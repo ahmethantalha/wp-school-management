@@ -1,0 +1,436 @@
+/* ==========================================================================
+   Okul Yönetim Sistemi — Tasarım Sistemi
+   Modern, kart tabanlı, İndigo vurgulu arayüz
+   ========================================================================== */
+
+.sms-wrap {
+	--sms-primary: #4f46e5;
+	--sms-primary-dark: #4338ca;
+	--sms-primary-soft: #eef2ff;
+	--sms-bg: #f6f7fb;
+	--sms-card: #ffffff;
+	--sms-text: #1e293b;
+	--sms-muted: #64748b;
+	--sms-border: #e2e8f0;
+	--sms-green: #16a34a;
+	--sms-green-soft: #f0fdf4;
+	--sms-red: #dc2626;
+	--sms-red-soft: #fef2f2;
+	--sms-amber: #d97706;
+	--sms-amber-soft: #fffbeb;
+	--sms-radius: 14px;
+	--sms-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 4px 16px rgba(15, 23, 42, .06);
+
+	max-width: 1280px;
+	margin-right: 12px;
+	color: var(--sms-text);
+	font-size: 14px;
+}
+
+.sms-wrap * { box-sizing: border-box; }
+.sms-wrap a { color: var(--sms-primary); text-decoration: none; }
+.sms-wrap a:hover { color: var(--sms-primary-dark); }
+
+/* ---------- Sayfa başlığı ---------- */
+.sms-page-head {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+	margin: 20px 0 18px;
+}
+.sms-title {
+	font-size: 26px !important;
+	font-weight: 700 !important;
+	color: var(--sms-text) !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	line-height: 1.25 !important;
+}
+.sms-subtitle { margin: 6px 0 0; color: var(--sms-muted); font-size: 13.5px; }
+.sms-term-picker {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--sms-card);
+	border: 1px solid var(--sms-border);
+	border-radius: 999px;
+	padding: 6px 8px 6px 16px;
+	box-shadow: var(--sms-shadow);
+}
+.sms-term-picker label { color: var(--sms-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+.sms-term-picker select {
+	border: none !important;
+	box-shadow: none !important;
+	background: transparent;
+	font-weight: 600;
+	color: var(--sms-text);
+	padding-right: 26px;
+}
+
+/* ---------- Kartlar ---------- */
+.sms-card {
+	background: var(--sms-card);
+	border: 1px solid var(--sms-border);
+	border-radius: var(--sms-radius);
+	box-shadow: var(--sms-shadow);
+	overflow: hidden;
+}
+.sms-card-head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	padding: 16px 20px 12px;
+	border-bottom: 1px solid var(--sms-border);
+}
+.sms-card-head h2 { margin: 0; font-size: 15px; font-weight: 700; color: var(--sms-text); }
+.sms-pad { padding: 16px 20px; }
+.sms-mt { margin-top: 18px; }
+.sms-mt-sm { margin-top: 8px; }
+.sms-mb { margin-bottom: 14px; }
+.sms-ml { margin-left: 10px; }
+.sms-muted { color: var(--sms-muted); }
+.sms-clamp { padding: 0 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ---------- Izgaralar ---------- */
+.sms-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+.sms-grid-2.sms-grid-uneven { grid-template-columns: 3fr 2fr; }
+.sms-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 18px; align-items: start; }
+@media (max-width: 1100px) {
+	.sms-grid-2, .sms-grid-2.sms-grid-uneven, .sms-grid-3 { grid-template-columns: 1fr; }
+}
+
+/* ---------- İstatistik kartları ---------- */
+.sms-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 18px; }
+@media (max-width: 1100px) { .sms-stat-grid { grid-template-columns: repeat(2, 1fr); } }
+.sms-stat-card {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	background: var(--sms-card);
+	border: 1px solid var(--sms-border);
+	border-radius: var(--sms-radius);
+	box-shadow: var(--sms-shadow);
+	padding: 18px 20px;
+}
+.sms-stat-icon {
+	display: grid;
+	place-items: center;
+	width: 46px;
+	height: 46px;
+	border-radius: 12px;
+	background: color-mix(in srgb, var(--c, #6366f1) 12%, white);
+	color: var(--c, #6366f1);
+	flex-shrink: 0;
+}
+.sms-stat-icon .dashicons { font-size: 22px; width: 22px; height: 22px; }
+.sms-stat-value { display: block; font-size: 24px; font-weight: 800; line-height: 1.15; }
+.sms-stat-label { color: var(--sms-muted); font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+
+/* ---------- Tablolar ---------- */
+.sms-table { width: 100%; border-collapse: collapse; }
+.sms-table th {
+	text-align: left;
+	padding: 10px 20px;
+	font-size: 11.5px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	color: var(--sms-muted);
+	border-bottom: 1px solid var(--sms-border);
+	background: #fafbfd;
+}
+.sms-table td { padding: 12px 20px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.sms-table tbody tr:last-child td { border-bottom: none; }
+.sms-table tbody tr:hover td { background: #fafbff; }
+.sms-name-cell { display: flex; align-items: center; gap: 10px; }
+.sms-name-cell .sms-muted { display: block; font-size: 12px; }
+.sms-actions-cell { text-align: right; white-space: nowrap; }
+
+/* ---------- Avatar ---------- */
+.sms-avatar {
+	display: inline-grid;
+	place-items: center;
+	width: 34px;
+	height: 34px;
+	border-radius: 50%;
+	background: hsl(var(--h, 230), 65%, 93%);
+	color: hsl(var(--h, 230), 55%, 38%);
+	font-weight: 700;
+	font-size: 12px;
+	flex-shrink: 0;
+	user-select: none;
+}
+.sms-avatar-lg { width: 56px; height: 56px; font-size: 18px; }
+
+/* ---------- Rozetler ---------- */
+.sms-badge {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: 999px;
+	font-size: 11.5px;
+	font-weight: 600;
+	background: #f1f5f9;
+	color: var(--sms-muted);
+	margin: 1px 2px 1px 0;
+}
+.sms-badge-green { background: var(--sms-green-soft); color: var(--sms-green); }
+.sms-badge-amber { background: var(--sms-amber-soft); color: var(--sms-amber); }
+.sms-badge-indigo { background: var(--sms-primary-soft); color: var(--sms-primary); }
+
+/* ---------- Butonlar ---------- */
+.sms-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 9px 18px;
+	border-radius: 10px;
+	border: 1px solid transparent;
+	font-size: 13.5px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all .15s ease;
+	text-decoration: none !important;
+	line-height: 1.3;
+}
+.sms-btn .dashicons { font-size: 16px; width: 16px; height: 16px; }
+.sms-btn-primary { background: var(--sms-primary); color: #fff !important; box-shadow: 0 2px 8px rgba(79, 70, 229, .28); }
+.sms-btn-primary:hover { background: var(--sms-primary-dark); }
+.sms-btn-ghost { background: var(--sms-card); color: var(--sms-text) !important; border-color: var(--sms-border); }
+.sms-btn-ghost:hover { border-color: var(--sms-primary); color: var(--sms-primary) !important; background: var(--sms-primary-soft); }
+.sms-btn-danger-ghost { background: transparent; color: var(--sms-red) !important; border-color: #fecaca; }
+.sms-btn-danger-ghost:hover { background: var(--sms-red-soft); }
+.sms-btn-sm { padding: 5px 12px; font-size: 12.5px; border-radius: 8px; }
+.sms-btn-block { width: 100%; }
+.sms-inline { display: inline; }
+
+/* ---------- Formlar ---------- */
+.sms-form .sms-field { margin-bottom: 14px; }
+.sms-field label { display: block; font-weight: 600; font-size: 12.5px; margin-bottom: 5px; color: var(--sms-text); }
+.sms-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 782px) { .sms-field-row { grid-template-columns: 1fr; } }
+.sms-wrap input[type="text"],
+.sms-wrap input[type="search"],
+.sms-wrap input[type="email"],
+.sms-wrap input[type="number"],
+.sms-wrap input[type="date"],
+.sms-wrap select,
+.sms-wrap textarea {
+	width: 100%;
+	border: 1px solid var(--sms-border);
+	border-radius: 10px;
+	padding: 8px 12px;
+	font-size: 13.5px;
+	background: #fff;
+	color: var(--sms-text);
+	box-shadow: none;
+	min-height: 38px;
+}
+.sms-wrap input:focus, .sms-wrap select:focus, .sms-wrap textarea:focus {
+	border-color: var(--sms-primary);
+	box-shadow: 0 0 0 3px rgba(79, 70, 229, .12);
+	outline: none;
+}
+.sms-input-sm { max-width: 220px; }
+.sms-check { display: flex; align-items: center; gap: 8px; margin: 12px 0; font-weight: 500; cursor: pointer; }
+.sms-details { border: 1px dashed var(--sms-border); border-radius: 10px; padding: 10px 14px; margin: 12px 0; }
+.sms-details summary { cursor: pointer; font-weight: 600; color: var(--sms-primary); }
+.sms-details[open] summary { margin-bottom: 10px; }
+
+/* Filtre araç çubuğu */
+.sms-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.sms-filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.sms-filters input[type="search"] { min-width: 240px; }
+.sms-filters select, .sms-filters input { width: auto; }
+
+/* ---------- Bildirimler ---------- */
+.sms-notice {
+	display: flex;
+	gap: 10px;
+	align-items: flex-start;
+	padding: 12px 16px;
+	border-radius: 12px;
+	margin: 0 0 16px;
+	font-weight: 500;
+	border: 1px solid;
+}
+.sms-notice .dashicons { flex-shrink: 0; margin-top: 1px; }
+.sms-notice-success { background: var(--sms-green-soft); color: #166534; border-color: #bbf7d0; }
+.sms-notice-error { background: var(--sms-red-soft); color: #991b1b; border-color: #fecaca; }
+.sms-notice-info { background: var(--sms-primary-soft); color: #3730a3; border-color: #c7d2fe; }
+.sms-mini-list { margin: 8px 0 0; padding-left: 4px; list-style: none; }
+.sms-mini-list li { padding: 4px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* ---------- Boş durumlar ---------- */
+.sms-empty { text-align: center; padding: 48px 24px; }
+.sms-empty .dashicons { font-size: 44px; width: 44px; height: 44px; color: #cbd5e1; }
+.sms-empty h2 { margin: 12px 0 4px; font-size: 17px; color: var(--sms-text); }
+.sms-empty p { color: var(--sms-muted); margin: 0; }
+
+/* ---------- Derslik / alışkanlık kartları ---------- */
+.sms-class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+.sms-class-card { padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+.sms-class-card-top { display: flex; gap: 12px; align-items: center; }
+.sms-class-card-top h3 { margin: 0; font-size: 15.5px; }
+.sms-class-emblem {
+	display: grid;
+	place-items: center;
+	width: 46px;
+	height: 46px;
+	border-radius: 12px;
+	background: var(--sms-primary-soft);
+	color: var(--sms-primary);
+	font-weight: 800;
+	font-size: 15px;
+	flex-shrink: 0;
+}
+.sms-emblem-green { background: var(--sms-green-soft); color: var(--sms-green); }
+.sms-class-card-meta { display: flex; gap: 16px; flex-wrap: wrap; color: var(--sms-muted); font-size: 13px; }
+.sms-class-card-meta .dashicons { font-size: 15px; width: 15px; height: 15px; vertical-align: text-bottom; }
+.sms-class-card-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+
+/* ---------- İlerleme çubukları / skorlar ---------- */
+.sms-progress { height: 8px; background: #eef1f6; border-radius: 999px; overflow: hidden; }
+.sms-progress-inline { display: inline-block; width: 90px; vertical-align: middle; margin-right: 8px; }
+.sms-progress-bar { height: 100%; border-radius: 999px; background: #94a3b8; transition: width .4s ease; }
+.sms-progress-bar.sms-rate-good { background: #22c55e; }
+.sms-progress-bar.sms-rate-mid { background: #f59e0b; }
+.sms-progress-bar.sms-rate-low { background: #ef4444; }
+.sms-score { font-weight: 700; }
+.sms-score-big { font-size: 16px; }
+.sms-rate-good { color: var(--sms-green); }
+.sms-rate-mid { color: var(--sms-amber); }
+.sms-rate-low { color: var(--sms-red); }
+
+/* ---------- Sıralama listeleri (dashboard) ---------- */
+.sms-rank-list { list-style: none; margin: 0; padding: 6px 0; }
+.sms-rank-list li { display: flex; align-items: center; gap: 10px; padding: 9px 20px; }
+.sms-rank-list li:hover { background: #fafbff; }
+.sms-rank-list a { font-weight: 600; flex: 1; }
+.sms-rank { color: var(--sms-muted); font-weight: 700; font-size: 12px; width: 26px; }
+.sms-rank-list .sms-score { margin-left: auto; }
+
+/* ---------- Segment kontrol (yoklama & alışkanlık) ---------- */
+.sms-seg { display: inline-flex; background: #f1f5f9; border-radius: 10px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.sms-seg-item { position: relative; cursor: pointer; }
+.sms-seg-item input { position: absolute; opacity: 0; pointer-events: none; }
+.sms-seg-item span {
+	display: inline-block;
+	padding: 5px 12px;
+	border-radius: 8px;
+	font-size: 12.5px;
+	font-weight: 600;
+	color: var(--sms-muted);
+	transition: all .12s ease;
+	user-select: none;
+}
+.sms-seg-item:hover span { color: var(--sms-text); }
+.sms-seg-item input:checked + span { background: #fff; color: var(--sms-text); box-shadow: 0 1px 4px rgba(15,23,42,.14); }
+.sms-seg-present input:checked + span, .sms-seg-item.sms-seg-present input:checked + span { color: var(--sms-green); }
+.sms-seg-absent input:checked + span { color: var(--sms-red); }
+.sms-seg-late input:checked + span { color: var(--sms-amber); }
+.sms-seg-excused input:checked + span { color: var(--sms-primary); }
+.sms-seg-num span { min-width: 32px; text-align: center; }
+.sms-seg-num input:checked + span { background: var(--sms-primary); color: #fff; }
+.sms-att-table td { padding-top: 8px; padding-bottom: 8px; }
+
+/* ---------- Kadro (roster) yönetimi ---------- */
+.sms-roster-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.sms-roster-tools input[type="search"] { flex: 1; min-width: 160px; }
+.sms-roster-tools select { width: auto; }
+.sms-roster-list {
+	max-height: 460px;
+	overflow-y: auto;
+	border: 1px solid var(--sms-border);
+	border-radius: 12px;
+	padding: 6px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.sms-roster-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 10px;
+	border-radius: 10px;
+	cursor: pointer;
+	transition: background .1s ease;
+}
+.sms-roster-item:hover { background: #f8fafc; }
+.sms-roster-item:has(input:checked) { background: var(--sms-primary-soft); }
+.sms-roster-item input { margin: 0; }
+.sms-roster-name { flex: 1; font-weight: 500; }
+.sms-roster-item.sms-hidden { display: none; }
+
+/* ---------- Seçim kartları (takip metodu) ---------- */
+.sms-choice-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 782px) { .sms-choice-cards { grid-template-columns: 1fr; } }
+.sms-choice-card {
+	display: flex;
+	gap: 10px;
+	align-items: flex-start;
+	border: 1.5px solid var(--sms-border);
+	border-radius: 12px;
+	padding: 12px 14px;
+	cursor: pointer;
+	transition: all .12s ease;
+}
+.sms-choice-card:hover { border-color: #c7d2fe; }
+.sms-choice-card:has(input:checked) { border-color: var(--sms-primary); background: var(--sms-primary-soft); }
+.sms-choice-card input { margin-top: 3px; }
+.sms-choice-card strong { display: block; }
+.sms-choice-card .sms-muted { font-size: 12px; }
+
+/* ---------- Karne / profil ---------- */
+.sms-profile-card { display: flex; gap: 18px; align-items: center; padding: 22px 24px; }
+.sms-profile-info h2 { margin: 0 0 8px; font-size: 20px; }
+.sms-profile-meta { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; font-size: 13px; }
+.sms-profile-meta .dashicons { font-size: 15px; width: 15px; height: 15px; vertical-align: text-bottom; }
+.sms-profile-classes { margin-top: 10px; }
+.sms-avg-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; }
+.sms-avg-row > span:first-child { flex: 1; font-weight: 500; }
+
+/* Yoklama özet kutuları */
+.sms-att-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.sms-att-summary-item { text-align: center; border-radius: 12px; padding: 12px 6px; background: #f8fafc; }
+.sms-att-count { display: block; font-size: 20px; font-weight: 800; }
+.sms-att-summary-item.sms-att-present .sms-att-count { color: var(--sms-green); }
+.sms-att-summary-item.sms-att-absent .sms-att-count { color: var(--sms-red); }
+.sms-att-summary-item.sms-att-late .sms-att-count { color: var(--sms-amber); }
+.sms-att-summary-item.sms-att-excused .sms-att-count { color: var(--sms-primary); }
+.sms-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; flex-shrink: 0; }
+.sms-dot.sms-att-present { background: #22c55e; }
+.sms-dot.sms-att-absent { background: #ef4444; }
+.sms-dot.sms-att-late { background: #f59e0b; }
+.sms-dot.sms-att-excused { background: #6366f1; }
+
+/* ---------- Grafikler ---------- */
+.sms-chart { padding: 14px 20px 18px; min-height: 200px; }
+.sms-chart svg { display: block; width: 100%; height: auto; }
+.sms-chart-tip {
+	position: absolute;
+	background: #1e293b;
+	color: #fff;
+	font-size: 12px;
+	font-weight: 600;
+	padding: 4px 10px;
+	border-radius: 8px;
+	pointer-events: none;
+	transform: translate(-50%, -130%);
+	white-space: nowrap;
+	z-index: 99;
+}
+.sms-donut-legend { display: flex; flex-direction: column; gap: 8px; }
+.sms-donut-legend span { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.sms-donut-wrap { display: flex; align-items: center; gap: 20px; }
+
+/* ---------- Diğer ---------- */
+.sms-back-link { font-weight: 600; }
+.sms-danger-zone { border-color: #fecaca; }
+.sms-help-list { margin: 0; padding-left: 18px; line-height: 1.8; }
+.sms-help-list li { margin-bottom: 8px; }
