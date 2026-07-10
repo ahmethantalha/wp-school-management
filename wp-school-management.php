@@ -3,7 +3,7 @@
  * Plugin Name:       Okul Yönetim Sistemi
  * Plugin URI:        https://github.com/ahmethantalha/wp-school-management
  * Description:       Öğrenci yurtları, okullar ve eğitim kurumları için dönem bazlı öğrenci takip sistemi: öğrenci/öğretmen/veli yönetimi, derslikler, yoklama, not ve alışkanlık takibi, raporlar.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Author:            Ahmet Han Talha
  * License:           GPL-2.0-or-later
  * Text Domain:       wp-school-management
@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SMS_VERSION', '1.0.0' );
+define( 'SMS_VERSION', '1.1.0' );
 define( 'SMS_FILE', __FILE__ );
 define( 'SMS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SMS_URL', plugin_dir_url( __FILE__ ) );
@@ -24,7 +24,9 @@ require_once SMS_DIR . 'includes/sms-helpers.php';
 require_once SMS_DIR . 'includes/class-sms-terms.php';
 require_once SMS_DIR . 'includes/class-sms-students.php';
 require_once SMS_DIR . 'includes/class-sms-classes.php';
+require_once SMS_DIR . 'includes/class-sms-attendance-types.php';
 require_once SMS_DIR . 'includes/class-sms-attendance.php';
+require_once SMS_DIR . 'includes/class-sms-import.php';
 require_once SMS_DIR . 'includes/class-sms-habits.php';
 require_once SMS_DIR . 'includes/class-sms-grades.php';
 require_once SMS_DIR . 'includes/class-sms-reports.php';

@@ -36,7 +36,7 @@
 			function applyFilter() {
 				var query = (searchInput && searchInput.value || '').toLocaleLowerCase('tr');
 				var grade = gradeSelect ? gradeSelect.value : '';
-				roster.querySelectorAll('.sms-roster-item').forEach(function (item) {
+				roster.querySelectorAll('.sms-roster-item, .sms-roster-row').forEach(function (item) {
 					var matchName = !query || (item.getAttribute('data-name') || '').indexOf(query) !== -1;
 					var matchGrade = !grade || item.getAttribute('data-grade') === grade;
 					item.classList.toggle('sms-hidden', !(matchName && matchGrade));
@@ -87,6 +87,15 @@
 				document.querySelectorAll('input[type="radio"][name^="log_value"][value="1"]').forEach(function (radio) {
 					radio.checked = true;
 				});
+			});
+		}
+
+		/* ---------- Öğretmen formu: sınıf öğretmeni seçilince sorumlu sınıflar ---------- */
+		var ctToggle = document.querySelector('[data-sms-ct-toggle]');
+		var ctGrades = document.querySelector('[data-sms-ct-grades]');
+		if (ctToggle && ctGrades) {
+			ctToggle.addEventListener('change', function () {
+				ctGrades.style.display = ctToggle.checked ? '' : 'none';
 			});
 		}
 

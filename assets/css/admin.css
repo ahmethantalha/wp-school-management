@@ -429,7 +429,107 @@
 .sms-donut-legend span { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .sms-donut-wrap { display: flex; align-items: center; gap: 20px; }
 
+/* ---------- Yoklama Al: kategori/oturum kartları ---------- */
+.sms-cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.sms-cat-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 8px;
+	padding: 26px 18px;
+	background: var(--sms-card);
+	border: 1px solid var(--sms-border);
+	border-radius: var(--sms-radius);
+	box-shadow: var(--sms-shadow);
+	color: var(--sms-text) !important;
+	transition: all .16s ease;
+}
+.sms-cat-card:hover { transform: translateY(-3px); border-color: var(--sms-primary); box-shadow: 0 10px 24px rgba(79,70,229,.16); color: var(--sms-text) !important; }
+.sms-cat-icon {
+	display: grid; place-items: center;
+	width: 58px; height: 58px; border-radius: 16px;
+	background: var(--sms-primary-soft); color: var(--sms-primary);
+}
+.sms-cat-icon .dashicons { font-size: 30px; width: 30px; height: 30px; }
+.sms-scope-general .sms-cat-icon { background: var(--sms-green-soft); color: var(--sms-green); }
+.sms-cat-name { font-weight: 700; font-size: 15px; }
+.sms-cat-meta { color: var(--sms-muted); font-size: 12.5px; }
+.sms-session-card .sms-cat-icon { background: var(--sms-amber-soft); color: var(--sms-amber); }
+
+/* ---------- Sekmeler (içe aktar) ---------- */
+.sms-tabs { display: flex; gap: 4px; margin-bottom: 18px; border-bottom: 1px solid var(--sms-border); }
+.sms-tab {
+	display: inline-flex; align-items: center; gap: 6px;
+	padding: 10px 18px; font-weight: 600; color: var(--sms-muted) !important;
+	border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.sms-tab:hover { color: var(--sms-text) !important; }
+.sms-tab.is-active { color: var(--sms-primary) !important; border-bottom-color: var(--sms-primary); }
+.sms-tab .dashicons { font-size: 16px; width: 16px; height: 16px; }
+
+/* ---------- Dosya yükleme ---------- */
+.sms-dropzone {
+	border: 2px dashed var(--sms-border);
+	border-radius: 14px;
+	padding: 26px 20px;
+	text-align: center;
+	background: #fafbfd;
+	transition: border-color .15s ease;
+}
+.sms-dropzone:hover { border-color: var(--sms-primary); }
+.sms-dropzone .dashicons { font-size: 34px; width: 34px; height: 34px; color: var(--sms-primary); }
+.sms-dropzone input[type="file"] { margin: 12px auto 4px; max-width: 320px; }
+.sms-code { display: block; background: #0f172a; color: #e2e8f0; padding: 12px 14px; border-radius: 10px; font-size: 12.5px; overflow-x: auto; white-space: pre; }
+
+/* ---------- Yoklama türleri yönetimi ---------- */
+.sms-card-head h2 .dashicons { font-size: 18px; width: 18px; height: 18px; vertical-align: text-bottom; color: var(--sms-primary); }
+.sms-session-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.sms-session-chip {
+	display: inline-flex; align-items: center; gap: 6px;
+	background: var(--sms-primary-soft); color: var(--sms-primary);
+	padding: 5px 6px 5px 12px; border-radius: 999px; font-weight: 600; font-size: 12.5px;
+}
+.sms-chip-x {
+	border: none; background: rgba(79,70,229,.18); color: var(--sms-primary);
+	width: 18px; height: 18px; border-radius: 50%; cursor: pointer; line-height: 1; font-size: 14px; padding: 0;
+}
+.sms-chip-x:hover { background: var(--sms-red); color: #fff; }
+.sms-inline-form { display: flex; gap: 8px; align-items: center; }
+.sms-inline-form input[type="text"] { max-width: 260px; }
+.sms-icon-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+.sms-icon-opt { cursor: pointer; }
+.sms-icon-opt input { position: absolute; opacity: 0; }
+.sms-icon-opt span.dashicons {
+	display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px;
+	border: 1px solid var(--sms-border); color: var(--sms-muted); transition: all .12s ease;
+	font-size: 20px;
+}
+.sms-icon-opt:hover span.dashicons { border-color: var(--sms-primary); color: var(--sms-primary); }
+.sms-icon-opt input:checked + span.dashicons { background: var(--sms-primary); color: #fff; border-color: var(--sms-primary); }
+
+/* ---------- Sınıf öğretmeni sorumlu sınıflar ---------- */
+.sms-ct-block { border: 1px dashed var(--sms-border); border-radius: 12px; padding: 12px 14px; }
+.sms-ct-grades { margin-top: 10px; }
+.sms-grade-checks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.sms-grade-check input { position: absolute; opacity: 0; }
+.sms-grade-check span {
+	display: grid; place-items: center; min-width: 34px; height: 34px; padding: 0 8px;
+	border: 1px solid var(--sms-border); border-radius: 8px; cursor: pointer; font-weight: 600; color: var(--sms-muted);
+}
+.sms-grade-check input:checked + span { background: var(--sms-primary); color: #fff; border-color: var(--sms-primary); }
+
+/* ---------- Karne: genel yoklama kırılımı ---------- */
+.sms-cat-report { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.sms-cat-report-block h4 { margin: 0 0 10px; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+.sms-cat-report-block h4 .dashicons { color: var(--sms-primary); }
+.sms-session-stats { display: flex; flex-direction: column; gap: 6px; }
+.sms-session-stat { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
+.sms-session-stat-name { flex: 1; font-weight: 500; }
+.sms-session-stat-rate { font-weight: 700; min-width: 44px; text-align: right; }
+
 /* ---------- Diğer ---------- */
+.sms-hidden { display: none !important; }
 .sms-back-link { font-weight: 600; }
 .sms-danger-zone { border-color: #fecaca; }
 .sms-help-list { margin: 0; padding-left: 18px; line-height: 1.8; }

@@ -16,7 +16,7 @@ if ( ! $student ) {
 	return;
 }
 
-$att        = $report['attendance'];
+$att        = $report['att_all'];
 $statuses   = sms_attendance_statuses();
 $habit_avg  = null;
 if ( $report['habits'] ) {
@@ -125,7 +125,10 @@ $parent = $student->parent_user_id ? get_userdata( (int) $student->parent_user_i
 						<?php foreach ( array_slice( $report['recent_att'], 0, 8 ) as $a ) : ?>
 							<li>
 								<span class="sms-dot sms-att-<?php echo esc_attr( $a->status ); ?>"></span>
-								<?php echo esc_html( sms_format_date( $a->att_date ) . ' — ' . $a->class_name . ': ' . ( $statuses[ $a->status ] ?? $a->status ) ); ?>
+								<?php
+									$ctx = $a->class_name ? $a->class_name : trim( $a->category_name . ( $a->session_name && $a->session_name !== $a->category_name ? ' · ' . $a->session_name : '' ) );
+									echo esc_html( sms_format_date( $a->att_date ) . ' — ' . $ctx . ': ' . ( $statuses[ $a->status ] ?? $a->status ) );
+								?>
 								<?php echo $a->note ? '<span class="sms-muted">(' . esc_html( $a->note ) . ')</span>' : ''; ?>
 							</li>
 						<?php endforeach; ?>
@@ -134,6 +137,28 @@ $parent = $student->parent_user_id ? get_userdata( (int) $student->parent_user_i
 			</div>
 		</div>
 	</div>
+
+	<?php if ( ! empty( $report['att_cats'] ) ) : ?>
+		<div class="sms-card sms-mt">
+			<div class="sms-card-head"><h2>Genel Yoklama Katılımı</h2><span class="sms-muted">Namaz, temizlik ve diğer genel yoklamalar</span></div>
+			<div class="sms-pad sms-cat-report">
+				<?php foreach ( $report['att_cats'] as $cat ) : ?>
+					<div class="sms-cat-report-block">
+						<h4><span class="dashicons <?php echo esc_attr( $cat['icon'] ?: 'dashicons-clipboard' ); ?>"></span> <?php echo esc_html( $cat['category'] ); ?></h4>
+						<div class="sms-session-stats">
+							<?php foreach ( $cat['sessions'] as $s ) : ?>
+								<div class="sms-session-stat">
+									<span class="sms-session-stat-name"><?php echo esc_html( $s['name'] ); ?></span>
+									<span class="sms-session-stat-rate <?php echo esc_attr( sms_rate_class( $s['rate'] ) ); ?>"><?php echo null !== $s['rate'] ? (int) $s['rate'] . '%' : '—'; ?></span>
+									<span class="sms-muted"><?php echo (int) $s['present']; ?>/<?php echo (int) $s['total']; ?> katılım</span>
+								</div>
+							<?php endforeach; ?>
+						</div>
+					</div>
+				<?php endforeach; ?>
+			</div>
+		</div>
+	<?php endif; ?>
 
 	<div class="sms-grid-2 sms-mt">
 		<div class="sms-card">

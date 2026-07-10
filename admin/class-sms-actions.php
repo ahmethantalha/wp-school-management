@@ -27,6 +27,11 @@ class SMS_Actions {
 			'sms_save_grades'     => 'sms_teach',
 			'sms_delete_grade'    => 'sms_teach',
 			'sms_save_settings'   => 'sms_manage',
+			'sms_save_category'   => 'sms_manage',
+			'sms_delete_category' => 'sms_manage',
+			'sms_add_session'     => 'sms_manage',
+			'sms_delete_session'  => 'sms_manage',
+			'sms_import'          => 'sms_manage',
 		);
 		foreach ( $actions as $action => $cap ) {
 			add_action( 'admin_post_' . $action, function () use ( $action, $cap ) {
@@ -35,6 +40,9 @@ class SMS_Actions {
 				self::$method();
 			} );
 		}
+
+		// CSV şablon indirme (GET, nonce URL ile).
+		add_action( 'admin_post_sms_import_template', array( __CLASS__, 'handle_import_template' ) );
 	}
 
 	private static function guard( $action, $cap ) {
@@ -214,6 +222,20 @@ class SMS_Actions {
 		if ( is_wp_error( $result ) ) {
 			self::back( '', 'Kayıt başarısız: ' . $result->get_error_message() );
 		}
+
+		// Öğretmen için sınıf öğretmeni bayrağı + sorumlu sınıf seviyeleri.
+		if ( 'sms_teacher' === $role ) {
+			$target = $user_id ?: (int) $result;
+			if ( ! empty( $_POST['is_class_teacher'] ) ) {
+				update_user_meta( $target, 'sms_is_class_teacher', 1 );
+				$grades = isset( $_POST['ct_grades'] ) ? array_map( 'intval', (array) $_POST['ct_grades'] ) : array();
+				update_user_meta( $target, 'sms_class_teacher_grades', array_values( array_filter( $grades ) ) );
+			} else {
+				delete_user_meta( $target, 'sms_is_class_teacher' );
+				delete_user_meta( $target, 'sms_class_teacher_grades' );
+			}
+		}
+
 		self::back( 'sms_teacher' === $role ? 'Öğretmen kaydedildi.' : 'Veli kaydedildi.' );
 	}
 
@@ -269,26 +291,53 @@ class SMS_Actions {
 	/* ---------- Yoklama ---------- */
 
 	private static function handle_save_attendance() {
-		$class_id = (int) self::post( 'class_id' );
-		$date     = self::post( 'att_date' );
-		if ( ! sms_can_manage_class( $class_id ) ) {
-			wp_die( 'Bu dersliğin yoklamasını alma yetkiniz yok.' );
+		$category_id = (int) self::post( 'category_id' );
+		$session_id  = (int) self::post( 'session_id' );
+		$class_id    = (int) self::post( 'class_id' );
+		$date        = self::post( 'att_date' );
+
+		$category = SMS_Attendance_Types::get_category( $category_id );
+		$session  = SMS_Attendance_Types::get_session( $session_id );
+		if ( ! $category || ! $session || (int) $session->category_id !== $category_id ) {
+			self::back( '', 'Geçersiz yoklama türü.' );
 		}
 		if ( ! $date || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
 			self::back( '', 'Geçerli bir tarih seçin.' );
 		}
 
+		// Yetki + öğrenci kapsamı, kategori türüne göre belirlenir.
+		if ( 'class' === $category->scope ) {
+			if ( ! sms_can_manage_class( $class_id ) ) {
+				wp_die( 'Bu dersliğin yoklamasını alma yetkiniz yok.' );
+			}
+			$class   = SMS_Classes::get( $class_id );
+			$term_id = $class ? (int) $class->term_id : sms_current_term_id();
+			$allowed = SMS_Classes::student_ids( $class_id );
+		} else {
+			if ( ! sms_can_take_general_attendance() ) {
+				wp_die( 'Genel yoklama alma yetkiniz yok.' );
+			}
+			$class_id = 0;
+			$term_id  = sms_current_term_id();
+			$allowed  = sms_general_attendance_student_ids( $term_id );
+		}
+		$allowed = array_map( 'intval', $allowed );
+
 		$statuses = isset( $_POST['att_status'] ) ? (array) $_POST['att_status'] : array();
 		$notes    = isset( $_POST['att_note'] ) ? (array) $_POST['att_note'] : array();
 		$entries  = array();
 		foreach ( $statuses as $student_id => $status ) {
-			$entries[ (int) $student_id ] = array(
+			$student_id = (int) $student_id;
+			if ( ! in_array( $student_id, $allowed, true ) ) {
+				continue; // yetki dışı öğrenci gönderimini yok say.
+			}
+			$entries[ $student_id ] = array(
 				'status' => sanitize_key( $status ),
 				'note'   => isset( $notes[ $student_id ] ) ? sanitize_text_field( wp_unslash( $notes[ $student_id ] ) ) : '',
 			);
 		}
-		SMS_Attendance::save_sheet( $class_id, $date, $entries, get_current_user_id() );
-		self::back( 'Yoklama kaydedildi (' . count( $entries ) . ' öğrenci).' );
+		SMS_Attendance::save_sheet( $term_id, $category_id, $session_id, $class_id, $date, $entries, get_current_user_id() );
+		self::back( $category->name . ' yoklaması kaydedildi (' . count( $entries ) . ' öğrenci).' );
 	}
 
 	/* ---------- Alışkanlıklar ---------- */
@@ -417,5 +466,110 @@ class SMS_Actions {
 			'max_grade'   => max( 1, (int) self::post( 'max_grade', '12' ) ),
 		) );
 		self::back( 'Ayarlar kaydedildi.' );
+	}
+
+	/* ---------- Yoklama türleri (kategori/oturum) ---------- */
+
+	private static function handle_save_category() {
+		$id   = (int) self::post( 'category_id' );
+		$name = self::post( 'name' );
+		$icon = self::post( 'icon' );
+		if ( ! $name ) {
+			self::back( '', 'Kategori adı gerekli.' );
+		}
+		if ( $id ) {
+			SMS_Attendance_Types::update_category( $id, $name, $icon );
+			self::back( 'Kategori güncellendi.' );
+		}
+		$scope   = self::post( 'scope', 'general' );
+		$cat_id  = SMS_Attendance_Types::create_category( $name, $scope, $icon );
+		$session = self::post( 'first_session' );
+		if ( $session ) {
+			SMS_Attendance_Types::add_session( $cat_id, $session );
+		} else {
+			SMS_Attendance_Types::add_session( $cat_id, $name );
+		}
+		self::back( 'Yoklama kategorisi oluşturuldu.' );
+	}
+
+	private static function handle_delete_category() {
+		$result = SMS_Attendance_Types::delete_category( (int) self::post( 'category_id' ) );
+		if ( is_wp_error( $result ) ) {
+			self::back( '', $result->get_error_message() );
+		}
+		self::back( 'Kategori silindi.' );
+	}
+
+	private static function handle_add_session() {
+		$cat_id = (int) self::post( 'category_id' );
+		$name   = self::post( 'name' );
+		if ( ! $name || ! SMS_Attendance_Types::get_category( $cat_id ) ) {
+			self::back( '', 'Oturum adı gerekli.' );
+		}
+		SMS_Attendance_Types::add_session( $cat_id, $name );
+		self::back( 'Oturum eklendi.' );
+	}
+
+	private static function handle_delete_session() {
+		$result = SMS_Attendance_Types::delete_session( (int) self::post( 'session_id' ) );
+		if ( is_wp_error( $result ) ) {
+			self::back( '', $result->get_error_message() );
+		}
+		self::back( 'Oturum silindi.' );
+	}
+
+	/* ---------- İçe aktarma ---------- */
+
+	private static function handle_import() {
+		$type    = self::post( 'import_type' );
+		$term_id = (int) self::post( 'term_id' );
+
+		if ( ! in_array( $type, array( 'students', 'teachers', 'parents' ), true ) ) {
+			self::back( '', 'Geçersiz içe aktarma türü.' );
+		}
+		if ( empty( $_FILES['import_file']['name'] ) || ! empty( $_FILES['import_file']['error'] ) ) {
+			self::back( '', 'Lütfen bir .xlsx veya .csv dosyası seçin.' );
+		}
+
+		$tmp  = $_FILES['import_file']['tmp_name'];
+		$ext  = strtolower( pathinfo( $_FILES['import_file']['name'], PATHINFO_EXTENSION ) );
+		$rows = SMS_Import::read_file( $tmp, $ext );
+		if ( is_wp_error( $rows ) ) {
+			self::back( '', $rows->get_error_message() );
+		}
+
+		if ( 'students' === $type ) {
+			if ( ! $term_id ) {
+				self::back( '', 'Öğrenci aktarımı için aktif bir dönem gerekli.' );
+			}
+			$res = SMS_Import::import_students( $rows, $term_id );
+		} else {
+			$role = 'teachers' === $type ? 'sms_teacher' : 'sms_parent';
+			$res  = SMS_Import::import_users( $rows, $role );
+		}
+
+		$msg = $res['created'] . ' kayıt içe aktarıldı.';
+		if ( ! empty( $res['errors'] ) ) {
+			$msg .= ' ' . count( $res['errors'] ) . ' satır atlandı/uyarı.';
+			set_transient( 'sms_import_errors_' . get_current_user_id(), $res['errors'], 120 );
+		}
+		self::back( $msg, '', admin_url( 'admin.php?page=sms-import&tab=' . $type ) );
+	}
+
+	public static function handle_import_template() {
+		$type = isset( $_GET['type'] ) ? sanitize_key( $_GET['type'] ) : '';
+		if ( ! current_user_can( 'sms_manage' ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'sms_template' ) ) {
+			wp_die( 'Yetkisiz istek.' );
+		}
+		$content = SMS_Import::template( $type );
+		if ( ! $content ) {
+			wp_die( 'Geçersiz şablon.' );
+		}
+		nocache_headers();
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename=sms-' . $type . '-sablon.csv' );
+		echo "\xEF\xBB\xBF"; // Excel için UTF-8 BOM.
+		echo $content; // phpcs:ignore
+		exit;
 	}
 }

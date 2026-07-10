@@ -19,12 +19,11 @@ $settings = sms_get_settings();
 	<?php
 	$counts       = SMS_Reports::counts( $term_id );
 	$teacher_only = sms_is_teacher();
-	$class_ids    = $teacher_only ? sms_teacher_class_ids() : null;
 	$student_ids  = $teacher_only ? sms_teacher_student_ids() : null;
 
 	$habit_series = SMS_Habits::daily_rates( $term_id, 14, $student_ids );
-	$att_series   = SMS_Attendance::daily_rates( $term_id, 14, $class_ids );
-	$att_break    = SMS_Attendance::term_breakdown( $term_id, $class_ids );
+	$att_series   = SMS_Attendance::daily_rates( $term_id, 14, $student_ids );
+	$att_break    = SMS_Attendance::term_breakdown( $term_id, $student_ids );
 	$scores       = SMS_Reports::student_scores( $term_id, $student_ids );
 	$top          = array_slice( $scores, 0, 5 );
 	$bottom       = array_slice( array_reverse( array_slice( $scores, 5 ) ), 0, 5 );

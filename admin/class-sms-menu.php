@@ -27,6 +27,8 @@ class SMS_Menu {
 		add_submenu_page( 'sms-dashboard', 'Alışkanlıklar', 'Alışkanlıklar', 'sms_teach', 'sms-habits', array( __CLASS__, 'render' ) );
 		add_submenu_page( 'sms-dashboard', 'Notlar', 'Notlar', 'sms_teach', 'sms-grades', array( __CLASS__, 'render' ) );
 		add_submenu_page( 'sms-dashboard', 'Raporlar', 'Raporlar', 'sms_access', 'sms-reports', array( __CLASS__, 'render' ) );
+		add_submenu_page( 'sms-dashboard', 'İçe Aktar', 'İçe Aktar', 'sms_manage', 'sms-import', array( __CLASS__, 'render' ) );
+		add_submenu_page( 'sms-dashboard', 'Yoklama Türleri', 'Yoklama Türleri', 'sms_manage', 'sms-att-types', array( __CLASS__, 'render' ) );
 
 		// Veli menüsü: yalnızca veli hesabı (yönetici/öğretmen değilse) için görünür.
 		if ( ! current_user_can( 'sms_teach' ) && current_user_can( 'sms_access' ) && SMS_Students::children_of( get_current_user_id() ) ) {
@@ -96,6 +98,12 @@ class SMS_Menu {
 				break;
 			case 'sms-reports':
 				self::load_view( isset( $_GET['student'] ) ? 'student-report' : 'reports' );
+				break;
+			case 'sms-import':
+				self::load_view( 'import' );
+				break;
+			case 'sms-att-types':
+				self::load_view( 'attendance-types' );
 				break;
 			case 'sms-my-children':
 				self::load_view( 'my-children' );

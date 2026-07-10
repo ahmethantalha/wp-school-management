@@ -17,7 +17,7 @@ if ( ! defined( 'SMS_REMOVE_DATA_ON_UNINSTALL' ) || ! SMS_REMOVE_DATA_ON_UNINSTA
 
 global $wpdb;
 
-$tables = array( 'terms', 'students', 'enrollments', 'classes', 'class_students', 'attendance', 'habits', 'habit_students', 'habit_logs', 'grades' );
+$tables = array( 'terms', 'students', 'enrollments', 'classes', 'class_students', 'att_categories', 'att_sessions', 'attendance', 'habits', 'habit_students', 'habit_logs', 'grades' );
 foreach ( $tables as $table ) {
 	$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'sms_' . $table ); // phpcs:ignore
 }

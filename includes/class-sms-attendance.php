@@ -2,7 +2,7 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Yoklama kayıtları.
+ * Yoklama kayıtları. Kategori (Ders/Namaz/Temizlik...) + oturum (vakit) + dönem bazlı.
  */
 class SMS_Attendance {
 
@@ -11,12 +11,15 @@ class SMS_Attendance {
 		return $wpdb->prefix . 'sms_attendance';
 	}
 
-	/** Bir dersliğin belirli gündeki yoklaması: student_id => satır. */
-	public static function sheet( $class_id, $date ) {
+	/**
+	 * Belirli kategori/oturum/derslik/gün için yoklama satırları: student_id => satır.
+	 * Genel yoklamalarda $class_id = 0.
+	 */
+	public static function sheet( $category_id, $session_id, $class_id, $date ) {
 		global $wpdb;
 		$rows = $wpdb->get_results( $wpdb->prepare(
-			'SELECT * FROM ' . self::table() . ' WHERE class_id = %d AND att_date = %s',
-			$class_id, $date
+			'SELECT * FROM ' . self::table() . ' WHERE category_id = %d AND session_id = %d AND class_id = %d AND att_date = %s',
+			$category_id, $session_id, $class_id, $date
 		) );
 		$map = array();
 		foreach ( $rows as $r ) {
@@ -25,11 +28,13 @@ class SMS_Attendance {
 		return $map;
 	}
 
-	/** Yoklamayı kaydeder. $entries: student_id => ['status' =>, 'note' =>]. */
-	public static function save_sheet( $class_id, $date, array $entries, $recorded_by ) {
+	/**
+	 * Yoklamayı kaydeder. $entries: student_id => ['status' =>, 'note' =>].
+	 */
+	public static function save_sheet( $term_id, $category_id, $session_id, $class_id, $date, array $entries, $recorded_by ) {
 		global $wpdb;
 		$valid    = array_keys( sms_attendance_statuses() );
-		$existing = self::sheet( $class_id, $date );
+		$existing = self::sheet( $category_id, $session_id, $class_id, $date );
 
 		foreach ( $entries as $student_id => $entry ) {
 			$student_id = (int) $student_id;
@@ -41,9 +46,13 @@ class SMS_Attendance {
 					'status'      => $status,
 					'note'        => $note,
 					'recorded_by' => (int) $recorded_by,
+					'term_id'     => (int) $term_id,
 				), array( 'id' => (int) $existing[ $student_id ]->id ) );
 			} else {
 				$wpdb->insert( self::table(), array(
+					'term_id'     => (int) $term_id,
+					'category_id' => (int) $category_id,
+					'session_id'  => (int) $session_id,
 					'class_id'    => (int) $class_id,
 					'student_id'  => $student_id,
 					'att_date'    => $date,
@@ -55,15 +64,18 @@ class SMS_Attendance {
 		}
 	}
 
-	/** Öğrencinin dönem devam özeti. */
-	public static function student_summary( $student_id, $term_id ) {
+	/** Öğrencinin dönem devam özeti. $category_id verilirse o kategoriyle sınırlar. */
+	public static function student_summary( $student_id, $term_id, $category_id = 0 ) {
 		global $wpdb;
-		$rows = $wpdb->get_results( $wpdb->prepare(
-			'SELECT a.status, COUNT(*) AS cnt FROM ' . self::table() . " a
-			 INNER JOIN {$wpdb->prefix}sms_classes c ON c.id = a.class_id
-			 WHERE a.student_id = %d AND c.term_id = %d GROUP BY a.status",
-			$student_id, $term_id
-		) );
+		$sql    = 'SELECT status, COUNT(*) AS cnt FROM ' . self::table() . ' WHERE student_id = %d AND term_id = %d';
+		$params = array( $student_id, $term_id );
+		if ( $category_id ) {
+			$sql     .= ' AND category_id = %d';
+			$params[] = $category_id;
+		}
+		$sql .= ' GROUP BY status';
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
+
 		$summary = array( 'present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0, 'total' => 0, 'rate' => null );
 		foreach ( $rows as $r ) {
 			$summary[ $r->status ] = (int) $r->cnt;
@@ -75,19 +87,66 @@ class SMS_Attendance {
 		return $summary;
 	}
 
-	/** Dönem geneli durum dağılımı (halka grafik için). $class_ids ile sınırlandırılabilir. */
-	public static function term_breakdown( $term_id, array $class_ids = null ) {
+	/**
+	 * Öğrencinin genel (namaz/temizlik/telefon...) kategorilerdeki oturum bazlı katılımı.
+	 * @return array [ ['category'=>ad, 'scope'=>, 'sessions'=> [ ['name'=>, 'present'=>, 'total'=>, 'rate'=> ] ] ] ]
+	 */
+	public static function student_category_breakdown( $student_id, $term_id ) {
 		global $wpdb;
-		$sql    = 'SELECT a.status, COUNT(*) AS cnt FROM ' . self::table() . " a
-			 INNER JOIN {$wpdb->prefix}sms_classes c ON c.id = a.class_id
-			 WHERE c.term_id = %d";
-		if ( null !== $class_ids ) {
-			if ( ! $class_ids ) {
+		$rows = $wpdb->get_results( $wpdb->prepare(
+			'SELECT a.category_id, a.session_id,
+				SUM(CASE WHEN a.status = %s THEN 1 ELSE 0 END) AS present,
+				SUM(CASE WHEN a.status = %s THEN 1 ELSE 0 END) AS late,
+				COUNT(*) AS total
+			 FROM ' . self::table() . ' a
+			 WHERE a.student_id = %d AND a.term_id = %d
+			 GROUP BY a.category_id, a.session_id',
+			'present', 'late', $student_id, $term_id
+		) );
+
+		$by_cs = array();
+		foreach ( $rows as $r ) {
+			$by_cs[ (int) $r->category_id ][ (int) $r->session_id ] = $r;
+		}
+
+		$out = array();
+		foreach ( SMS_Attendance_Types::categories( false ) as $cat ) {
+			if ( 'class' === $cat->scope || empty( $by_cs[ (int) $cat->id ] ) ) {
+				continue;
+			}
+			$sessions = array();
+			foreach ( SMS_Attendance_Types::sessions( (int) $cat->id ) as $sess ) {
+				$row = $by_cs[ (int) $cat->id ][ (int) $sess->id ] ?? null;
+				if ( ! $row ) {
+					continue;
+				}
+				$total = (int) $row->total;
+				$rate  = $total ? round( ( (int) $row->present + 0.5 * (int) $row->late ) / $total * 100 ) : null;
+				$sessions[] = array(
+					'name'    => $sess->name,
+					'present' => (int) $row->present,
+					'total'   => $total,
+					'rate'    => $rate,
+				);
+			}
+			if ( $sessions ) {
+				$out[] = array( 'category' => $cat->name, 'icon' => $cat->icon, 'sessions' => $sessions );
+			}
+		}
+		return $out;
+	}
+
+	/** Dönem geneli durum dağılımı (halka grafik). $student_ids ile sınırlandırılabilir. */
+	public static function term_breakdown( $term_id, array $student_ids = null ) {
+		global $wpdb;
+		$sql = 'SELECT status, COUNT(*) AS cnt FROM ' . self::table() . ' WHERE term_id = %d';
+		if ( null !== $student_ids ) {
+			if ( ! $student_ids ) {
 				return array();
 			}
-			$sql .= ' AND a.class_id IN (' . implode( ',', array_map( 'intval', $class_ids ) ) . ')';
+			$sql .= ' AND student_id IN (' . implode( ',', array_map( 'intval', $student_ids ) ) . ')';
 		}
-		$sql .= ' GROUP BY a.status';
+		$sql .= ' GROUP BY status';
 		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $term_id ) );
 		$out  = array();
 		foreach ( $rows as $r ) {
@@ -97,25 +156,24 @@ class SMS_Attendance {
 	}
 
 	/** Son N günün günlük devam yüzdesi: [tarih => yüzde|null]. */
-	public static function daily_rates( $term_id, $days = 14, array $class_ids = null ) {
+	public static function daily_rates( $term_id, $days = 14, array $student_ids = null ) {
 		global $wpdb;
 		$start = gmdate( 'Y-m-d', strtotime( '-' . ( $days - 1 ) . ' days', current_time( 'timestamp' ) ) );
 
-		$sql = 'SELECT a.att_date,
-				SUM(CASE WHEN a.status = %s THEN 1 WHEN a.status = %s THEN 0.5 ELSE 0 END) AS score,
+		$sql = 'SELECT att_date,
+				SUM(CASE WHEN status = %s THEN 1 WHEN status = %s THEN 0.5 ELSE 0 END) AS score,
 				COUNT(*) AS total
-			 FROM ' . self::table() . " a
-			 INNER JOIN {$wpdb->prefix}sms_classes c ON c.id = a.class_id
-			 WHERE c.term_id = %d AND a.att_date >= %s";
-		if ( null !== $class_ids ) {
-			if ( ! $class_ids ) {
+			 FROM ' . self::table() . ' WHERE term_id = %d AND att_date >= %s';
+		$rows = null;
+		if ( null !== $student_ids ) {
+			if ( ! $student_ids ) {
 				$rows = array();
 			} else {
-				$sql .= ' AND a.class_id IN (' . implode( ',', array_map( 'intval', $class_ids ) ) . ')';
+				$sql .= ' AND student_id IN (' . implode( ',', array_map( 'intval', $student_ids ) ) . ')';
 			}
 		}
-		if ( ! isset( $rows ) ) {
-			$sql .= ' GROUP BY a.att_date';
+		if ( null === $rows ) {
+			$sql .= ' GROUP BY att_date';
 			$rows = $wpdb->get_results( $wpdb->prepare( $sql, 'present', 'late', $term_id, $start ) );
 		}
 
@@ -136,12 +194,10 @@ class SMS_Attendance {
 	public static function rates_by_student( $term_id ) {
 		global $wpdb;
 		$rows = $wpdb->get_results( $wpdb->prepare(
-			'SELECT a.student_id,
-				SUM(CASE WHEN a.status = %s THEN 1 WHEN a.status = %s THEN 0.5 ELSE 0 END) AS score,
+			'SELECT student_id,
+				SUM(CASE WHEN status = %s THEN 1 WHEN status = %s THEN 0.5 ELSE 0 END) AS score,
 				COUNT(*) AS total
-			 FROM ' . self::table() . " a
-			 INNER JOIN {$wpdb->prefix}sms_classes c ON c.id = a.class_id
-			 WHERE c.term_id = %d GROUP BY a.student_id",
+			 FROM ' . self::table() . ' WHERE term_id = %d GROUP BY student_id',
 			'present', 'late', $term_id
 		) );
 		$out = array();
@@ -153,13 +209,16 @@ class SMS_Attendance {
 		return $out;
 	}
 
-	/** Öğrencinin son yoklama kayıtları. */
+	/** Öğrencinin son yoklama kayıtları (kategori/oturum/derslik adlarıyla). */
 	public static function recent_for_student( $student_id, $term_id, $limit = 20 ) {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare(
-			'SELECT a.*, c.name AS class_name FROM ' . self::table() . " a
-			 INNER JOIN {$wpdb->prefix}sms_classes c ON c.id = a.class_id
-			 WHERE a.student_id = %d AND c.term_id = %d
+			'SELECT a.*, c.name AS class_name, cat.name AS category_name, s.name AS session_name
+			 FROM ' . self::table() . " a
+			 LEFT JOIN {$wpdb->prefix}sms_classes c ON c.id = a.class_id
+			 LEFT JOIN {$wpdb->prefix}sms_att_categories cat ON cat.id = a.category_id
+			 LEFT JOIN {$wpdb->prefix}sms_att_sessions s ON s.id = a.session_id
+			 WHERE a.student_id = %d AND a.term_id = %d
 			 ORDER BY a.att_date DESC, a.id DESC LIMIT %d",
 			$student_id, $term_id, $limit
 		) );

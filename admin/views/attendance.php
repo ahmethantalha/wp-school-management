@@ -1,86 +1,204 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-$term_id  = sms_current_term_id();
-$teacher  = sms_is_teacher();
-$classes  = $term_id ? SMS_Classes::for_term( $term_id, $teacher ? get_current_user_id() : 0 ) : array();
+$term_id = sms_current_term_id();
+$cat_id  = isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
+$sess_id = isset( $_GET['session'] ) ? (int) $_GET['session'] : 0;
 $class_id = isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
-$date     = isset( $_GET['att_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $_GET['att_date'] ) ? sanitize_text_field( wp_unslash( $_GET['att_date'] ) ) : current_time( 'Y-m-d' );
 
-$class    = $class_id ? SMS_Classes::get( $class_id ) : null;
-if ( $class && ! sms_can_manage_class( $class_id ) ) {
-	wp_die( 'Bu dersliğin yoklamasına erişim yetkiniz yok.' );
+// Eski bağlantı uyumu: class_id var ama kategori yoksa Ders kategorisini varsay.
+if ( $class_id && ! $cat_id ) {
+	$cat_id = sms_ders_category_id();
 }
-$students = $class ? SMS_Classes::students( $class_id ) : array();
-$sheet    = $class ? SMS_Attendance::sheet( $class_id, $date ) : array();
+
+$category = $cat_id ? SMS_Attendance_Types::get_category( $cat_id ) : null;
+
+/* ============================ 1) KATEGORİ SEÇİMİ ============================ */
+if ( ! $category ) {
+	$cats = $term_id ? SMS_Attendance_Types::accessible_categories( $term_id ) : array();
+	?>
+	<div class="wrap sms-wrap">
+		<?php sms_view_header( 'Yoklama Al', 'Almak istediğiniz yoklama türünü seçin.' ); ?>
+
+		<?php if ( ! $term_id ) : ?>
+			<div class="sms-card sms-empty"><span class="dashicons dashicons-calendar-alt"></span><h2>Aktif dönem yok</h2><p>Önce bir dönem oluşturun.</p></div>
+		<?php elseif ( $cats ) : ?>
+			<div class="sms-cat-grid">
+				<?php foreach ( $cats as $cat ) :
+					$scount = SMS_Attendance_Types::session_count( (int) $cat->id );
+					?>
+					<a class="sms-cat-card sms-scope-<?php echo esc_attr( $cat->scope ); ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&cat=' . (int) $cat->id . '&sms_term=' . $term_id ) ); ?>">
+						<span class="sms-cat-icon"><span class="dashicons <?php echo esc_attr( $cat->icon ?: 'dashicons-clipboard' ); ?>"></span></span>
+						<span class="sms-cat-name"><?php echo esc_html( $cat->name ); ?></span>
+						<span class="sms-cat-meta">
+							<?php echo 'class' === $cat->scope ? 'Derslik bazlı' : ( $scount > 1 ? $scount . ' oturum' : 'Genel yoklama' ); ?>
+						</span>
+					</a>
+				<?php endforeach; ?>
+			</div>
+			<p class="sms-muted sms-mt"><span class="dashicons dashicons-info"></span> Yeni yoklama türü mü lazım? Yönetici olarak <a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-att-types' ) ); ?>">Yoklama Türleri</a> sayfasından ekleyebilirsiniz.</p>
+		<?php else : ?>
+			<div class="sms-card sms-empty"><span class="dashicons dashicons-clipboard"></span><h2>Yetkili olduğunuz yoklama türü yok</h2><p>Branş öğretmenleri kendi dersliklerinin, sınıf öğretmenleri genel yoklamaların (namaz, temizlik, telefon) sorumlusudur.</p></div>
+		<?php endif; ?>
+	</div>
+	<?php
+	return;
+}
+
+/* ============================ 2) DERS: DERSLİK SEÇİMİ ============================ */
+if ( 'class' === $category->scope && ! $class_id ) {
+	$classes = SMS_Classes::for_term( $term_id, sms_is_manager() ? 0 : get_current_user_id() );
+	?>
+	<div class="wrap sms-wrap">
+		<?php sms_view_header( $category->name . ' Yoklaması', 'Yoklama alacağınız dersliği seçin.' ); ?>
+		<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&sms_term=' . $term_id ) ); ?>">← Yoklama türlerine dön</a></p>
+		<?php if ( $classes ) : ?>
+			<div class="sms-cat-grid">
+				<?php $sess = SMS_Attendance_Types::sessions( (int) $category->id ); $sid = $sess ? (int) $sess[0]->id : 0; ?>
+				<?php foreach ( $classes as $c ) : ?>
+					<a class="sms-cat-card" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&cat=' . (int) $category->id . '&session=' . $sid . '&class_id=' . (int) $c->id . '&sms_term=' . $term_id ) ); ?>">
+						<span class="sms-cat-icon"><span class="dashicons dashicons-book-alt"></span></span>
+						<span class="sms-cat-name"><?php echo esc_html( $c->name ); ?></span>
+						<span class="sms-cat-meta"><?php echo (int) $c->student_count; ?> öğrenci</span>
+					</a>
+				<?php endforeach; ?>
+			</div>
+		<?php else : ?>
+			<div class="sms-card sms-empty"><span class="dashicons dashicons-book-alt"></span><h2>Derslik yok</h2><p>Bu dönemde size ait derslik bulunmuyor.</p></div>
+		<?php endif; ?>
+	</div>
+	<?php
+	return;
+}
+
+/* ============================ 3) GENEL: OTURUM SEÇİMİ ============================ */
+$sessions = SMS_Attendance_Types::sessions( (int) $category->id );
+if ( 'general' === $category->scope && count( $sessions ) > 1 && ! $sess_id ) {
+	?>
+	<div class="wrap sms-wrap">
+		<?php sms_view_header( $category->name . ' Yoklaması', 'Hangi oturumun yoklamasını alacaksınız?' ); ?>
+		<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&sms_term=' . $term_id ) ); ?>">← Yoklama türlerine dön</a></p>
+		<div class="sms-cat-grid">
+			<?php foreach ( $sessions as $s ) : ?>
+				<a class="sms-cat-card sms-session-card" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&cat=' . (int) $category->id . '&session=' . (int) $s->id . '&sms_term=' . $term_id ) ); ?>">
+					<span class="sms-cat-icon"><span class="dashicons <?php echo esc_attr( $category->icon ?: 'dashicons-clock' ); ?>"></span></span>
+					<span class="sms-cat-name"><?php echo esc_html( $s->name ); ?></span>
+				</a>
+			<?php endforeach; ?>
+		</div>
+	</div>
+	<?php
+	return;
+}
+
+// Tek oturumlu genel kategori: oturumu otomatik seç.
+if ( ! $sess_id && $sessions ) {
+	$sess_id = (int) $sessions[0]->id;
+}
+$session = $sess_id ? SMS_Attendance_Types::get_session( $sess_id ) : null;
+if ( ! $session || (int) $session->category_id !== (int) $category->id ) {
+	echo '<div class="wrap sms-wrap"><div class="sms-card sms-empty"><h2>Oturum bulunamadı</h2></div></div>';
+	return;
+}
+
+/* ============================ 4) YOKLAMA CETVELİ ============================ */
+$date = isset( $_GET['att_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $_GET['att_date'] ) ? sanitize_text_field( wp_unslash( $_GET['att_date'] ) ) : current_time( 'Y-m-d' );
+
+if ( 'class' === $category->scope ) {
+	if ( ! sms_can_manage_class( $class_id ) ) {
+		wp_die( 'Bu dersliğin yoklamasına erişim yetkiniz yok.' );
+	}
+	$class     = SMS_Classes::get( $class_id );
+	$students  = SMS_Classes::students( $class_id );
+	$scope_lbl = $class ? $class->name : '';
+} else {
+	if ( ! sms_can_take_general_attendance() ) {
+		wp_die( 'Genel yoklama alma yetkiniz yok.' );
+	}
+	$class_id  = 0;
+	$ids       = sms_general_attendance_student_ids( $term_id );
+	$students  = $ids ? SMS_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'ids' => $ids ) ) : array();
+	$scope_lbl = 'Genel';
+}
+
+$sheet    = SMS_Attendance::sheet( (int) $category->id, (int) $session->id, (int) $class_id, $date );
 $statuses = sms_attendance_statuses();
+$grades   = 'general' === $category->scope ? SMS_Students::grades_in_term( $term_id ) : array();
+$multi_session = count( $sessions ) > 1;
+$title    = $category->name . ( $multi_session ? ' — ' . $session->name : '' ) . ' Yoklaması';
+$back_url = $multi_session
+	? admin_url( 'admin.php?page=sms-attendance&cat=' . (int) $category->id . '&sms_term=' . $term_id )
+	: admin_url( 'admin.php?page=sms-attendance&sms_term=' . $term_id );
 ?>
 <div class="wrap sms-wrap">
-	<?php sms_view_header( 'Yoklama', 'Derslik ve tarih seçin, tüm sınıfın yoklamasını tek ekranda alın.' ); ?>
+	<?php sms_view_header( $title, $scope_lbl ); ?>
+	<p><a class="sms-back-link" href="<?php echo esc_url( $back_url ); ?>">← Geri</a></p>
 
 	<div class="sms-card">
 		<div class="sms-pad">
 			<form method="get" class="sms-filters">
 				<input type="hidden" name="page" value="sms-attendance">
-				<?php if ( $term_id ) : ?><input type="hidden" name="sms_term" value="<?php echo (int) $term_id; ?>"><?php endif; ?>
-				<select name="class_id" onchange="this.form.submit()">
-					<option value="0">— Derslik seçin —</option>
-					<?php foreach ( $classes as $c ) : ?>
-						<option value="<?php echo (int) $c->id; ?>" <?php selected( $class_id, (int) $c->id ); ?>><?php echo esc_html( $c->name . ' (' . $c->student_count . ' öğrenci)' ); ?></option>
-					<?php endforeach; ?>
-				</select>
+				<input type="hidden" name="cat" value="<?php echo (int) $category->id; ?>">
+				<input type="hidden" name="session" value="<?php echo (int) $session->id; ?>">
+				<?php if ( $class_id ) : ?><input type="hidden" name="class_id" value="<?php echo (int) $class_id; ?>"><?php endif; ?>
+				<input type="hidden" name="sms_term" value="<?php echo (int) $term_id; ?>">
+				<label class="sms-muted">Tarih</label>
 				<input type="date" name="att_date" value="<?php echo esc_attr( $date ); ?>" onchange="this.form.submit()">
+				<?php if ( $grades ) : ?>
+					<select data-sms-filter-grade>
+						<option value="">Tüm sınıflar</option>
+						<?php foreach ( $grades as $g ) : ?>
+							<option value="<?php echo (int) $g; ?>"><?php echo esc_html( sms_grade_label( $g ) ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				<?php endif; ?>
 				<button type="submit" class="sms-btn sms-btn-ghost">Getir</button>
 			</form>
 		</div>
 	</div>
 
-	<?php if ( $class ) : ?>
-		<div class="sms-card sms-mt">
-			<div class="sms-card-head">
-				<h2><?php echo esc_html( $class->name ); ?> — <?php echo esc_html( sms_format_date( $date ) ); ?></h2>
-				<button type="button" class="sms-btn sms-btn-ghost sms-btn-sm" data-sms-all-present>Tümünü "Geldi" işaretle</button>
-			</div>
-			<?php if ( $students ) : ?>
-				<?php sms_form_open( 'sms_save_attendance' ); sms_back_url_field(); ?>
-					<input type="hidden" name="class_id" value="<?php echo (int) $class_id; ?>">
-					<input type="hidden" name="att_date" value="<?php echo esc_attr( $date ); ?>">
-					<table class="sms-table sms-att-table">
-						<thead><tr><th>Öğrenci</th><th>Durum</th><th>Not</th></tr></thead>
-						<tbody>
-						<?php foreach ( $students as $s ) :
-							$row     = $sheet[ (int) $s->id ] ?? null;
-							$current = $row ? $row->status : 'present';
-							?>
-							<tr>
-								<td class="sms-name-cell"><?php echo sms_avatar( sms_student_name( $s ) ); // phpcs:ignore ?><strong><?php echo esc_html( sms_student_name( $s ) ); ?></strong></td>
-								<td>
-									<div class="sms-seg" role="radiogroup">
-										<?php foreach ( $statuses as $key => $label ) : ?>
-											<label class="sms-seg-item sms-seg-<?php echo esc_attr( $key ); ?>">
-												<input type="radio" name="att_status[<?php echo (int) $s->id; ?>]" value="<?php echo esc_attr( $key ); ?>" <?php checked( $current, $key ); ?>>
-												<span><?php echo esc_html( $label ); ?></span>
-											</label>
-										<?php endforeach; ?>
-									</div>
-								</td>
-								<td><input type="text" class="sms-input-sm" name="att_note[<?php echo (int) $s->id; ?>]" value="<?php echo esc_attr( $row->note ?? '' ); ?>" placeholder="Not…"></td>
-							</tr>
-						<?php endforeach; ?>
-						</tbody>
-					</table>
-					<div class="sms-pad">
-						<button type="submit" class="sms-btn sms-btn-primary">Yoklamayı Kaydet</button>
-						<?php if ( $sheet ) : ?><span class="sms-muted sms-ml">Bu tarih için kayıt mevcut; kaydederseniz güncellenir.</span><?php endif; ?>
-					</div>
-				</form>
-			<?php else : ?>
-				<div class="sms-empty"><span class="dashicons dashicons-groups"></span><h2>Derslikte öğrenci yok</h2><p>Önce derslik kadrosuna öğrenci ekleyin.</p></div>
-			<?php endif; ?>
+	<div class="sms-card sms-mt">
+		<div class="sms-card-head">
+			<h2><?php echo esc_html( sms_format_date( $date ) ); ?><?php echo $multi_session ? ' — ' . esc_html( $session->name ) : ''; ?></h2>
+			<button type="button" class="sms-btn sms-btn-ghost sms-btn-sm" data-sms-all-present>Tümünü "Geldi" işaretle</button>
 		</div>
-	<?php elseif ( $classes ) : ?>
-		<div class="sms-card sms-mt"><div class="sms-empty"><span class="dashicons dashicons-clipboard"></span><h2>Derslik seçin</h2><p>Yoklama almak için yukarıdan bir derslik ve tarih seçin.</p></div></div>
-	<?php else : ?>
-		<div class="sms-card sms-mt"><div class="sms-empty"><span class="dashicons dashicons-book-alt"></span><h2>Derslik yok</h2><p>Bu dönemde size ait derslik bulunmuyor.</p></div></div>
-	<?php endif; ?>
+		<?php if ( $students ) : ?>
+			<?php sms_form_open( 'sms_save_attendance' ); sms_back_url_field(); ?>
+				<input type="hidden" name="category_id" value="<?php echo (int) $category->id; ?>">
+				<input type="hidden" name="session_id" value="<?php echo (int) $session->id; ?>">
+				<input type="hidden" name="class_id" value="<?php echo (int) $class_id; ?>">
+				<input type="hidden" name="att_date" value="<?php echo esc_attr( $date ); ?>">
+				<table class="sms-table sms-att-table" data-sms-roster>
+					<thead><tr><th>Öğrenci</th><th>Durum</th><th>Not</th></tr></thead>
+					<tbody>
+					<?php foreach ( $students as $s ) :
+						$row     = $sheet[ (int) $s->id ] ?? null;
+						$current = $row ? $row->status : 'present';
+						?>
+						<tr class="sms-roster-row" data-grade="<?php echo (int) ( $s->grade_level ?? 0 ); ?>">
+							<td class="sms-name-cell"><?php echo sms_avatar( sms_student_name( $s ) ); // phpcs:ignore ?><strong><?php echo esc_html( sms_student_name( $s ) ); ?></strong><?php echo isset( $s->grade_level ) ? ' <span class="sms-badge sms-badge-indigo">' . esc_html( sms_grade_label( $s->grade_level ) ) . '</span>' : ''; ?></td>
+							<td>
+								<div class="sms-seg" role="radiogroup">
+									<?php foreach ( $statuses as $key => $label ) : ?>
+										<label class="sms-seg-item sms-seg-<?php echo esc_attr( $key ); ?>">
+											<input type="radio" name="att_status[<?php echo (int) $s->id; ?>]" value="<?php echo esc_attr( $key ); ?>" <?php checked( $current, $key ); ?>>
+											<span><?php echo esc_html( $label ); ?></span>
+										</label>
+									<?php endforeach; ?>
+								</div>
+							</td>
+							<td><input type="text" class="sms-input-sm" name="att_note[<?php echo (int) $s->id; ?>]" value="<?php echo esc_attr( $row->note ?? '' ); ?>" placeholder="Not…"></td>
+						</tr>
+					<?php endforeach; ?>
+					</tbody>
+				</table>
+				<div class="sms-pad">
+					<button type="submit" class="sms-btn sms-btn-primary">Yoklamayı Kaydet</button>
+					<?php if ( $sheet ) : ?><span class="sms-muted sms-ml">Bu tarih/oturum için kayıt mevcut; kaydederseniz güncellenir.</span><?php endif; ?>
+				</div>
+			</form>
+		<?php else : ?>
+			<div class="sms-empty"><span class="dashicons dashicons-groups"></span><h2>Öğrenci bulunamadı</h2><p><?php echo 'class' === $category->scope ? 'Derslik kadrosuna öğrenci ekleyin.' : 'Sorumlu olduğunuz sınıf seviyelerinde aktif öğrenci yok.'; ?></p></div>
+		<?php endif; ?>
+	</div>
 </div>

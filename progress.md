@@ -108,12 +108,35 @@ Ayarlar `wp_options` içinde `sms_settings` anahtarında tutulur (kurum adı, so
 - [x] `uninstall.php` (isteğe bağlı veri temizliği — varsayılan: veriyi korur)
 - [x] `readme.md` kurulum ve kullanım kılavuzu
 
-### Gelecek Sürüm Fikirleri (v1.1+)
+### Gelecek Sürüm Fikirleri (v1.2+)
 - [ ] E-posta/SMS bildirimleri (devamsızlık, düşük not uyarısı)
-- [ ] Excel/CSV içe-dışa aktarma
 - [ ] Ödev takibi modülü
 - [ ] Veli-öğretmen mesajlaşması
 - [ ] PDF karne çıktısı
+- [ ] Dışa aktarma (CSV/Excel rapor çıktısı)
+
+## 7. Sürüm 1.1 — Toplu İçe Aktarma + Kategorili Yoklama
+
+### Toplu İçe Aktarma (Excel/CSV)
+- [x] Harici kütüphanesiz okuyucu: CSV (`;`/`,` otomatik ayırıcı, UTF-8 BOM) + XLSX (ZipArchive + SimpleXML, sharedStrings) (`includes/class-sms-import.php`)
+- [x] Türkçe/İngilizce başlık eş anlamlıları (ad/soyad/ad_soyad, sınıf, veli_eposta…) otomatik eşlenir
+- [x] Öğrenci içe aktarma: dönem kaydı + e-posta ile veli eşleştirme; öğretmen/veli hesabı içe aktarma (sınıf öğretmeni bayrağı dahil)
+- [x] Sekmeli içe aktarma sayfası, sürükle-bırak alanı, indirilebilir CSV şablonları, satır bazlı uyarı raporu (`admin/views/import.php`)
+- [x] Birim testleri: CSV + gerçek XLSX ayrıştırma doğrulandı
+
+### Kategorili Yoklama Sistemi
+- [x] **Yoklama kategorileri + oturumları**: `wp_sms_att_categories` + `wp_sms_att_sessions`.
+  Varsayılanlar: Ders (derslik bazlı), Namaz (5 vakit: sabah/öğle/ikindi/akşam/yatsı), Temizlik, Telefon.
+- [x] Yönetici **yeni kategori/oturum ekleyebilir** ("Yoklama Türleri" sayfası); Namaz gibi bir kategori altına birden çok oturum
+- [x] Yoklama tablosu genelleştirildi: `category_id + session_id + class_id(0=genel) + term_id`; eski kayıtlar Ders kategorisine taşınır (migrasyon)
+- [x] **"Yoklama Al" modern kart arayüzü**: kategori kartı → (namaz) oturum kartları / (ders) derslik kartları → cetvel (`admin/views/attendance.php`)
+- [x] **Sınıf öğretmeni statüsü**: branş öğretmeni yalnızca kendi dersliğinin (Ders) yoklamasını; sınıf öğretmeni genel yoklamaları (namaz/temizlik/telefon) alır. Sorumlu sınıf seviyeleri atanabilir (kullanıcı meta).
+- [x] Raporda **namaz/genel yoklama katılımı** oturum bazlı gösterilir (hangi vakitte var/yok)
+
+### Yoklama İş Kuralları
+- **Ders (scope=class):** yönetici + o dersliğin branş öğretmeni.
+- **Genel (scope=general):** yönetici + sınıf öğretmeni; öğrenci kapsamı sınıf öğretmeninin sorumlu seviyeleridir (boşsa tümü).
+- Kayıt benzersizliği: (kategori, oturum, derslik, öğrenci, tarih) — genelde derslik=0.
 
 ## 6. Puanlama / "En İyi Öğrenciler" Formülü
 

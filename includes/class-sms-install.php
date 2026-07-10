@@ -2,7 +2,8 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Veritabanı tablolarını kurar ve rolleri kaydeder.
+ * Veritabanı tablolarını kurar, varsayılan yoklama kategorilerini tohumlar ve
+ * eski sürümlerden gelen yoklama tablosunu yeni şemaya taşır.
  */
 class SMS_Install {
 
@@ -18,6 +19,9 @@ class SMS_Install {
 				'max_grade'   => 12,
 			) );
 		}
+
+		self::seed_attendance_types();
+		self::migrate_attendance();
 
 		update_option( 'sms_db_version', SMS_VERSION );
 	}
@@ -95,16 +99,47 @@ class SMS_Install {
 			KEY student_id (student_id)
 		) $charset;";
 
+		// Yoklama kategorileri (Namaz, Temizlik, Telefon, Ders...) — yönetici genişletebilir.
+		$sql[] = "CREATE TABLE {$p}att_categories (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			name VARCHAR(100) NOT NULL,
+			slug VARCHAR(60) NOT NULL,
+			icon VARCHAR(60) NULL,
+			scope VARCHAR(15) NOT NULL DEFAULT 'general',
+			is_system TINYINT(1) NOT NULL DEFAULT 0,
+			sort_order INT NOT NULL DEFAULT 0,
+			is_active TINYINT(1) NOT NULL DEFAULT 1,
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY slug (slug)
+		) $charset;";
+
+		// Kategori altındaki oturumlar (Namaz → Sabah, Öğle, İkindi, Akşam, Yatsı).
+		$sql[] = "CREATE TABLE {$p}att_sessions (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			category_id BIGINT UNSIGNED NOT NULL,
+			name VARCHAR(100) NOT NULL,
+			slug VARCHAR(60) NOT NULL,
+			sort_order INT NOT NULL DEFAULT 0,
+			PRIMARY KEY  (id),
+			KEY category_id (category_id)
+		) $charset;";
+
+		// Yoklama kayıtları — kategori + oturum + (opsiyonel) derslik bazlı.
 		$sql[] = "CREATE TABLE {$p}attendance (
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-			class_id BIGINT UNSIGNED NOT NULL,
+			term_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+			category_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+			session_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+			class_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
 			student_id BIGINT UNSIGNED NOT NULL,
 			att_date DATE NOT NULL,
 			status VARCHAR(15) NOT NULL DEFAULT 'present',
 			note VARCHAR(255) NULL,
 			recorded_by BIGINT UNSIGNED NULL,
 			PRIMARY KEY  (id),
-			UNIQUE KEY class_student_date (class_id,student_id,att_date),
+			UNIQUE KEY attu (category_id,session_id,class_id,student_id,att_date),
+			KEY term_id (term_id),
 			KEY student_id (student_id),
 			KEY att_date (att_date)
 		) $charset;";
@@ -164,6 +199,134 @@ class SMS_Install {
 
 		foreach ( $sql as $statement ) {
 			dbDelta( $statement );
+		}
+	}
+
+	/**
+	 * Varsayılan yoklama kategorilerini ve oturumlarını ekler (slug'a göre idempotent).
+	 */
+	public static function seed_attendance_types() {
+		$defaults = array(
+			array(
+				'name'     => 'Ders',
+				'slug'     => 'ders',
+				'icon'     => 'dashicons-welcome-learn-more',
+				'scope'    => 'class',
+				'sessions' => array( array( 'Ders', 'ders' ) ),
+			),
+			array(
+				'name'     => 'Namaz',
+				'slug'     => 'namaz',
+				'icon'     => 'dashicons-store',
+				'scope'    => 'general',
+				'sessions' => array(
+					array( 'Sabah', 'sabah' ),
+					array( 'Öğle', 'ogle' ),
+					array( 'İkindi', 'ikindi' ),
+					array( 'Akşam', 'aksam' ),
+					array( 'Yatsı', 'yatsi' ),
+				),
+			),
+			array(
+				'name'     => 'Temizlik',
+				'slug'     => 'temizlik',
+				'icon'     => 'dashicons-image-filter',
+				'scope'    => 'general',
+				'sessions' => array( array( 'Temizlik', 'temizlik' ) ),
+			),
+			array(
+				'name'     => 'Telefon',
+				'slug'     => 'telefon',
+				'icon'     => 'dashicons-smartphone',
+				'scope'    => 'general',
+				'sessions' => array( array( 'Telefon', 'telefon' ) ),
+			),
+		);
+
+		global $wpdb;
+		$ct = $wpdb->prefix . 'sms_att_categories';
+		$st = $wpdb->prefix . 'sms_att_sessions';
+		$order = 0;
+
+		foreach ( $defaults as $cat ) {
+			$cat_id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $ct WHERE slug = %s", $cat['slug'] ) );
+			if ( ! $cat_id ) {
+				$wpdb->insert( $ct, array(
+					'name'       => $cat['name'],
+					'slug'       => $cat['slug'],
+					'icon'       => $cat['icon'],
+					'scope'      => $cat['scope'],
+					'is_system'  => 1,
+					'sort_order' => $order,
+					'is_active'  => 1,
+					'created_at' => current_time( 'mysql' ),
+				) );
+				$cat_id = (int) $wpdb->insert_id;
+			}
+			$order++;
+
+			$s_order = 0;
+			foreach ( $cat['sessions'] as $sess ) {
+				$exists = (int) $wpdb->get_var( $wpdb->prepare(
+					"SELECT id FROM $st WHERE category_id = %d AND slug = %s", $cat_id, $sess[1]
+				) );
+				if ( ! $exists ) {
+					$wpdb->insert( $st, array(
+						'category_id' => $cat_id,
+						'name'        => $sess[0],
+						'slug'        => $sess[1],
+						'sort_order'  => $s_order,
+					) );
+				}
+				$s_order++;
+			}
+		}
+	}
+
+	/**
+	 * Eski (sürüm 1.0) yoklama kayıtlarını yeni şemaya taşır:
+	 * term_id ve Ders kategorisi/oturumu atar, eski benzersiz anahtarı kaldırır.
+	 */
+	private static function migrate_attendance() {
+		global $wpdb;
+		$att = $wpdb->prefix . 'sms_attendance';
+
+		// term_id boş olan (eski) satırları derslik üzerinden doldur.
+		$wpdb->query(
+			"UPDATE $att a
+			 INNER JOIN {$wpdb->prefix}sms_classes c ON c.id = a.class_id
+			 SET a.term_id = c.term_id
+			 WHERE a.term_id = 0 AND a.class_id > 0"
+		);
+
+		// Kategorisi olmayan eski satırları Ders kategorisine bağla.
+		$ders_cat = (int) $wpdb->get_var( "SELECT id FROM {$wpdb->prefix}sms_att_categories WHERE slug = 'ders'" );
+		$ders_sess = (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT id FROM {$wpdb->prefix}sms_att_sessions WHERE category_id = %d ORDER BY id LIMIT 1", $ders_cat
+		) );
+		if ( $ders_cat && $ders_sess ) {
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE $att SET category_id = %d, session_id = %d WHERE category_id = 0",
+				$ders_cat, $ders_sess
+			) );
+		}
+
+		// Eski benzersiz anahtar (class_id,student_id,att_date) yeni kategori mantığını bozar; kaldır.
+		$has_old = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM information_schema.STATISTICS
+			 WHERE table_schema = DATABASE() AND table_name = '{$att}' AND index_name = 'class_student_date'"
+		);
+		if ( $has_old ) {
+			$wpdb->query( "ALTER TABLE $att DROP INDEX class_student_date" );
+		}
+
+		// Yeni benzersiz anahtar yoksa ekle.
+		$has_new = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM information_schema.STATISTICS
+			 WHERE table_schema = DATABASE() AND table_name = '{$att}' AND index_name = 'attu'"
+		);
+		if ( ! $has_new ) {
+			$wpdb->query( "ALTER TABLE $att ADD UNIQUE KEY attu (category_id,session_id,class_id,student_id,att_date)" );
 		}
 	}
 }

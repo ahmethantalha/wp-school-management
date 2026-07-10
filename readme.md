@@ -38,6 +38,32 @@ alışkanlık takibi ve görsel raporlar sunar.
 
 Veli ve öğrenci hesapları giriş yaptığında doğrudan panele yönlendirilir.
 
+## Toplu İçe Aktarma (Excel / CSV)
+
+**İçe Aktar** sayfasından öğrenci, öğretmen ve velileri topluca yükleyebilirsiniz:
+
+- `.xlsx` (Excel) veya `.csv` desteklenir; her sekmede indirilebilir **örnek şablon** bulunur.
+- İlk satır başlık satırıdır; başlıklar Türkçe/İngilizce yazılabilir (ör. `ad`, `soyad`, `sinif`, `veli_eposta`).
+- Öğrenci aktarımında `veli_eposta` sütunu, sisteme önceden eklenmiş veliyle otomatik eşleştirir.
+- Öğretmen aktarımında `sinif_ogretmeni` sütununa `1` yazılırsa öğretmen sınıf öğretmeni olarak işaretlenir.
+- Atlanan/uyarılı satırlar aktarım sonrası listelenir.
+
+## Yoklama Sistemi (Kategoriler + Oturumlar)
+
+Yoklama artık **kategori** ve **oturum** bazlıdır. **Yoklama → Yoklama Al** ekranında kart seçersiniz:
+
+- **Ders** (derslik bazlı): branş öğretmeni yalnızca kendi dersliğinin yoklamasını alır.
+- **Namaz**: kategori seçince vakit kartları (Sabah, Öğle, İkindi, Akşam, Yatsı) çıkar.
+- **Temizlik / Telefon**: tek ekranda genel yoklama.
+
+**Sınıf öğretmeni** (öğretmen kartındaki onay kutusu), branş dersi olmasa da genel yoklamaları
+(namaz/temizlik/telefon) alabilen sorumlu hocadır. İsteğe bağlı olarak sorumlu olduğu sınıf
+seviyeleri seçilebilir (boş bırakılırsa tüm seviyeler).
+
+Yönetici **Yoklama Türleri** sayfasından yeni kategori ekleyebilir ve mevcut kategorilere oturum
+ekleyip çıkarabilir (örn. "Etüt" kategorisi, Namaz'a yeni bir vakit vb.). Raporlarda öğrencinin
+her vakit/oturumdaki katılımı ayrı ayrı görüntülenir.
+
 ## Alışkanlık Takibi
 
 - Alışkanlık oluştururken **takip metodu** seçilir:

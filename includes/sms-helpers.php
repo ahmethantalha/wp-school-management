@@ -54,17 +54,79 @@ function sms_teacher_class_ids( $user_id = 0, $term_id = 0 ) {
 	) ) );
 }
 
-/** Öğretmenin bu dönemde ders verdiği öğrenci ID'leri. */
+/**
+ * Öğretmenin bu dönemde sorumlu olduğu öğrenci ID'leri.
+ * Branş dersliklerindeki öğrenciler + (sınıf öğretmeni ise) sorumlu sınıf seviyelerindeki öğrenciler.
+ */
 function sms_teacher_student_ids( $user_id = 0, $term_id = 0 ) {
 	global $wpdb;
+	$user_id = $user_id ? (int) $user_id : get_current_user_id();
+	$term_id = $term_id ? (int) $term_id : sms_current_term_id();
+
+	$ids       = array();
 	$class_ids = sms_teacher_class_ids( $user_id, $term_id );
-	if ( ! $class_ids ) {
-		return array();
+	if ( $class_ids ) {
+		$in  = implode( ',', array_map( 'intval', $class_ids ) );
+		$ids = array_map( 'intval', $wpdb->get_col(
+			"SELECT DISTINCT student_id FROM {$wpdb->prefix}sms_class_students WHERE class_id IN ($in)"
+		) );
 	}
-	$in = implode( ',', array_map( 'intval', $class_ids ) );
-	return array_map( 'intval', $wpdb->get_col(
-		"SELECT DISTINCT student_id FROM {$wpdb->prefix}sms_class_students WHERE class_id IN ($in)"
-	) );
+
+	// Sınıf öğretmeni: sorumlu sınıf seviyelerindeki (veya tüm) aktif öğrenciler.
+	if ( sms_is_class_teacher( $user_id ) ) {
+		$ids = array_merge( $ids, sms_general_attendance_student_ids( $term_id, $user_id ) );
+	}
+
+	return array_values( array_unique( array_map( 'intval', $ids ) ) );
+}
+
+/** Kullanıcı sınıf öğretmeni mi? */
+function sms_is_class_teacher( $user_id = 0 ) {
+	$user_id = $user_id ? (int) $user_id : get_current_user_id();
+	return (bool) get_user_meta( $user_id, 'sms_is_class_teacher', true );
+}
+
+/** Sınıf öğretmeninin sorumlu olduğu sınıf seviyeleri (boş = tüm seviyeler). */
+function sms_class_teacher_grades( $user_id = 0 ) {
+	$user_id = $user_id ? (int) $user_id : get_current_user_id();
+	$grades  = get_user_meta( $user_id, 'sms_class_teacher_grades', true );
+	return is_array( $grades ) ? array_map( 'intval', $grades ) : array();
+}
+
+/** Geçerli kullanıcı genel (namaz/temizlik/telefon) yoklaması alabilir mi? */
+function sms_can_take_general_attendance() {
+	if ( sms_is_manager() ) {
+		return true;
+	}
+	return current_user_can( 'sms_teach' ) && sms_is_class_teacher();
+}
+
+/**
+ * Genel yoklama için görülebilecek öğrenci ID'leri.
+ * Yönetici: dönemdeki tüm aktif öğrenciler. Sınıf öğretmeni: sorumlu seviyeler (boşsa tümü).
+ */
+function sms_general_attendance_student_ids( $term_id = 0, $user_id = 0 ) {
+	$term_id = $term_id ? (int) $term_id : sms_current_term_id();
+	$user_id = $user_id ? (int) $user_id : get_current_user_id();
+
+	$args = array( 'term_id' => $term_id, 'status' => 'active' );
+	$students = SMS_Students::query( $args );
+
+	$grades = user_can( $user_id, 'manage_options' ) ? array() : sms_class_teacher_grades( $user_id );
+	$ids    = array();
+	foreach ( $students as $s ) {
+		if ( $grades && ! in_array( (int) ( $s->grade_level ?? 0 ), $grades, true ) ) {
+			continue;
+		}
+		$ids[] = (int) $s->id;
+	}
+	return $ids;
+}
+
+/** Ders (derslik bazlı) yoklama kategorisinin kimliği. */
+function sms_ders_category_id() {
+	$cat = SMS_Attendance_Types::get_category_by_slug( 'ders' );
+	return $cat ? (int) $cat->id : 0;
 }
 
 /**
@@ -165,7 +227,7 @@ function sms_view_header( $title, $subtitle = '', $show_term_picker = true ) {
 	if ( $show_term_picker && $terms ) {
 		echo '<form method="get" class="sms-term-picker">';
 		// Mevcut sayfa parametrelerini koru.
-		foreach ( array( 'page', 'view', 'class_id', 'habit_id', 'student' ) as $keep ) {
+		foreach ( array( 'page', 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'tab' ) as $keep ) {
 			if ( isset( $_GET[ $keep ] ) ) {
 				echo '<input type="hidden" name="' . esc_attr( $keep ) . '" value="' . esc_attr( sanitize_text_field( wp_unslash( $_GET[ $keep ] ) ) ) . '">';
 			}
