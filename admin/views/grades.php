@@ -13,6 +13,11 @@ if ( $class && ! sms_can_manage_class( $class_id ) ) {
 $students = $class ? SMS_Classes::students( $class_id ) : array();
 $grades   = $class ? SMS_Grades::for_class( $class_id ) : array();
 
+$import_errors = get_transient( 'sms_grade_import_errors_' . get_current_user_id() );
+if ( $import_errors ) {
+	delete_transient( 'sms_grade_import_errors_' . get_current_user_id() );
+}
+
 // Sınav geçmişini sınav başlığına göre grupla.
 $exams = array();
 foreach ( $grades as $g ) {
@@ -25,6 +30,20 @@ foreach ( $grades as $g ) {
 ?>
 <div class="wrap sms-wrap">
 	<?php sms_view_header( 'Notlar', 'Derslik seçin, sınav tanımlayın ve tüm öğrencilerin puanlarını tek ekranda girin.' ); ?>
+
+	<?php if ( $import_errors ) : ?>
+		<div class="sms-notice sms-notice-info">
+			<span class="dashicons dashicons-info"></span>
+			<div>
+				<strong>Not yükleme uyarıları / atlanan satırlar:</strong>
+				<ul class="sms-mini-list">
+					<?php foreach ( array_slice( (array) $import_errors, 0, 30 ) as $e ) : ?>
+						<li><?php echo esc_html( $e ); ?></li>
+					<?php endforeach; ?>
+				</ul>
+			</div>
+		</div>
+	<?php endif; ?>
 
 	<div class="sms-card">
 		<div class="sms-pad">
@@ -89,7 +108,52 @@ foreach ( $grades as $g ) {
 				<?php endif; ?>
 			</div>
 
+			<div>
 			<div class="sms-card">
+				<div class="sms-card-head"><h2>Toplu Not Yükleme</h2><span class="sms-muted">Excel / CSV ile güvenli giriş</span></div>
+				<div class="sms-pad">
+					<p class="sms-muted"><strong>1. Adım:</strong> Sınav bilgilerini girin ve önceden doldurulmuş öğrenci listesini indirin. Listede yalnızca <em>puan</em> sütunu boştur.</p>
+					<form method="get" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sms-form sms-tpl-form">
+						<input type="hidden" name="action" value="sms_grade_template">
+						<input type="hidden" name="_wpnonce" value="<?php echo esc_attr( wp_create_nonce( 'sms_grade_template' ) ); ?>">
+						<input type="hidden" name="class_id" value="<?php echo (int) $class_id; ?>">
+						<div class="sms-field-row">
+							<div class="sms-field"><label>Sınav Adı *</label><input type="text" name="title" placeholder="Örn. 1. Yazılı" required></div>
+							<div class="sms-field">
+								<label>Tür</label>
+								<select name="exam_type">
+									<option value="Yazılı">Yazılı</option>
+									<option value="Sözlü">Sözlü</option>
+									<option value="Quiz">Quiz</option>
+									<option value="Deneme">Deneme</option>
+									<option value="Proje">Proje</option>
+									<option value="Performans">Performans</option>
+								</select>
+							</div>
+						</div>
+						<div class="sms-field-row">
+							<div class="sms-field"><label>Tarih</label><input type="date" name="exam_date" value="<?php echo esc_attr( current_time( 'Y-m-d' ) ); ?>"></div>
+							<div class="sms-field"><label>Tam Puan</label><input type="number" name="max_score" value="100" min="1" step="0.01"></div>
+						</div>
+						<button type="submit" class="sms-btn sms-btn-ghost"><span class="dashicons dashicons-download"></span> Öğrenci Listesini İndir</button>
+					</form>
+
+					<hr class="sms-hr">
+
+					<p class="sms-muted"><strong>2. Adım:</strong> Puanları doldurduğunuz listeyi yükleyin. Kimlik ve ad-soyad doğrulaması yapılır; uyuşmayan satırlar güvenlik için atlanır. (İsterseniz daha sonra da yükleyebilirsiniz — dosya derslik ve sınav bilgisini içerir.)</p>
+					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data" class="sms-form sms-upl-form">
+						<input type="hidden" name="action" value="sms_grade_import">
+						<?php wp_nonce_field( 'sms_grade_import', '_sms_nonce' ); ?>
+						<?php sms_back_url_field(); ?>
+						<div class="sms-inline-form">
+							<input type="file" name="grade_file" accept=".xlsx,.csv,.txt" required>
+							<button type="submit" class="sms-btn sms-btn-primary sms-btn-sm"><span class="dashicons dashicons-upload"></span> Yükle</button>
+						</div>
+					</form>
+				</div>
+			</div>
+
+			<div class="sms-card sms-mt">
 				<div class="sms-card-head"><h2>Sınav Geçmişi</h2></div>
 				<?php if ( $exams ) : ?>
 					<div class="sms-pad">
@@ -127,6 +191,7 @@ foreach ( $grades as $g ) {
 				<?php else : ?>
 					<p class="sms-muted sms-pad">Bu derslikte henüz not girilmedi.</p>
 				<?php endif; ?>
+			</div>
 			</div>
 		</div>
 	<?php elseif ( $classes ) : ?>

@@ -32,6 +32,7 @@ class SMS_Actions {
 			'sms_add_session'     => 'sms_manage',
 			'sms_delete_session'  => 'sms_manage',
 			'sms_import'          => 'sms_manage',
+			'sms_grade_import'    => 'sms_teach',
 		);
 		foreach ( $actions as $action => $cap ) {
 			add_action( 'admin_post_' . $action, function () use ( $action, $cap ) {
@@ -43,6 +44,7 @@ class SMS_Actions {
 
 		// CSV şablon indirme (GET, nonce URL ile).
 		add_action( 'admin_post_sms_import_template', array( __CLASS__, 'handle_import_template' ) );
+		add_action( 'admin_post_sms_grade_template', array( __CLASS__, 'handle_grade_template' ) );
 	}
 
 	private static function guard( $action, $cap ) {
@@ -554,6 +556,52 @@ class SMS_Actions {
 			set_transient( 'sms_import_errors_' . get_current_user_id(), $res['errors'], 120 );
 		}
 		self::back( $msg, '', admin_url( 'admin.php?page=sms-import&tab=' . $type ) );
+	}
+
+	/** Seçili derslik için önceden doldurulmuş not listesi indirir (GET + nonce). */
+	public static function handle_grade_template() {
+		if ( ! current_user_can( 'sms_teach' ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'sms_grade_template' ) ) {
+			wp_die( 'Yetkisiz istek.' );
+		}
+		$class_id = isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
+		if ( ! sms_can_manage_class( $class_id ) ) {
+			wp_die( 'Bu derslik için yetkiniz yok.' );
+		}
+		$title     = isset( $_GET['title'] ) ? sanitize_text_field( wp_unslash( $_GET['title'] ) ) : 'Sınav';
+		$exam_type = isset( $_GET['exam_type'] ) ? sanitize_text_field( wp_unslash( $_GET['exam_type'] ) ) : '';
+		$exam_date = isset( $_GET['exam_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $_GET['exam_date'] ) ? sanitize_text_field( wp_unslash( $_GET['exam_date'] ) ) : current_time( 'Y-m-d' );
+		$max_score = isset( $_GET['max_score'] ) ? max( 1, (float) $_GET['max_score'] ) : 100;
+
+		$content = SMS_Import::grade_template( $class_id, $title ?: 'Sınav', $exam_type, $exam_date, $max_score );
+
+		nocache_headers();
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename=not-listesi-derslik-' . $class_id . '-' . $exam_date . '.csv' );
+		echo "\xEF\xBB\xBF";
+		echo $content; // phpcs:ignore
+		exit;
+	}
+
+	/** Doldurulmuş not listesini yükler. */
+	private static function handle_grade_import() {
+		if ( empty( $_FILES['grade_file']['name'] ) || ! empty( $_FILES['grade_file']['error'] ) ) {
+			self::back( '', 'Lütfen doldurulmuş not listesini (.csv veya .xlsx) seçin.' );
+		}
+		$tmp  = $_FILES['grade_file']['tmp_name'];
+		$ext  = strtolower( pathinfo( $_FILES['grade_file']['name'], PATHINFO_EXTENSION ) );
+		$rows = SMS_Import::read_file( $tmp, $ext );
+		if ( is_wp_error( $rows ) ) {
+			self::back( '', $rows->get_error_message() );
+		}
+
+		$res = SMS_Import::import_grades( $rows, get_current_user_id(), 'sms_can_manage_class' );
+
+		$msg = $res['created'] . ' not kaydedildi.';
+		if ( ! empty( $res['errors'] ) ) {
+			$msg .= ' ' . count( $res['errors'] ) . ' satır atlandı.';
+			set_transient( 'sms_grade_import_errors_' . get_current_user_id(), $res['errors'], 300 );
+		}
+		self::back( $msg );
 	}
 
 	public static function handle_import_template() {

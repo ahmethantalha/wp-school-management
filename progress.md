@@ -138,6 +138,37 @@ Ayarlar `wp_options` içinde `sms_settings` anahtarında tutulur (kurum adı, so
 - **Genel (scope=general):** yönetici + sınıf öğretmeni; öğrenci kapsamı sınıf öğretmeninin sorumlu seviyeleridir (boşsa tümü).
 - Kayıt benzersizliği: (kategori, oturum, derslik, öğrenci, tarih) — genelde derslik=0.
 
+## 8. Sürüm 1.2 — Analiz Raporları, Güvenli Not Yükleme, Arayüz Kilidi
+
+### Raporlar (analiz merkezi) — `admin/views/reports.php`
+- [x] **Yoklama Analizi**: kategori (Namaz vb.) + tarih aralığı + metrik (katılım/geldi/gelmedi/geç/izinli %) seçimiyle
+      öğrenci × oturum matrisi. Namazda 5 vakit ayrı sütun; her hücrede yüzde + adet (12/15). "Toplu" satırı liste genelini verir.
+- [x] Tüm analizlerde **gruplama**: öğrenci bazında (tek tek) veya sınıf bazında (seviye toplamları); sınıf filtresi.
+- [x] **Alışkanlık Analizi**: öğrenci × alışkanlık tamamlama matrisi + sınıf ortalamaları.
+- [x] **Not Analizi**: öğrenci × derslik ortalaması matrisi + sınıf ortalamaları.
+- [x] **Genel Başarı**: bileşik skor sıralaması / sınıf bazında özet.
+- [x] Bireysel karneler ayrı **Karneler** sayfasına taşındı (`admin/views/cards.php`); karne görünümü aynen korunur.
+
+### Güvenli Toplu Not Yükleme — `admin/views/grades.php`
+- [x] 1. adım: sınav adı/tür/tarih/tam puan girilir → **önceden doldurulmuş öğrenci listesi (CSV)** indirilir
+      (derslik_id, ogrenci_id, no, ad_soyad, sınav bilgileri dolu; yalnız *puan* boş).
+- [x] 2. adım: doldurulan liste (.csv/.xlsx) yüklenir — dosya bağlamı taşıdığı için istenildiği zaman yüklenebilir.
+- [x] Veri güvenliği: derslik yetkisi + kadro üyeliği + **ad-soyad eşleşmesi** (Türkçe I/İ katlamalı) + puan aralığı doğrulaması;
+      uyuşmayan satırlar asla yazılmaz, satır satır raporlanır. Birim testleriyle doğrulandı.
+
+### Arayüz / Erişim
+- [x] **WP admin kilidi**: yönetici olmayan tüm kullanıcılar (öğretmen/veli/öğrenci) yalnızca `sms-*` sayfalarını görebilir;
+      diğer wp-admin ekranları panele yönlendirilir, admin bar ve WP menüleri tamamen gizlenir, başlığa hesap çipi + çıkış eklendi.
+- [x] **Tam genişlik tasarım**: sabit 1280px sınırı kaldırıldı; ızgaralar akışkan (auto-fit), 2200px üzeri ortalanır; mobil iyileştirmeler.
+- [x] **Dashboard detayları**: sınıf bazında özet tablosu + yoklama türü bazında katılım tablosu (detaylı analize bağlantılı).
+
+### Güvenlik Notları (kişisel veri)
+- Tüm formlar nonce + capability; tüm okuma/yazma yolları **kayıt düzeyinde** denetlenir
+  (öğretmen yalnızca kendi öğrencileri/derslikleri, veli yalnızca kendi çocuğu).
+- CSV indirmeleri nonce'lu ve `nocache_headers()` ile sunulur; not şablonu yalnızca derslik yetkisi olana verilir.
+- Yüklenen dosyalar sunucuda saklanmaz; yalnızca geçici dosyadan okunur, uzantı beyaz listesi uygulanır.
+- Toplu not girişinde kimlik `ogrenci_id` + ad-soyad çifte doğrulamasıyla teyit edilir.
+
 ## 6. Puanlama / "En İyi Öğrenciler" Formülü
 
 Bileşik skor, mevcut bileşenlerin ağırlıklı ortalamasıdır (bir bileşen için veri yoksa ağırlık diğerlerine dağıtılır):

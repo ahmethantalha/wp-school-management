@@ -27,6 +27,7 @@ class SMS_Menu {
 		add_submenu_page( 'sms-dashboard', 'Alışkanlıklar', 'Alışkanlıklar', 'sms_teach', 'sms-habits', array( __CLASS__, 'render' ) );
 		add_submenu_page( 'sms-dashboard', 'Notlar', 'Notlar', 'sms_teach', 'sms-grades', array( __CLASS__, 'render' ) );
 		add_submenu_page( 'sms-dashboard', 'Raporlar', 'Raporlar', 'sms_access', 'sms-reports', array( __CLASS__, 'render' ) );
+		add_submenu_page( 'sms-dashboard', 'Karneler', 'Karneler', 'sms_teach', 'sms-cards', array( __CLASS__, 'render' ) );
 		add_submenu_page( 'sms-dashboard', 'İçe Aktar', 'İçe Aktar', 'sms_manage', 'sms-import', array( __CLASS__, 'render' ) );
 		add_submenu_page( 'sms-dashboard', 'Yoklama Türleri', 'Yoklama Türleri', 'sms_manage', 'sms-att-types', array( __CLASS__, 'render' ) );
 
@@ -98,6 +99,9 @@ class SMS_Menu {
 				break;
 			case 'sms-reports':
 				self::load_view( isset( $_GET['student'] ) ? 'student-report' : 'reports' );
+				break;
+			case 'sms-cards':
+				self::load_view( 'cards' );
 				break;
 			case 'sms-import':
 				self::load_view( 'import' );

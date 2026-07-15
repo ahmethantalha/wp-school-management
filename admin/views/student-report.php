@@ -38,7 +38,7 @@ $parent = $student->parent_user_id ? get_userdata( (int) $student->parent_user_i
 	<?php sms_view_header( 'Öğrenci Karnesi', '' ); ?>
 
 	<?php if ( current_user_can( 'sms_teach' ) ) : ?>
-		<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&sms_term=' . $term_id ) ); ?>">← Raporlara dön</a></p>
+		<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-cards&sms_term=' . $term_id ) ); ?>">← Karnelere dön</a></p>
 	<?php endif; ?>
 
 	<div class="sms-card sms-profile-card">

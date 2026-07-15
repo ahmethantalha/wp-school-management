@@ -27,6 +27,8 @@ $settings = sms_get_settings();
 	$scores       = SMS_Reports::student_scores( $term_id, $student_ids );
 	$top          = array_slice( $scores, 0, 5 );
 	$bottom       = array_slice( array_reverse( array_slice( $scores, 5 ) ), 0, 5 );
+	$grade_sum    = SMS_Reports::grade_level_summary( $term_id, $student_ids );
+	$cat_sum      = SMS_Reports::category_summary( $term_id, $student_ids );
 
 	$att_labels = sms_attendance_statuses();
 	$donut      = array();
@@ -117,6 +119,59 @@ $settings = sms_get_settings();
 				</ul>
 			<?php else : ?>
 				<p class="sms-muted sms-pad">Yeterli veri birikince burada gelişim odaklı liste görünecek.</p>
+			<?php endif; ?>
+		</div>
+	</div>
+
+	<div class="sms-grid-2 sms-mt">
+		<div class="sms-card">
+			<div class="sms-card-head">
+				<h2>Sınıf Bazında Özet</h2>
+				<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&rtype=genel&group=sinif&sms_term=' . $term_id ) ); ?>">Detaylı Analiz →</a>
+			</div>
+			<?php if ( $grade_sum ) : ?>
+				<table class="sms-table">
+					<thead><tr><th>Sınıf</th><th>Öğrenci</th><th class="sms-center">Devam</th><th class="sms-center">Alışkanlık</th><th class="sms-center">Not Ort.</th></tr></thead>
+					<tbody>
+					<?php foreach ( $grade_sum as $row ) : ?>
+						<tr>
+							<td><strong><?php echo esc_html( sms_grade_label( $row['grade'] ) ); ?></strong></td>
+							<td class="sms-muted"><?php echo (int) $row['count']; ?></td>
+							<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['att'] ) ); ?>"><?php echo null !== $row['att'] ? $row['att'] . '%' : '—'; ?></span></td>
+							<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? $row['habit'] . '%' : '—'; ?></span></td>
+							<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['grade_avg'] ) ); ?>"><?php echo null !== $row['grade_avg'] ? $row['grade_avg'] . '%' : '—'; ?></span></td>
+						</tr>
+					<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php else : ?>
+				<p class="sms-muted sms-pad">Henüz sınıf bazında veri yok.</p>
+			<?php endif; ?>
+		</div>
+
+		<div class="sms-card">
+			<div class="sms-card-head">
+				<h2>Yoklama Türlerine Göre</h2>
+				<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&rtype=yoklama&sms_term=' . $term_id ) ); ?>">Detaylı Analiz →</a>
+			</div>
+			<?php if ( $cat_sum ) : ?>
+				<table class="sms-table">
+					<thead><tr><th>Tür</th><th class="sms-center">Katılım</th><th class="sms-center">Geldi</th><th class="sms-center">Gelmedi</th><th class="sms-center">Geç</th><th class="sms-center">İzinli</th></tr></thead>
+					<tbody>
+					<?php foreach ( $cat_sum as $row ) : ?>
+						<tr>
+							<td><span class="dashicons <?php echo esc_attr( $row['icon'] ?: 'dashicons-clipboard' ); ?>"></span> <strong><?php echo esc_html( $row['name'] ); ?></strong></td>
+							<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $row['rate'] ) ); ?>"><?php echo null !== $row['rate'] ? $row['rate'] . '%' : '—'; ?></span></td>
+							<td class="sms-center sms-rate-good"><?php echo (int) $row['present']; ?></td>
+							<td class="sms-center sms-rate-low"><?php echo (int) $row['absent']; ?></td>
+							<td class="sms-center sms-rate-mid"><?php echo (int) $row['late']; ?></td>
+							<td class="sms-center" style="color:#6366f1"><?php echo (int) $row['excused']; ?></td>
+						</tr>
+					<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php else : ?>
+				<p class="sms-muted sms-pad">Henüz yoklama kaydı yok.</p>
 			<?php endif; ?>
 		</div>
 	</div>

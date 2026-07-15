@@ -207,6 +207,21 @@ class SMS_Import {
 			'password'           => 'password',
 			'sinif_ogretmeni'    => 'is_class_teacher',
 			'is_class_teacher'   => 'is_class_teacher',
+			'derslik_id'         => 'class_id',
+			'class_id'           => 'class_id',
+			'ogrenci_id'         => 'student_id',
+			'student_id'         => 'student_id',
+			'sinav_adi'          => 'title',
+			'sinav'              => 'title',
+			'title'              => 'title',
+			'tur'                => 'exam_type',
+			'exam_type'          => 'exam_type',
+			'tarih'              => 'exam_date',
+			'exam_date'          => 'exam_date',
+			'tam_puan'           => 'max_score',
+			'max_score'          => 'max_score',
+			'puan'               => 'score',
+			'score'              => 'score',
 		);
 		return $map[ $k ] ?? $k;
 	}
@@ -333,6 +348,126 @@ class SMS_Import {
 			return '';
 		}
 		return gmdate( 'Y-m-d', $ts );
+	}
+
+	/**
+	 * İsim karşılaştırması için normalize eder: küçük harf, tek boşluk,
+	 * Türkçe karakter katlaması (I/İ/ı sorunu ve diakritiksiz yazımlar için).
+	 * Kimlik esas olarak ogrenci_id ile doğrulanır; isim ikincil güvenlik kontrolüdür.
+	 */
+	public static function normalize_name( $name ) {
+		$n = mb_strtolower( trim( (string) $name ), 'UTF-8' );
+		$n = str_replace( "\xCC\x87", '', $n ); // İ küçültmesinden kalan birleşik nokta
+		$n = str_replace(
+			array( 'ı', 'ş', 'ğ', 'ü', 'ö', 'ç', 'â', 'î', 'û' ),
+			array( 'i', 's', 'g', 'u', 'o', 'c', 'a', 'i', 'u' ),
+			$n
+		);
+		return preg_replace( '/\s+/', ' ', $n );
+	}
+
+	/**
+	 * Seçili derslik + sınav bilgileriyle önceden doldurulmuş not listesi (CSV) üretir.
+	 * Sadece "puan" sütunu boş bırakılır — güvenli veri girişi için.
+	 */
+	public static function grade_template( $class_id, $title, $exam_type, $exam_date, $max_score ) {
+		$sep      = ';';
+		$students = SMS_Classes::students( (int) $class_id );
+		$out      = "derslik_id{$sep}ogrenci_id{$sep}ogrenci_no{$sep}ad_soyad{$sep}sinav_adi{$sep}tur{$sep}tarih{$sep}tam_puan{$sep}puan\n";
+		foreach ( $students as $s ) {
+			$out .= implode( $sep, array(
+				(int) $class_id,
+				(int) $s->id,
+				str_replace( $sep, ' ', (string) $s->student_no ),
+				str_replace( $sep, ' ', sms_student_name( $s ) ),
+				str_replace( $sep, ' ', (string) $title ),
+				str_replace( $sep, ' ', (string) $exam_type ),
+				(string) $exam_date,
+				(string) $max_score,
+				'',
+			) ) . "\n";
+		}
+		return $out;
+	}
+
+	/**
+	 * Doldurulmuş not listesini içe aktarır.
+	 * Güvenlik kontrolleri: derslik yetkisi, öğrencinin dersliğe kayıtlılığı,
+	 * ad-soyad eşleşmesi (karışıklığa karşı), puan aralığı.
+	 *
+	 * @param callable $can_manage_class fn($class_id): bool — kayıt düzeyi yetki denetimi.
+	 */
+	public static function import_grades( array $rows, $recorded_by, $can_manage_class ) {
+		$created = 0;
+		$errors  = array();
+		$perm    = array(); // class_id => bool
+		$roster  = array(); // class_id => [student_id => normalized name]
+
+		foreach ( $rows as $i => $row ) {
+			$line       = $i + 2;
+			$class_id   = (int) ( $row['class_id'] ?? 0 );
+			$student_id = (int) ( $row['student_id'] ?? 0 );
+			$score_raw  = trim( (string) ( $row['score'] ?? '' ) );
+
+			if ( '' === $score_raw ) {
+				continue; // puanı boş bırakılan öğrenci atlanır (sınava girmedi).
+			}
+			if ( ! $class_id || ! $student_id ) {
+				$errors[] = "Satır $line: derslik_id/ogrenci_id eksik, atlandı.";
+				continue;
+			}
+
+			if ( ! isset( $perm[ $class_id ] ) ) {
+				$perm[ $class_id ] = (bool) call_user_func( $can_manage_class, $class_id );
+				if ( $perm[ $class_id ] ) {
+					$roster[ $class_id ] = array();
+					foreach ( SMS_Classes::students( $class_id ) as $s ) {
+						$roster[ $class_id ][ (int) $s->id ] = self::normalize_name( sms_student_name( $s ) );
+					}
+				}
+			}
+			if ( ! $perm[ $class_id ] ) {
+				$errors[] = "Satır $line: $class_id numaralı derslik için yetkiniz yok, atlandı.";
+				continue;
+			}
+			if ( ! isset( $roster[ $class_id ][ $student_id ] ) ) {
+				$errors[] = "Satır $line: öğrenci (#$student_id) bu derslik kadrosunda değil, atlandı.";
+				continue;
+			}
+
+			// Ad-soyad doğrulaması: dosyadaki isim sistemdekiyle uyuşmalı.
+			$file_name = self::normalize_name( $row['full_name'] ?? ( ( $row['first_name'] ?? '' ) . ' ' . ( $row['last_name'] ?? '' ) ) );
+			if ( $file_name && $file_name !== $roster[ $class_id ][ $student_id ] ) {
+				$errors[] = "Satır $line: isim uyuşmazlığı ('" . trim( (string) ( $row['full_name'] ?? '' ) ) . "' ≠ sistemdeki kayıt), güvenlik için atlandı.";
+				continue;
+			}
+
+			$score = (float) str_replace( ',', '.', $score_raw );
+			$max   = (float) str_replace( ',', '.', (string) ( $row['max_score'] ?? 100 ) );
+			if ( $max <= 0 ) {
+				$max = 100;
+			}
+			if ( ! is_numeric( str_replace( ',', '.', $score_raw ) ) || $score < 0 || $score > $max ) {
+				$errors[] = "Satır $line: geçersiz puan '$score_raw' (0–$max aralığında olmalı), atlandı.";
+				continue;
+			}
+
+			global $wpdb;
+			$wpdb->insert( $wpdb->prefix . 'sms_grades', array(
+				'class_id'    => $class_id,
+				'student_id'  => $student_id,
+				'title'       => sanitize_text_field( $row['title'] ?? 'Sınav' ),
+				'exam_type'   => sanitize_text_field( $row['exam_type'] ?? '' ),
+				'score'       => $score,
+				'max_score'   => $max,
+				'exam_date'   => self::parse_date( $row['exam_date'] ?? '' ) ?: null,
+				'recorded_by' => (int) $recorded_by,
+				'created_at'  => current_time( 'mysql' ),
+			) );
+			$created++;
+		}
+
+		return array( 'created' => $created, 'errors' => $errors );
 	}
 
 	/** İndirilebilir CSV şablonu içeriği. */

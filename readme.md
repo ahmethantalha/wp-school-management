@@ -64,6 +64,33 @@ Yönetici **Yoklama Türleri** sayfasından yeni kategori ekleyebilir ve mevcut 
 ekleyip çıkarabilir (örn. "Etüt" kategorisi, Namaz'a yeni bir vakit vb.). Raporlarda öğrencinin
 her vakit/oturumdaki katılımı ayrı ayrı görüntülenir.
 
+## Raporlar ve Karneler
+
+- **Raporlar** sayfası analiz merkezidir: Yoklama / Alışkanlık / Not / Genel Başarı sekmeleri,
+  öğrenci ya da sınıf bazında gruplama, sınıf filtresi.
+  - *Yoklama Analizi*: kategori (örn. Namaz) ve tarih aralığı seçin — her öğrencinin 5 vakit için
+    ayrı ayrı katılım oranı, metrik seçimiyle (geldi/gelmedi/geç/izinli %) görüntülenir;
+    en alttaki "Toplu" satırı liste genelini özetler.
+- **Karneler** sayfası bireysel öğrenci karnelerine açılır.
+- Dashboard'da sınıf bazında özet ve yoklama türlerine göre katılım tabloları bulunur.
+
+## Toplu Not Yükleme (güvenli akış)
+
+Notlar sayfasında derslik seçtikten sonra **Toplu Not Yükleme** kartı:
+
+1. Sınav adı, tür, tarih ve tam puanı girip **Öğrenci Listesini İndir** deyin — inen CSV'de
+   tüm bilgiler doludur, yalnızca *puan* sütunu boştur.
+2. Puanları doldurup dosyayı yükleyin (hemen ya da günler sonra — dosya derslik/sınav bilgisini taşır).
+
+Yükleme sırasında öğrenci kimliği, ad-soyad eşleşmesi, derslik yetkisi ve puan aralığı doğrulanır;
+uyuşmayan satırlar kaydedilmez ve tek tek raporlanır.
+
+## Erişim Güvenliği
+
+Yönetici dışındaki tüm kullanıcılar (öğretmen/veli/öğrenci) WordPress arayüzünü hiç görmez:
+admin çubuğu ve WP menüleri gizlenir, eklenti sayfaları dışına yönlendirme yapılır; çıkış,
+sayfa başlığındaki hesap çipinden yapılır.
+
 ## Alışkanlık Takibi
 
 - Alışkanlık oluştururken **takip metodu** seçilir:

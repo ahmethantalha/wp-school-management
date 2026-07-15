@@ -21,10 +21,13 @@
 	--sms-radius: 14px;
 	--sms-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 4px 16px rgba(15, 23, 42, .06);
 
-	max-width: 1280px;
-	margin-right: 12px;
+	max-width: none;
+	margin-right: 20px;
 	color: var(--sms-text);
 	font-size: 14px;
+}
+@media (min-width: 2200px) {
+	.sms-wrap { max-width: 2000px; margin-left: auto; margin-right: auto; }
 }
 
 .sms-wrap * { box-sizing: border-box; }
@@ -104,8 +107,9 @@
 }
 
 /* ---------- İstatistik kartları ---------- */
-.sms-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 18px; }
+.sms-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 18px; }
 @media (max-width: 1100px) { .sms-stat-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .sms-stat-grid { grid-template-columns: 1fr; } }
 .sms-stat-card {
 	display: flex;
 	align-items: center;
@@ -527,6 +531,51 @@
 .sms-session-stat { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
 .sms-session-stat-name { flex: 1; font-weight: 500; }
 .sms-session-stat-rate { font-weight: 700; min-width: 44px; text-align: right; }
+
+/* ---------- Analiz matrisi ---------- */
+.sms-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.sms-center { text-align: center !important; }
+.sms-matrix th.sms-center { white-space: nowrap; }
+.sms-matrix td.sms-center { min-width: 76px; }
+.sms-cell-sub { display: block; font-size: 10.5px; color: var(--sms-muted); font-weight: 500; }
+.sms-total-row td { background: #f8fafc; border-top: 2px solid var(--sms-border); }
+.sms-hr { border: none; border-top: 1px solid var(--sms-border); margin: 16px 0; }
+
+/* ---------- Başlık araçları + kullanıcı çipi ---------- */
+.sms-head-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.sms-user-chip {
+	display: flex; align-items: center; gap: 8px;
+	background: var(--sms-card);
+	border: 1px solid var(--sms-border);
+	border-radius: 999px;
+	padding: 5px 8px 5px 6px;
+	box-shadow: var(--sms-shadow);
+}
+.sms-user-chip .sms-avatar { width: 28px; height: 28px; font-size: 10.5px; }
+.sms-user-chip-name { font-weight: 600; font-size: 13px; }
+.sms-user-chip-logout {
+	display: grid; place-items: center;
+	width: 28px; height: 28px; border-radius: 50%;
+	background: var(--sms-red-soft); color: var(--sms-red) !important;
+}
+.sms-user-chip-logout .dashicons { font-size: 15px; width: 15px; height: 15px; }
+.sms-user-chip-logout:hover { background: var(--sms-red); color: #fff !important; }
+
+/* ---------- Mobil iyileştirmeleri ---------- */
+@media (max-width: 782px) {
+	.sms-wrap { margin-right: 10px; }
+	.sms-page-head { align-items: flex-start; }
+	.sms-title { font-size: 21px !important; }
+	.sms-pad { padding: 14px 14px; }
+	.sms-table th, .sms-table td { padding: 10px 12px; }
+	.sms-filters input[type="search"] { min-width: 0; flex: 1; }
+	.sms-seg-item span { padding: 5px 9px; font-size: 12px; }
+	.sms-att-summary { grid-template-columns: repeat(2, 1fr); }
+	.sms-profile-card { flex-direction: column; text-align: center; }
+	.sms-profile-meta { justify-content: center; }
+	.sms-tabs { overflow-x: auto; }
+	.sms-tab { white-space: nowrap; }
+}
 
 /* ---------- Diğer ---------- */
 .sms-hidden { display: none !important; }

@@ -214,7 +214,7 @@ function sms_render_notices() {
 	}
 }
 
-/** Ortak sayfa başlığı + dönem seçici. */
+/** Ortak sayfa başlığı + dönem seçici (+ sınırlı kullanıcılar için hesap çipi). */
 function sms_view_header( $title, $subtitle = '', $show_term_picker = true ) {
 	$terms   = SMS_Terms::all();
 	$current = sms_current_term_id();
@@ -224,10 +224,11 @@ function sms_view_header( $title, $subtitle = '', $show_term_picker = true ) {
 		echo '<p class="sms-subtitle">' . esc_html( $subtitle ) . '</p>';
 	}
 	echo '</div>';
+	echo '<div class="sms-head-tools">';
 	if ( $show_term_picker && $terms ) {
 		echo '<form method="get" class="sms-term-picker">';
 		// Mevcut sayfa parametrelerini koru.
-		foreach ( array( 'page', 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'tab' ) as $keep ) {
+		foreach ( array( 'page', 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'tab', 'rtype', 'group', 'grade', 'metric', 'from', 'to' ) as $keep ) {
 			if ( isset( $_GET[ $keep ] ) ) {
 				echo '<input type="hidden" name="' . esc_attr( $keep ) . '" value="' . esc_attr( sanitize_text_field( wp_unslash( $_GET[ $keep ] ) ) ) . '">';
 			}
@@ -244,6 +245,16 @@ function sms_view_header( $title, $subtitle = '', $show_term_picker = true ) {
 		}
 		echo '</select></form>';
 	}
+	// WP arayüzü gizlenen kullanıcılar için hesap bilgisi + çıkış.
+	if ( function_exists( 'sms_is_limited_user' ) && sms_is_limited_user() ) {
+		$user = wp_get_current_user();
+		echo '<div class="sms-user-chip">';
+		echo sms_avatar( $user->display_name ); // phpcs:ignore
+		echo '<span class="sms-user-chip-name">' . esc_html( $user->display_name ) . '</span>';
+		echo '<a class="sms-user-chip-logout" href="' . esc_url( wp_logout_url( home_url() ) ) . '" title="Çıkış Yap"><span class="dashicons dashicons-exit"></span></a>';
+		echo '</div>';
+	}
+	echo '</div>';
 	echo '</div>';
 	sms_render_notices();
 
