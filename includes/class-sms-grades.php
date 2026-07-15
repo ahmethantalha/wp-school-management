@@ -132,8 +132,13 @@ class SMS_Grades {
 		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::table() . ' WHERE id = %d', $id ) );
 	}
 
-	/** Öğrenci bazında dönem not ortalaması (yüzde): student_id => yüzde. */
+	/** Öğrenci bazında dönem not ortalaması (yüzde): student_id => yüzde. Tek istek içinde memoize edilir. */
 	public static function rates_by_student( $term_id ) {
+		static $cache = array();
+		$term_id = (int) $term_id;
+		if ( isset( $cache[ $term_id ] ) ) {
+			return $cache[ $term_id ];
+		}
 		global $wpdb;
 		$rows = $wpdb->get_results( $wpdb->prepare(
 			'SELECT g.student_id, ROUND(AVG(g.score / g.max_score * 100)) AS rate
@@ -146,6 +151,7 @@ class SMS_Grades {
 		foreach ( $rows as $r ) {
 			$out[ (int) $r->student_id ] = (int) $r->rate;
 		}
+		$cache[ $term_id ] = $out;
 		return $out;
 	}
 

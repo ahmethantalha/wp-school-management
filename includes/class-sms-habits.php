@@ -172,8 +172,13 @@ class SMS_Habits {
 		) );
 	}
 
-	/** Öğrenci bazında dönem alışkanlık tamamlama: student_id => yüzde. */
+	/** Öğrenci bazında dönem alışkanlık tamamlama: student_id => yüzde. Tek istek içinde memoize edilir. */
 	public static function rates_by_student( $term_id ) {
+		static $cache = array();
+		$term_id = (int) $term_id;
+		if ( isset( $cache[ $term_id ] ) ) {
+			return $cache[ $term_id ];
+		}
 		global $wpdb;
 		$rows = $wpdb->get_results( $wpdb->prepare(
 			"SELECT l.student_id,
@@ -188,6 +193,7 @@ class SMS_Habits {
 		foreach ( $rows as $r ) {
 			$out[ (int) $r->student_id ] = (int) $r->rate;
 		}
+		$cache[ $term_id ] = $out;
 		return $out;
 	}
 

@@ -40,12 +40,16 @@ if ( is_admin() ) {
 
 register_activation_hook( __FILE__, array( 'SMS_Install', 'activate' ) );
 
-// Veritabanı sürümü eskiyse şemayı güncelle (eklenti güncellemeleri için).
-add_action( 'plugins_loaded', function () {
+/**
+ * Veritabanı sürümü eskiyse şemayı güncelle (eklenti güncellemeleri için).
+ * Yalnızca yönetim tarafında çalışır: bu kontrol ve olası ağır dbDelta/migrasyon
+ * asla giriş (wp-login.php) veya site ön yüzü isteğini yavaşlatmaz.
+ */
+add_action( 'admin_init', function () {
 	if ( get_option( 'sms_db_version' ) !== SMS_VERSION ) {
 		SMS_Install::activate();
 	}
-} );
+}, 0 );
 
 /**
  * Yönetici olmayan sistem kullanıcısı (öğretmen/veli/öğrenci) mı?

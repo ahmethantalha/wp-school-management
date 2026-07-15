@@ -190,8 +190,16 @@ class SMS_Attendance {
 		return $series;
 	}
 
-	/** Öğrenci bazında devam yüzdeleri: student_id => yüzde. */
+	/**
+	 * Öğrenci bazında devam yüzdeleri: student_id => yüzde.
+	 * Tek istek içinde (dashboard/raporlar aynı dönemi birden çok kez sorar) memoize edilir.
+	 */
 	public static function rates_by_student( $term_id ) {
+		static $cache = array();
+		$term_id = (int) $term_id;
+		if ( isset( $cache[ $term_id ] ) ) {
+			return $cache[ $term_id ];
+		}
 		global $wpdb;
 		$rows = $wpdb->get_results( $wpdb->prepare(
 			'SELECT student_id,
@@ -206,6 +214,7 @@ class SMS_Attendance {
 				$out[ (int) $r->student_id ] = round( $r->score / $r->total * 100 );
 			}
 		}
+		$cache[ $term_id ] = $out;
 		return $out;
 	}
 
