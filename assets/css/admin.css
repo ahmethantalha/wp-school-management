@@ -552,7 +552,10 @@
 	box-shadow: var(--sms-shadow);
 }
 .sms-user-chip .sms-avatar { width: 28px; height: 28px; font-size: 10.5px; }
+.sms-user-chip-img { border-radius: 50%; width: 28px; height: 28px; }
+.sms-user-chip-text { display: flex; flex-direction: column; line-height: 1.2; }
 .sms-user-chip-name { font-weight: 600; font-size: 13px; }
+.sms-user-chip-role { font-size: 10.5px; color: var(--sms-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
 .sms-user-chip-logout {
 	display: grid; place-items: center;
 	width: 28px; height: 28px; border-radius: 50%;
@@ -560,6 +563,19 @@
 }
 .sms-user-chip-logout .dashicons { font-size: 15px; width: 15px; height: 15px; }
 .sms-user-chip-logout:hover { background: var(--sms-red); color: #fff !important; }
+
+/* ---------- Not girişi ekranı ---------- */
+.sms-entry-meta { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .sms-entry-meta { grid-template-columns: 1fr 1fr; } }
+.sms-entry-toolbar {
+	display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+	background: var(--sms-primary-soft);
+	border: 1px dashed #c7d2fe;
+	border-radius: 12px;
+	padding: 10px 14px;
+	margin: 4px 0 16px;
+}
+.sms-subject-initial { font-weight: 800; font-size: 17px; }
 
 /* ---------- Mobil iyileştirmeleri ---------- */
 @media (max-width: 782px) {

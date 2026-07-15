@@ -88,12 +88,19 @@ add_action( 'admin_menu', function () {
 	}
 }, 999 );
 
-// Sınırlı kullanıcılar için wp-admin içindeki üst çubuğu ve alt bilgiyi gizle.
+// Sınırlı kullanıcılar için üst çubuğu, alt bilgiyi ve WP uyarılarını gizle;
+// sol menü (eklenti sayfaları) görünür kalır, sağ üstte profil çipi bulunur.
 add_action( 'admin_head', function () {
 	if ( ! sms_is_limited_user() ) {
 		return;
 	}
-	echo '<style>#wpadminbar{display:none!important}html.wp-toolbar{padding-top:0!important}#wpfooter,#screen-meta,#screen-meta-links{display:none!important}</style>';
+	echo '<style>
+		#wpadminbar{display:none!important}
+		html.wp-toolbar{padding-top:0!important}
+		#wpfooter,#screen-meta,#screen-meta-links{display:none!important}
+		.notice,.update-nag,.updated,.error:not(.sms-notice){display:none!important}
+		#adminmenu .wp-submenu .wp-submenu-head{display:none}
+	</style>';
 } );
 
 // Giriş sonrası veli/öğrenci/öğretmeni doğrudan panele yönlendir.

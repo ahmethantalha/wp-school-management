@@ -165,6 +165,13 @@ Ayarlar `wp_options` içinde `sms_settings` anahtarında tutulur (kurum adı, so
 - [x] **Tam genişlik tasarım**: sabit 1280px sınırı kaldırıldı; ızgaralar akışkan (auto-fit), 2200px üzeri ortalanır; mobil iyileştirmeler.
 - [x] **Dashboard detayları**: sınıf bazında özet tablosu + yoklama türü bazında katılım tablosu (detaylı analize bağlantılı).
 
+### Sürüm 1.2.1 — Notlar Sayfası Hiyerarşisi + Arayüz Rötuşları
+- [x] **Notlar gezinmesi yeniden tasarlandı**:
+  - Branş öğretmeni: kendi derslikleri (kart) → sınav listesi → sınav → öğrenci bazında puanlar.
+  - Yönetici / sınıf öğretmeni: branş kartları → branşın derslikleri → sınavlar → öğrenci bazında puanlar (salt okunur; yönetim yetkisi yalnızca dersliğin branş öğretmeni + yönetici).
+- [x] **"Not Gir" ekranı ayrıldı**: tek kartta sınav bilgileri + tek tek puan girişi + "Öğrenci Listesini İndir" (aynı formdaki bilgilerle önceden doldurulmuş CSV) + doldurulmuş liste yükleme.
+- [x] Üst çubuk (admin bar) sınırlı kullanıcılar için tamamen kaldırıldı; **sol menü görünür kalır**, sağ üstte profil çipi (avatar + ad + rol + çıkış). WP bildirimleri (notice/update-nag) da gizlendi.
+
 ### Güvenlik Notları (kişisel veri)
 - Tüm formlar nonce + capability; tüm okuma/yazma yolları **kayıt düzeyinde** denetlenir
   (öğretmen yalnızca kendi öğrencileri/derslikleri, veli yalnızca kendi çocuğu).

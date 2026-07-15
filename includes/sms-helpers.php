@@ -123,6 +123,28 @@ function sms_general_attendance_student_ids( $term_id = 0, $user_id = 0 ) {
 	return $ids;
 }
 
+/**
+ * Geçerli kullanıcı bu dersliğin notlarını GÖRÜNTÜLEYEBİLİR mi?
+ * Yönetici ve sınıf öğretmeni tüm branşları gezebilir (salt okunur);
+ * branş öğretmeni yalnızca kendi dersliğini görür (ve yönetir).
+ */
+function sms_can_view_grades( $class_id ) {
+	if ( sms_is_manager() ) {
+		return true;
+	}
+	if ( ! current_user_can( 'sms_teach' ) ) {
+		return false;
+	}
+	$class = SMS_Classes::get( (int) $class_id );
+	if ( ! $class ) {
+		return false;
+	}
+	if ( (int) $class->teacher_id === get_current_user_id() ) {
+		return true;
+	}
+	return sms_is_class_teacher();
+}
+
 /** Ders (derslik bazlı) yoklama kategorisinin kimliği. */
 function sms_ders_category_id() {
 	$cat = SMS_Attendance_Types::get_category_by_slug( 'ders' );
@@ -228,7 +250,7 @@ function sms_view_header( $title, $subtitle = '', $show_term_picker = true ) {
 	if ( $show_term_picker && $terms ) {
 		echo '<form method="get" class="sms-term-picker">';
 		// Mevcut sayfa parametrelerini koru.
-		foreach ( array( 'page', 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'tab', 'rtype', 'group', 'grade', 'metric', 'from', 'to' ) as $keep ) {
+		foreach ( array( 'page', 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'tab', 'rtype', 'group', 'grade', 'metric', 'from', 'to', 'gview', 'subject', 'title', 'exam_date', 'exam_type' ) as $keep ) {
 			if ( isset( $_GET[ $keep ] ) ) {
 				echo '<input type="hidden" name="' . esc_attr( $keep ) . '" value="' . esc_attr( sanitize_text_field( wp_unslash( $_GET[ $keep ] ) ) ) . '">';
 			}
@@ -245,12 +267,26 @@ function sms_view_header( $title, $subtitle = '', $show_term_picker = true ) {
 		}
 		echo '</select></form>';
 	}
-	// WP arayüzü gizlenen kullanıcılar için hesap bilgisi + çıkış.
+	// WP arayüzü gizlenen kullanıcılar için profil bilgisi + çıkış (üst çubuk yerine geçer).
 	if ( function_exists( 'sms_is_limited_user' ) && sms_is_limited_user() ) {
-		$user = wp_get_current_user();
+		$user  = wp_get_current_user();
+		$roles = (array) $user->roles;
+		if ( in_array( 'sms_teacher', $roles, true ) ) {
+			$role_label = sms_is_class_teacher( $user->ID ) ? 'Sınıf Öğretmeni' : 'Öğretmen';
+		} elseif ( in_array( 'sms_parent', $roles, true ) ) {
+			$role_label = 'Veli';
+		} elseif ( in_array( 'sms_student', $roles, true ) ) {
+			$role_label = 'Öğrenci';
+		} else {
+			$role_label = '';
+		}
 		echo '<div class="sms-user-chip">';
-		echo sms_avatar( $user->display_name ); // phpcs:ignore
-		echo '<span class="sms-user-chip-name">' . esc_html( $user->display_name ) . '</span>';
+		echo get_avatar( $user->ID, 28, '', '', array( 'class' => 'sms-user-chip-img' ) ) ?: sms_avatar( $user->display_name ); // phpcs:ignore
+		echo '<span class="sms-user-chip-text"><span class="sms-user-chip-name">' . esc_html( $user->display_name ) . '</span>';
+		if ( $role_label ) {
+			echo '<span class="sms-user-chip-role">' . esc_html( $role_label ) . '</span>';
+		}
+		echo '</span>';
 		echo '<a class="sms-user-chip-logout" href="' . esc_url( wp_logout_url( home_url() ) ) . '" title="Çıkış Yap"><span class="dashicons dashicons-exit"></span></a>';
 		echo '</div>';
 	}

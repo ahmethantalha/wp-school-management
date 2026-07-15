@@ -90,6 +90,21 @@
 			});
 		}
 
+		/* ---------- Not girişi: sınav bilgileriyle önceden doldurulmuş liste indir ---------- */
+		var gradeTpl = document.querySelector('[data-sms-grade-template]');
+		if (gradeTpl) {
+			gradeTpl.addEventListener('click', function () {
+				var form = gradeTpl.closest('form');
+				if (!form) { return; }
+				var url = gradeTpl.getAttribute('data-url');
+				['title', 'exam_type', 'exam_date', 'max_score'].forEach(function (name) {
+					var field = form.querySelector('[name="' + name + '"]');
+					url += '&' + name + '=' + encodeURIComponent(field ? field.value : '');
+				});
+				window.location.href = url;
+			});
+		}
+
 		/* ---------- Öğretmen formu: sınıf öğretmeni seçilince sorumlu sınıflar ---------- */
 		var ctToggle = document.querySelector('[data-sms-ct-toggle]');
 		var ctGrades = document.querySelector('[data-sms-ct-grades]');

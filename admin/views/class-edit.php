@@ -108,7 +108,7 @@ $grades      = SMS_Students::grades_in_term( $term_id );
 				<div class="sms-card sms-mt">
 					<div class="sms-pad">
 						<a class="sms-btn sms-btn-ghost sms-btn-block" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&class_id=' . (int) $class_id . '&sms_term=' . $term_id ) ); ?>"><span class="dashicons dashicons-clipboard"></span> Yoklama Al</a>
-						<a class="sms-btn sms-btn-ghost sms-btn-block sms-mt-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-grades&class_id=' . (int) $class_id . '&sms_term=' . $term_id ) ); ?>"><span class="dashicons dashicons-welcome-write-blog"></span> Not Girişi</a>
+						<a class="sms-btn sms-btn-ghost sms-btn-block sms-mt-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-grades&gview=class&class_id=' . (int) $class_id . '&sms_term=' . $term_id ) ); ?>"><span class="dashicons dashicons-welcome-write-blog"></span> Notlar</a>
 					</div>
 				</div>
 

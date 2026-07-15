@@ -11,6 +11,70 @@ class SMS_Grades {
 		return $wpdb->prefix . 'sms_grades';
 	}
 
+	/** Dönemdeki branşlar (derslik ve not sayılarıyla). Boş branş 'Diğer' olarak döner. */
+	public static function subjects_for_term( $term_id ) {
+		global $wpdb;
+		return $wpdb->get_results( $wpdb->prepare(
+			"SELECT COALESCE(NULLIF(TRIM(c.subject), ''), 'Diğer') AS subject,
+				COUNT(DISTINCT c.id) AS class_count,
+				COUNT(g.id) AS grade_count
+			 FROM {$wpdb->prefix}sms_classes c
+			 LEFT JOIN " . self::table() . " g ON g.class_id = c.id
+			 WHERE c.term_id = %d
+			 GROUP BY COALESCE(NULLIF(TRIM(c.subject), ''), 'Diğer')
+			 ORDER BY subject",
+			$term_id
+		) );
+	}
+
+	/** Branşa ait derslikler (not sayılarıyla). $subject='Diğer' boş branşı da kapsar. */
+	public static function classes_for_subject( $term_id, $subject ) {
+		global $wpdb;
+		return $wpdb->get_results( $wpdb->prepare(
+			"SELECT c.*,
+				(SELECT COUNT(*) FROM {$wpdb->prefix}sms_class_students cs WHERE cs.class_id = c.id) AS student_count,
+				(SELECT COUNT(DISTINCT CONCAT(g.title,'|',COALESCE(g.exam_date,''),'|',COALESCE(g.exam_type,''))) FROM " . self::table() . " g WHERE g.class_id = c.id) AS exam_count
+			 FROM {$wpdb->prefix}sms_classes c
+			 WHERE c.term_id = %d AND COALESCE(NULLIF(TRIM(c.subject), ''), 'Diğer') = %s
+			 ORDER BY c.grade_level, c.name",
+			$term_id, $subject
+		) );
+	}
+
+	/** Dersliğin sınavları (başlık+tarih+tür bazında gruplu). */
+	public static function exams_for_class( $class_id ) {
+		global $wpdb;
+		return $wpdb->get_results( $wpdb->prepare(
+			"SELECT title, COALESCE(exam_type,'') AS exam_type, exam_date,
+				COUNT(*) AS cnt,
+				ROUND(AVG(score), 1) AS avg_score,
+				MAX(max_score) AS max_score,
+				ROUND(AVG(score / max_score * 100)) AS avg_rate
+			 FROM " . self::table() . '
+			 WHERE class_id = %d AND max_score > 0
+			 GROUP BY title, COALESCE(exam_type,\'\'), exam_date
+			 ORDER BY exam_date DESC, title',
+			$class_id
+		) );
+	}
+
+	/** Tek sınavın öğrenci bazında puanları. */
+	public static function exam_scores( $class_id, $title, $exam_date, $exam_type ) {
+		global $wpdb;
+		$sql    = 'SELECT g.*, s.first_name, s.last_name FROM ' . self::table() . " g
+			 INNER JOIN {$wpdb->prefix}sms_students s ON s.id = g.student_id
+			 WHERE g.class_id = %d AND g.title = %s AND COALESCE(g.exam_type,'') = %s";
+		$params = array( (int) $class_id, $title, (string) $exam_type );
+		if ( '' === (string) $exam_date ) {
+			$sql .= ' AND g.exam_date IS NULL';
+		} else {
+			$sql     .= ' AND g.exam_date = %s';
+			$params[] = $exam_date;
+		}
+		$sql .= ' ORDER BY g.score DESC, s.first_name';
+		return $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
+	}
+
 	/** Dersliğin sınav kayıtları (öğrenci adlarıyla). */
 	public static function for_class( $class_id ) {
 		global $wpdb;

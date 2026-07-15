@@ -38,7 +38,7 @@ foreach ( sms_users_by_role( 'sms_teacher' ) as $t ) {
 					<div class="sms-class-card-actions">
 						<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-classes&view=edit&class_id=' . (int) $c->id . '&sms_term=' . $term_id ) ); ?>">Yönet</a>
 						<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&class_id=' . (int) $c->id . '&sms_term=' . $term_id ) ); ?>">Yoklama</a>
-						<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-grades&class_id=' . (int) $c->id . '&sms_term=' . $term_id ) ); ?>">Notlar</a>
+						<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-grades&gview=class&class_id=' . (int) $c->id . '&sms_term=' . $term_id ) ); ?>">Notlar</a>
 					</div>
 				</div>
 			<?php endforeach; ?>
