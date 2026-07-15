@@ -66,6 +66,20 @@ $tabs = array(
 	'not'        => array( 'Not Analizi', 'dashicons-welcome-write-blog' ),
 	'genel'      => array( 'Genel Başarı', 'dashicons-chart-bar' ),
 );
+
+// Geçerli filtrelerle CSV dışa aktarma bağlantısı (nonce'lu; kişisel veri içerir).
+$export_url = wp_nonce_url( add_query_arg( array(
+	'action'   => 'sms_export_report',
+	'rtype'    => $rtype,
+	'group'    => $group,
+	'grade'    => $grade,
+	'cat'      => $cat_id,
+	'metric'   => $metric,
+	'from'     => $from,
+	'to'       => $to,
+	'sms_term' => $term_id,
+), admin_url( 'admin-post.php' ) ), 'sms_export_report' );
+$export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $export_url ) . '"><span class="dashicons dashicons-download"></span> CSV İndir</a>';
 ?>
 <div class="wrap sms-wrap">
 	<?php sms_view_header( 'Raporlar', 'Yoklama, alışkanlık ve not verilerini öğrenci ya da sınıf bazında analiz edin. Bireysel karneler için Karneler sayfasını kullanın.' ); ?>
@@ -169,7 +183,7 @@ $tabs = array(
 		<div class="sms-card sms-mt">
 			<div class="sms-card-head">
 				<h2><?php echo esc_html( ( $category ? $category->name : '' ) . ' — ' . $metric_labels[ $metric ] ); ?></h2>
-				<span class="sms-muted"><?php echo esc_html( sms_format_date( $from ) . ' – ' . sms_format_date( $to ) ); ?></span>
+				<div class="sms-head-tools"><span class="sms-muted"><?php echo esc_html( sms_format_date( $from ) . ' – ' . sms_format_date( $to ) ); ?></span><?php echo $matrix['rows'] ? $export_btn : ''; // phpcs:ignore ?></div>
 			</div>
 			<?php if ( $matrix['rows'] ) : ?>
 				<div class="sms-table-scroll">
@@ -255,7 +269,7 @@ $tabs = array(
 		}
 		?>
 		<div class="sms-card sms-mt">
-			<div class="sms-card-head"><h2>Alışkanlık Tamamlama Oranları</h2><span class="sms-muted">Dönem geneli</span></div>
+			<div class="sms-card-head"><h2>Alışkanlık Tamamlama Oranları</h2><div class="sms-head-tools"><span class="sms-muted">Dönem geneli</span><?php echo ( $matrix['rows'] && $habits ) ? $export_btn : ''; // phpcs:ignore ?></div></div>
 			<?php if ( $matrix['rows'] && $habits ) : ?>
 				<div class="sms-table-scroll">
 				<table class="sms-table sms-matrix">
@@ -349,7 +363,7 @@ $tabs = array(
 		}
 		?>
 		<div class="sms-card sms-mt">
-			<div class="sms-card-head"><h2>Not Ortalamaları (%)</h2><span class="sms-muted">Derslik bazında, dönem geneli</span></div>
+			<div class="sms-card-head"><h2>Not Ortalamaları (%)</h2><div class="sms-head-tools"><span class="sms-muted">Derslik bazında, dönem geneli</span><?php echo ( $matrix['rows'] && $classes ) ? $export_btn : ''; // phpcs:ignore ?></div></div>
 			<?php if ( $matrix['rows'] && $classes ) : ?>
 				<div class="sms-table-scroll">
 				<table class="sms-table sms-matrix">
@@ -424,7 +438,7 @@ $tabs = array(
 			$summary = SMS_Reports::grade_level_summary( $term_id, $student_ids );
 			?>
 			<div class="sms-card sms-mt">
-				<div class="sms-card-head"><h2>Sınıf Bazında Genel Özet</h2></div>
+				<div class="sms-card-head"><h2>Sınıf Bazında Genel Özet</h2><?php echo $summary ? $export_btn : ''; // phpcs:ignore ?></div>
 				<?php if ( $summary ) : ?>
 					<div class="sms-table-scroll">
 					<table class="sms-table">
@@ -455,7 +469,7 @@ $tabs = array(
 			}
 			?>
 			<div class="sms-card sms-mt">
-				<div class="sms-card-head"><h2>Genel Başarı Sıralaması</h2><span class="sms-muted">Bileşik skor: %40 devam + %40 alışkanlık + %20 not</span></div>
+				<div class="sms-card-head"><h2>Genel Başarı Sıralaması</h2><div class="sms-head-tools"><span class="sms-muted">Bileşik skor: %40 devam + %40 alışkanlık + %20 not</span><?php echo $scores ? $export_btn : ''; // phpcs:ignore ?></div></div>
 				<?php if ( $scores ) : ?>
 					<div class="sms-table-scroll">
 					<table class="sms-table">

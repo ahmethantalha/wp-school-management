@@ -45,6 +45,258 @@ class SMS_Actions {
 		// CSV şablon indirme (GET, nonce URL ile).
 		add_action( 'admin_post_sms_import_template', array( __CLASS__, 'handle_import_template' ) );
 		add_action( 'admin_post_sms_grade_template', array( __CLASS__, 'handle_grade_template' ) );
+		add_action( 'admin_post_sms_export_report', array( __CLASS__, 'handle_export_report' ) );
+	}
+
+	/**
+	 * CSV çıktısı gönderir. Kişisel veri içerdiğinden nonce + yetki şarttır;
+	 * formül enjeksiyonuna karşı tüm hücreler etkisizleştirilir.
+	 */
+	private static function send_csv( $filename, array $lines ) {
+		nocache_headers();
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename=' . $filename );
+		echo "\xEF\xBB\xBF";
+		foreach ( $lines as $row ) {
+			$cells = array_map( function ( $v ) {
+				$v = (string) $v;
+				// CSV/Excel formül enjeksiyonunu engelle.
+				if ( '' !== $v && in_array( $v[0], array( '=', '+', '-', '@' ), true ) ) {
+					$v = "'" . $v;
+				}
+				return '"' . str_replace( '"', '""', $v ) . '"';
+			}, $row );
+			echo implode( ';', $cells ) . "\r\n"; // phpcs:ignore
+		}
+		exit;
+	}
+
+	/** Raporlar sayfasındaki analiz tablolarını CSV olarak dışa aktarır. */
+	public static function handle_export_report() {
+		if ( ! current_user_can( 'sms_teach' ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'sms_export_report' ) ) {
+			wp_die( 'Yetkisiz istek.' );
+		}
+
+		$term_id = sms_current_term_id();
+		if ( ! $term_id ) {
+			wp_die( 'Aktif dönem yok.' );
+		}
+
+		$rtype  = isset( $_GET['rtype'] ) ? sanitize_key( $_GET['rtype'] ) : 'yoklama';
+		$group  = isset( $_GET['group'] ) && 'sinif' === $_GET['group'] ? 'sinif' : 'ogrenci';
+		$grade  = isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
+		$metric = isset( $_GET['metric'] ) ? sanitize_key( $_GET['metric'] ) : 'rate';
+		if ( ! in_array( $metric, array( 'rate', 'present', 'absent', 'late', 'excused' ), true ) ) {
+			$metric = 'rate';
+		}
+		$cat_id = isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
+		$from   = isset( $_GET['from'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $_GET['from'] ) ? sanitize_text_field( wp_unslash( $_GET['from'] ) ) : gmdate( 'Y-m-d', strtotime( '-29 days', current_time( 'timestamp' ) ) );
+		$to     = isset( $_GET['to'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $_GET['to'] ) ? sanitize_text_field( wp_unslash( $_GET['to'] ) ) : current_time( 'Y-m-d' );
+
+		// Öğretmenler yalnızca sorumlu oldukları öğrencilerin verisini dışa aktarabilir.
+		$student_ids = sms_is_teacher() ? sms_teacher_student_ids() : null;
+
+		$term          = SMS_Terms::get( $term_id );
+		$metric_labels = array( 'rate' => 'Katılım Oranı' ) + sms_attendance_statuses();
+		$row_label     = 'sinif' === $group ? 'Sınıf' : 'Öğrenci';
+		$lines         = array();
+
+		$empty_c = array( 'present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0, 'total' => 0, 'rate' => null );
+		$calc_c  = function ( $c ) {
+			if ( $c['total'] > 0 ) {
+				$c['rate'] = round( ( $c['present'] + 0.5 * $c['late'] ) / $c['total'] * 100 );
+			}
+			return $c;
+		};
+		$fmt_att = function ( $cell ) use ( $metric ) {
+			if ( ! $cell || $cell['total'] < 1 ) {
+				return '';
+			}
+			$v = 'rate' === $metric ? (int) $cell['rate'] : (int) round( $cell[ $metric ] / $cell['total'] * 100 );
+			$n = 'rate' === $metric ? $cell['present'] : $cell[ $metric ];
+			return $v . '% (' . $n . '/' . $cell['total'] . ')';
+		};
+
+		if ( 'yoklama' === $rtype ) {
+			$category = SMS_Attendance_Types::get_category( $cat_id );
+			if ( ! $category ) {
+				wp_die( 'Geçersiz kategori.' );
+			}
+			$matrix   = SMS_Reports::attendance_matrix( $term_id, $cat_id, $from, $to, 'sinif' === $group ? 0 : $grade, $student_ids );
+			$sessions = $matrix['sessions'];
+
+			$lines[] = array( $category->name . ' Yoklaması — ' . $metric_labels[ $metric ] . ' — ' . $from . ' / ' . $to . ' — ' . ( $term ? $term->name : '' ) );
+			$header  = array( $row_label );
+			if ( 'ogrenci' === $group ) {
+				$header[] = 'Sınıf';
+			}
+			foreach ( $sessions as $s ) {
+				$header[] = $s->name;
+			}
+			$header[] = 'Genel';
+			$lines[]  = $header;
+
+			if ( 'sinif' === $group ) {
+				$agg = array();
+				foreach ( $matrix['rows'] as $row ) {
+					$g = (int) ( $row['student']->grade_level ?? 0 );
+					if ( ! isset( $agg[ $g ] ) ) {
+						$agg[ $g ] = array( 'count' => 0, 'cells' => array(), 'overall' => $empty_c );
+					}
+					$agg[ $g ]['count']++;
+					foreach ( $sessions as $s ) {
+						$sid = (int) $s->id;
+						if ( ! isset( $agg[ $g ]['cells'][ $sid ] ) ) {
+							$agg[ $g ]['cells'][ $sid ] = $empty_c;
+						}
+						foreach ( array( 'present', 'absent', 'late', 'excused', 'total' ) as $k ) {
+							$agg[ $g ]['cells'][ $sid ][ $k ] += $row['cells'][ $sid ][ $k ];
+							$agg[ $g ]['overall'][ $k ]       += $row['cells'][ $sid ][ $k ];
+						}
+					}
+				}
+				ksort( $agg );
+				foreach ( $agg as $g => $gr ) {
+					$line = array( sms_grade_label( $g ) . ' (' . $gr['count'] . ' öğrenci)' );
+					foreach ( $sessions as $s ) {
+						$line[] = $fmt_att( $calc_c( $gr['cells'][ (int) $s->id ] ) );
+					}
+					$line[]  = $fmt_att( $calc_c( $gr['overall'] ) );
+					$lines[] = $line;
+				}
+			} else {
+				foreach ( $matrix['rows'] as $row ) {
+					$st   = $row['student'];
+					$line = array( sms_student_name( $st ), isset( $st->grade_level ) ? sms_grade_label( $st->grade_level ) : '' );
+					foreach ( $sessions as $s ) {
+						$line[] = $fmt_att( $row['cells'][ (int) $s->id ] );
+					}
+					$line[]  = $fmt_att( $row['overall'] );
+					$lines[] = $line;
+				}
+				$total_line = array( 'TOPLU (tüm liste)', '' );
+				foreach ( $sessions as $s ) {
+					$total_line[] = $fmt_att( $matrix['totals'][ (int) $s->id ] ?? null );
+				}
+				$total_line[] = $fmt_att( $matrix['totals']['overall'] ?? null );
+				$lines[]      = $total_line;
+			}
+		} elseif ( 'aliskanlik' === $rtype || 'not' === $rtype ) {
+			$is_habit = 'aliskanlik' === $rtype;
+			$matrix   = $is_habit
+				? SMS_Reports::habit_matrix( $term_id, 'sinif' === $group ? 0 : $grade, $student_ids )
+				: SMS_Reports::grade_matrix( $term_id, 'sinif' === $group ? 0 : $grade, $student_ids );
+			$cols = $is_habit ? $matrix['habits'] : $matrix['classes'];
+
+			$lines[] = array( ( $is_habit ? 'Alışkanlık Tamamlama' : 'Not Ortalamaları' ) . ' — ' . ( $term ? $term->name : '' ) );
+			$header  = array( $row_label );
+			if ( 'ogrenci' === $group ) {
+				$header[] = 'Sınıf';
+			}
+			foreach ( $cols as $c ) {
+				$header[] = $c->name;
+			}
+			$header[] = 'Genel';
+			$lines[]  = $header;
+
+			$fmt = function ( $cell ) use ( $is_habit ) {
+				if ( ! $cell ) {
+					return '';
+				}
+				return (int) $cell['rate'] . '% (' . ( $is_habit ? $cell['logs'] . ' kayıt' : $cell['exams'] . ' sınav' ) . ')';
+			};
+
+			if ( 'sinif' === $group ) {
+				$agg = array();
+				foreach ( $matrix['rows'] as $row ) {
+					$g = (int) ( $row['student']->grade_level ?? 0 );
+					if ( ! isset( $agg[ $g ] ) ) {
+						$agg[ $g ] = array( 'count' => 0, 'sum' => array(), 'cnt' => array() );
+					}
+					$agg[ $g ]['count']++;
+					foreach ( $cols as $c ) {
+						$cell = $row['cells'][ (int) $c->id ];
+						if ( $cell ) {
+							$agg[ $g ]['sum'][ (int) $c->id ] = ( $agg[ $g ]['sum'][ (int) $c->id ] ?? 0 ) + $cell['rate'];
+							$agg[ $g ]['cnt'][ (int) $c->id ] = ( $agg[ $g ]['cnt'][ (int) $c->id ] ?? 0 ) + 1;
+						}
+					}
+				}
+				ksort( $agg );
+				foreach ( $agg as $g => $gr ) {
+					$line  = array( sms_grade_label( $g ) . ' (' . $gr['count'] . ' öğrenci)' );
+					$g_sum = 0;
+					$g_cnt = 0;
+					foreach ( $cols as $c ) {
+						$cid = (int) $c->id;
+						if ( isset( $gr['cnt'][ $cid ] ) ) {
+							$v      = (int) round( $gr['sum'][ $cid ] / $gr['cnt'][ $cid ] );
+							$line[] = $v . '%';
+							$g_sum += $v;
+							$g_cnt++;
+						} else {
+							$line[] = '';
+						}
+					}
+					$line[]  = $g_cnt ? (int) round( $g_sum / $g_cnt ) . '%' : '';
+					$lines[] = $line;
+				}
+			} else {
+				foreach ( $matrix['rows'] as $row ) {
+					$st   = $row['student'];
+					$line = array( sms_student_name( $st ), isset( $st->grade_level ) ? sms_grade_label( $st->grade_level ) : '' );
+					foreach ( $cols as $c ) {
+						$line[] = $fmt( $row['cells'][ (int) $c->id ] );
+					}
+					$line[]  = null !== $row['overall'] ? $row['overall'] . '%' : '';
+					$lines[] = $line;
+				}
+				$total_line = array( 'TOPLU (tüm liste)', '' );
+				foreach ( $cols as $c ) {
+					$v            = $matrix['totals'][ (int) $c->id ];
+					$total_line[] = null !== $v ? $v . '%' : '';
+				}
+				$total_line[] = '';
+				$lines[]      = $total_line;
+			}
+		} else { // genel
+			if ( 'sinif' === $group ) {
+				$lines[] = array( 'Sınıf Bazında Genel Özet — ' . ( $term ? $term->name : '' ) );
+				$lines[] = array( 'Sınıf', 'Öğrenci Sayısı', 'Devam %', 'Alışkanlık %', 'Not Ort. %' );
+				foreach ( SMS_Reports::grade_level_summary( $term_id, $student_ids ) as $row ) {
+					$lines[] = array(
+						sms_grade_label( $row['grade'] ),
+						$row['count'],
+						null !== $row['att'] ? $row['att'] : '',
+						null !== $row['habit'] ? $row['habit'] : '',
+						null !== $row['grade_avg'] ? $row['grade_avg'] : '',
+					);
+				}
+			} else {
+				$scores = SMS_Reports::student_scores( $term_id, $student_ids );
+				if ( $grade ) {
+					$scores = array_values( array_filter( $scores, function ( $r ) use ( $grade ) {
+						return (int) ( $r['student']->grade_level ?? 0 ) === $grade;
+					} ) );
+				}
+				$lines[] = array( 'Genel Başarı Sıralaması — ' . ( $term ? $term->name : '' ) );
+				$lines[] = array( 'Sıra', 'Öğrenci', 'Sınıf', 'Devam %', 'Alışkanlık %', 'Not Ort. %', 'Bileşik Skor' );
+				foreach ( $scores as $i => $row ) {
+					$s       = $row['student'];
+					$lines[] = array(
+						$i + 1,
+						sms_student_name( $s ),
+						isset( $s->grade_level ) ? sms_grade_label( $s->grade_level ) : '',
+						null !== $row['attendance'] ? $row['attendance'] : '',
+						null !== $row['habit'] ? $row['habit'] : '',
+						null !== $row['grade'] ? $row['grade'] : '',
+						$row['score'],
+					);
+				}
+			}
+		}
+
+		self::send_csv( 'rapor-' . $rtype . '-' . $group . '-' . current_time( 'Y-m-d' ) . '.csv', $lines );
 	}
 
 	private static function guard( $action, $cap ) {

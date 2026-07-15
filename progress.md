@@ -148,6 +148,9 @@ Ayarlar `wp_options` içinde `sms_settings` anahtarında tutulur (kurum adı, so
 - [x] **Not Analizi**: öğrenci × derslik ortalaması matrisi + sınıf ortalamaları.
 - [x] **Genel Başarı**: bileşik skor sıralaması / sınıf bazında özet.
 - [x] Bireysel karneler ayrı **Karneler** sayfasına taşındı (`admin/views/cards.php`); karne görünümü aynen korunur.
+- [x] **CSV dışa aktarma**: her analiz tablosunda "CSV İndir" butonu — geçerli filtrelerle (kategori, tarih aralığı,
+      metrik, gruplama, sınıf) birebir aynı tabloyu indirir. Nonce + yetki korumalı; öğretmen yalnızca kendi
+      öğrencilerini dışa aktarabilir; hücreler Excel formül enjeksiyonuna karşı etkisizleştirilir.
 
 ### Güvenli Toplu Not Yükleme — `admin/views/grades.php`
 - [x] 1. adım: sınav adı/tür/tarih/tam puan girilir → **önceden doldurulmuş öğrenci listesi (CSV)** indirilir
