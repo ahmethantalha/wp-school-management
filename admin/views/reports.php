@@ -26,6 +26,21 @@ if ( ! in_array( $metric, array( 'rate', 'present', 'absent', 'late', 'excused' 
 $namaz  = SMS_Attendance_Types::get_category_by_slug( 'namaz' );
 $cat_id = isset( $_GET['cat'] ) ? (int) $_GET['cat'] : ( $namaz ? (int) $namaz->id : 0 );
 
+// Oturum (vakit) odağı: 0 = tüm oturumlar (matris), aksi halde tek vakte kırılım.
+$cat_sessions   = $cat_id ? SMS_Attendance_Types::sessions( $cat_id ) : array();
+$valid_sess_ids = array_map( function ( $s ) { return (int) $s->id; }, $cat_sessions );
+$sess_id        = isset( $_GET['rsession'] ) ? (int) $_GET['rsession'] : 0;
+if ( $sess_id && ! in_array( $sess_id, $valid_sess_ids, true ) ) {
+	$sess_id = 0; // kategoriye ait olmayan (bayat) oturum seçimini sıfırla.
+}
+$focus_session = null;
+foreach ( $cat_sessions as $s ) {
+	if ( (int) $s->id === $sess_id ) {
+		$focus_session = $s;
+		break;
+	}
+}
+
 $default_from = $term && $term->start_date && '0000-00-00' !== $term->start_date
 	? $term->start_date
 	: gmdate( 'Y-m-d', strtotime( '-29 days', current_time( 'timestamp' ) ) );
@@ -74,6 +89,7 @@ $export_url = wp_nonce_url( add_query_arg( array(
 	'group'    => $group,
 	'grade'    => $grade,
 	'cat'      => $cat_id,
+	'rsession' => $sess_id,
 	'metric'   => $metric,
 	'from'     => $from,
 	'to'       => $to,
@@ -120,11 +136,23 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 							<option value="<?php echo (int) $c->id; ?>" <?php selected( $cat_id, (int) $c->id ); ?>><?php echo esc_html( $c->name ); ?></option>
 						<?php endforeach; ?>
 					</select>
-					<select name="metric">
-						<?php foreach ( $metric_labels as $mk => $ml ) : ?>
-							<option value="<?php echo esc_attr( $mk ); ?>" <?php selected( $metric, $mk ); ?>><?php echo esc_html( $ml ); ?> %</option>
-						<?php endforeach; ?>
-					</select>
+					<?php if ( count( $cat_sessions ) > 1 ) : ?>
+						<select name="rsession">
+							<option value="0" <?php selected( $sess_id, 0 ); ?>>Tüm vakitler (matris)</option>
+							<?php foreach ( $cat_sessions as $s ) : ?>
+								<option value="<?php echo (int) $s->id; ?>" <?php selected( $sess_id, (int) $s->id ); ?>><?php echo esc_html( $s->name ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					<?php endif; ?>
+					<?php if ( ! $focus_session ) : ?>
+						<select name="metric">
+							<?php foreach ( $metric_labels as $mk => $ml ) : ?>
+								<option value="<?php echo esc_attr( $mk ); ?>" <?php selected( $metric, $mk ); ?>><?php echo esc_html( $ml ); ?> %</option>
+							<?php endforeach; ?>
+						</select>
+					<?php else : ?>
+						<input type="hidden" name="metric" value="<?php echo esc_attr( $metric ); ?>">
+					<?php endif; ?>
 					<label class="sms-muted">Aralık</label>
 					<input type="date" name="from" value="<?php echo esc_attr( $from ); ?>">
 					<input type="date" name="to" value="<?php echo esc_attr( $to ); ?>">
@@ -180,12 +208,67 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 			}
 		}
 		?>
+		<?php
+		// Odak (tek vakit) tablosunda durum hücrelerini basan yardımcı.
+		$focus_cells = function ( $c ) {
+			$out = '';
+			foreach ( array( 'present', 'absent', 'late', 'excused' ) as $k ) {
+				$out .= '<td class="sms-center">' . ( $c['total'] > 0 ? (int) $c[ $k ] : '—' ) . '</td>';
+			}
+			$rate = $c['total'] > 0 ? (int) $c['rate'] : null;
+			$out .= '<td class="sms-center"><span class="sms-score sms-score-big ' . esc_attr( sms_rate_class( $rate ) ) . '">'
+				. ( null !== $rate ? $rate . '%' : '—' ) . '</span>'
+				. ( $c['total'] > 0 ? '<span class="sms-cell-sub">' . (int) $c['total'] . ' kayıt</span>' : '' ) . '</td>';
+			return $out;
+		};
+		?>
 		<div class="sms-card sms-mt">
 			<div class="sms-card-head">
-				<h2><?php echo esc_html( ( $category ? $category->name : '' ) . ' — ' . $metric_labels[ $metric ] ); ?></h2>
+				<h2><?php echo esc_html( ( $category ? $category->name : '' ) . ( $focus_session ? ' — ' . $focus_session->name . ' vakti' : ' — ' . $metric_labels[ $metric ] ) ); ?></h2>
 				<div class="sms-head-tools"><span class="sms-muted"><?php echo esc_html( sms_format_date( $from ) . ' – ' . sms_format_date( $to ) ); ?></span><?php echo $matrix['rows'] ? $export_btn : ''; // phpcs:ignore ?></div>
 			</div>
-			<?php if ( $matrix['rows'] ) : ?>
+			<?php if ( $matrix['rows'] && $focus_session ) : ?>
+				<?php // ---- ODAK: tek vakit için tam durum kırılımı ---- ?>
+				<div class="sms-table-scroll">
+				<table class="sms-table sms-matrix">
+					<thead>
+						<tr>
+							<th><?php echo 'sinif' === $group ? 'Sınıf' : 'Öğrenci'; ?></th>
+							<th class="sms-center">Geldi</th>
+							<th class="sms-center">Gelmedi</th>
+							<th class="sms-center">Geç</th>
+							<th class="sms-center">İzinli</th>
+							<th class="sms-center">Katılım</th>
+						</tr>
+					</thead>
+					<tbody>
+					<?php if ( 'sinif' === $group ) : ?>
+						<?php foreach ( $grade_rows as $g => $gr ) : ?>
+							<tr>
+								<td><strong><?php echo esc_html( sms_grade_label( $g ) ); ?></strong> <span class="sms-muted">(<?php echo (int) $gr['count']; ?> öğrenci)</span></td>
+								<?php echo $focus_cells( $gr['cells'][ $sess_id ] ); // phpcs:ignore ?>
+							</tr>
+						<?php endforeach; ?>
+					<?php else : ?>
+						<?php foreach ( $matrix['rows'] as $row ) : $st = $row['student']; ?>
+							<tr>
+								<td class="sms-name-cell">
+									<?php echo sms_avatar( sms_student_name( $st ) ); // phpcs:ignore ?>
+									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $st->id . '&sms_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( sms_student_name( $st ) ); ?></strong></a>
+									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( sms_grade_label( $st->grade_level ) ) : ''; ?></span></div>
+								</td>
+								<?php echo $focus_cells( $row['cells'][ $sess_id ] ); // phpcs:ignore ?>
+							</tr>
+						<?php endforeach; ?>
+						<tr class="sms-total-row">
+							<td><strong>Toplu (tüm liste)</strong></td>
+							<?php echo $focus_cells( $matrix['totals'][ $sess_id ] ?? array( 'present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0, 'total' => 0, 'rate' => null ) ); // phpcs:ignore ?>
+						</tr>
+					<?php endif; ?>
+					</tbody>
+				</table>
+				</div>
+			<?php elseif ( $matrix['rows'] ) : ?>
 				<div class="sms-table-scroll">
 				<table class="sms-table sms-matrix">
 					<thead>

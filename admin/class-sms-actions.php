@@ -125,61 +125,117 @@ class SMS_Actions {
 			$matrix   = SMS_Reports::attendance_matrix( $term_id, $cat_id, $from, $to, 'sinif' === $group ? 0 : $grade, $student_ids );
 			$sessions = $matrix['sessions'];
 
-			$lines[] = array( $category->name . ' Yoklaması — ' . $metric_labels[ $metric ] . ' — ' . $from . ' / ' . $to . ' — ' . ( $term ? $term->name : '' ) );
-			$header  = array( $row_label );
-			if ( 'ogrenci' === $group ) {
-				$header[] = 'Sınıf';
-			}
+			// Oturum odağı: geçerli tek bir vakit seçildiyse tam durum kırılımı dışa aktarılır.
+			$sess_id       = isset( $_GET['rsession'] ) ? (int) $_GET['rsession'] : 0;
+			$focus_session = null;
 			foreach ( $sessions as $s ) {
-				$header[] = $s->name;
-			}
-			$header[] = 'Genel';
-			$lines[]  = $header;
-
-			if ( 'sinif' === $group ) {
-				$agg = array();
-				foreach ( $matrix['rows'] as $row ) {
-					$g = (int) ( $row['student']->grade_level ?? 0 );
-					if ( ! isset( $agg[ $g ] ) ) {
-						$agg[ $g ] = array( 'count' => 0, 'cells' => array(), 'overall' => $empty_c );
-					}
-					$agg[ $g ]['count']++;
-					foreach ( $sessions as $s ) {
-						$sid = (int) $s->id;
-						if ( ! isset( $agg[ $g ]['cells'][ $sid ] ) ) {
-							$agg[ $g ]['cells'][ $sid ] = $empty_c;
-						}
-						foreach ( array( 'present', 'absent', 'late', 'excused', 'total' ) as $k ) {
-							$agg[ $g ]['cells'][ $sid ][ $k ] += $row['cells'][ $sid ][ $k ];
-							$agg[ $g ]['overall'][ $k ]       += $row['cells'][ $sid ][ $k ];
-						}
-					}
+				if ( (int) $s->id === $sess_id ) {
+					$focus_session = $s;
+					break;
 				}
-				ksort( $agg );
-				foreach ( $agg as $g => $gr ) {
-					$line = array( sms_grade_label( $g ) . ' (' . $gr['count'] . ' öğrenci)' );
-					foreach ( $sessions as $s ) {
-						$line[] = $fmt_att( $calc_c( $gr['cells'][ (int) $s->id ] ) );
+			}
+
+			if ( $focus_session ) {
+				$fmt_focus = function ( $c ) {
+					if ( ! $c || $c['total'] < 1 ) {
+						return array( '', '', '', '', '' );
 					}
-					$line[]  = $fmt_att( $calc_c( $gr['overall'] ) );
-					$lines[] = $line;
+					return array( (int) $c['present'], (int) $c['absent'], (int) $c['late'], (int) $c['excused'], (int) $c['rate'] . '%' );
+				};
+
+				$lines[] = array( $category->name . ' — ' . $focus_session->name . ' vakti — ' . $from . ' / ' . $to . ' — ' . ( $term ? $term->name : '' ) );
+				$header  = array( $row_label );
+				if ( 'ogrenci' === $group ) {
+					$header[] = 'Sınıf';
+				}
+				$lines[] = array_merge( $header, array( 'Geldi', 'Gelmedi', 'Geç', 'İzinli', 'Katılım %' ) );
+
+				if ( 'sinif' === $group ) {
+					$agg = array();
+					foreach ( $matrix['rows'] as $row ) {
+						$g = (int) ( $row['student']->grade_level ?? 0 );
+						if ( ! isset( $agg[ $g ] ) ) {
+							$agg[ $g ] = array( 'count' => 0, 'cell' => $empty_c );
+						}
+						$agg[ $g ]['count']++;
+						foreach ( array( 'present', 'absent', 'late', 'excused', 'total' ) as $k ) {
+							$agg[ $g ]['cell'][ $k ] += $row['cells'][ $sess_id ][ $k ];
+						}
+					}
+					ksort( $agg );
+					foreach ( $agg as $g => $gr ) {
+						$lines[] = array_merge(
+							array( sms_grade_label( $g ) . ' (' . $gr['count'] . ' öğrenci)' ),
+							$fmt_focus( $calc_c( $gr['cell'] ) )
+						);
+					}
+				} else {
+					foreach ( $matrix['rows'] as $row ) {
+						$st      = $row['student'];
+						$lines[] = array_merge(
+							array( sms_student_name( $st ), isset( $st->grade_level ) ? sms_grade_label( $st->grade_level ) : '' ),
+							$fmt_focus( $row['cells'][ $sess_id ] )
+						);
+					}
+					$lines[] = array_merge( array( 'TOPLU (tüm liste)', '' ), $fmt_focus( $matrix['totals'][ $sess_id ] ?? null ) );
 				}
 			} else {
-				foreach ( $matrix['rows'] as $row ) {
-					$st   = $row['student'];
-					$line = array( sms_student_name( $st ), isset( $st->grade_level ) ? sms_grade_label( $st->grade_level ) : '' );
-					foreach ( $sessions as $s ) {
-						$line[] = $fmt_att( $row['cells'][ (int) $s->id ] );
-					}
-					$line[]  = $fmt_att( $row['overall'] );
-					$lines[] = $line;
+				$lines[] = array( $category->name . ' Yoklaması — ' . $metric_labels[ $metric ] . ' — ' . $from . ' / ' . $to . ' — ' . ( $term ? $term->name : '' ) );
+				$header  = array( $row_label );
+				if ( 'ogrenci' === $group ) {
+					$header[] = 'Sınıf';
 				}
-				$total_line = array( 'TOPLU (tüm liste)', '' );
 				foreach ( $sessions as $s ) {
-					$total_line[] = $fmt_att( $matrix['totals'][ (int) $s->id ] ?? null );
+					$header[] = $s->name;
 				}
-				$total_line[] = $fmt_att( $matrix['totals']['overall'] ?? null );
-				$lines[]      = $total_line;
+				$header[] = 'Genel';
+				$lines[]  = $header;
+
+				if ( 'sinif' === $group ) {
+					$agg = array();
+					foreach ( $matrix['rows'] as $row ) {
+						$g = (int) ( $row['student']->grade_level ?? 0 );
+						if ( ! isset( $agg[ $g ] ) ) {
+							$agg[ $g ] = array( 'count' => 0, 'cells' => array(), 'overall' => $empty_c );
+						}
+						$agg[ $g ]['count']++;
+						foreach ( $sessions as $s ) {
+							$sid = (int) $s->id;
+							if ( ! isset( $agg[ $g ]['cells'][ $sid ] ) ) {
+								$agg[ $g ]['cells'][ $sid ] = $empty_c;
+							}
+							foreach ( array( 'present', 'absent', 'late', 'excused', 'total' ) as $k ) {
+								$agg[ $g ]['cells'][ $sid ][ $k ] += $row['cells'][ $sid ][ $k ];
+								$agg[ $g ]['overall'][ $k ]       += $row['cells'][ $sid ][ $k ];
+							}
+						}
+					}
+					ksort( $agg );
+					foreach ( $agg as $g => $gr ) {
+						$line = array( sms_grade_label( $g ) . ' (' . $gr['count'] . ' öğrenci)' );
+						foreach ( $sessions as $s ) {
+							$line[] = $fmt_att( $calc_c( $gr['cells'][ (int) $s->id ] ) );
+						}
+						$line[]  = $fmt_att( $calc_c( $gr['overall'] ) );
+						$lines[] = $line;
+					}
+				} else {
+					foreach ( $matrix['rows'] as $row ) {
+						$st   = $row['student'];
+						$line = array( sms_student_name( $st ), isset( $st->grade_level ) ? sms_grade_label( $st->grade_level ) : '' );
+						foreach ( $sessions as $s ) {
+							$line[] = $fmt_att( $row['cells'][ (int) $s->id ] );
+						}
+						$line[]  = $fmt_att( $row['overall'] );
+						$lines[] = $line;
+					}
+					$total_line = array( 'TOPLU (tüm liste)', '' );
+					foreach ( $sessions as $s ) {
+						$total_line[] = $fmt_att( $matrix['totals'][ (int) $s->id ] ?? null );
+					}
+					$total_line[] = $fmt_att( $matrix['totals']['overall'] ?? null );
+					$lines[]      = $total_line;
+				}
 			}
 		} elseif ( 'aliskanlik' === $rtype || 'not' === $rtype ) {
 			$is_habit = 'aliskanlik' === $rtype;

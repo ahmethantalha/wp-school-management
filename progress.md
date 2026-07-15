@@ -186,6 +186,15 @@ Ayarlar `wp_options` içinde `sms_settings` anahtarında tutulur (kurum adı, so
   — böylece 4 seçenek yan yana sığıyor, alt alta kaymıyor. Not alanı varsayılan gizli; küçük bir
   kalem ikonlu düğmeyle açılıp kapanıyor (zaten not girilmişse otomatik açık gelir).
 
+### Sürüm 1.2.3 — Yoklama Raporunda Oturum (Vakit) Odağı
+- [x] Yoklama Analizi'ne **oturum seçici** eklendi (çok oturumlu kategorilerde). Varsayılan "Tüm vakitler (matris)";
+  bir vakit seçilince (ör. yalnız *Sabah*) o vakit için **tam durum kırılımı** gösterilir: her öğrenci/sınıf için
+  Geldi · Gelmedi · Geç · İzinli sayıları + Katılım %. En altta "Toplu (tüm liste)" satırı.
+- [x] Öğrenci ve sınıf bazında gruplama, sınıf filtresi ve tarih aralığı odak modunda da geçerli.
+- [x] CSV dışa aktarma oturum odağını da destekler (odaktayken vakit bazlı durum kırılımı CSV'si iner).
+- [x] Genel mantık: her yoklama türü kategorisinin alt oturumları (namazda 5 vakit, ya da yöneticinin eklediği
+  herhangi bir kategori/oturum) ayrı ayrı izlenebilir.
+
 ### Güvenlik Notları (kişisel veri)
 - Tüm formlar nonce + capability; tüm okuma/yazma yolları **kayıt düzeyinde** denetlenir
   (öğretmen yalnızca kendi öğrencileri/derslikleri, veli yalnızca kendi çocuğu).

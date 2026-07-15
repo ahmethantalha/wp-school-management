@@ -260,7 +260,7 @@ function sms_view_header( $title, $subtitle = '', $show_term_picker = true ) {
 	if ( $show_term_picker && $terms ) {
 		echo '<form method="get" class="sms-term-picker">';
 		// Mevcut sayfa parametrelerini koru.
-		foreach ( array( 'page', 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'tab', 'rtype', 'group', 'grade', 'metric', 'from', 'to', 'gview', 'subject', 'title', 'exam_date', 'exam_type' ) as $keep ) {
+		foreach ( array( 'page', 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'rsession', 'tab', 'rtype', 'group', 'grade', 'metric', 'from', 'to', 'gview', 'subject', 'title', 'exam_date', 'exam_type' ) as $keep ) {
 			if ( isset( $_GET[ $keep ] ) ) {
 				echo '<input type="hidden" name="' . esc_attr( $keep ) . '" value="' . esc_attr( sanitize_text_field( wp_unslash( $_GET[ $keep ] ) ) ) . '">';
 			}
