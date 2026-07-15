@@ -168,30 +168,35 @@ $back_url = $multi_session
 				<input type="hidden" name="session_id" value="<?php echo (int) $session->id; ?>">
 				<input type="hidden" name="class_id" value="<?php echo (int) $class_id; ?>">
 				<input type="hidden" name="att_date" value="<?php echo esc_attr( $date ); ?>">
-				<table class="sms-table sms-att-table" data-sms-roster>
-					<thead><tr><th>Öğrenci</th><th>Durum</th><th>Not</th></tr></thead>
-					<tbody>
-					<?php foreach ( $students as $s ) :
-						$row     = $sheet[ (int) $s->id ] ?? null;
-						$current = $row ? $row->status : 'present';
+				<div class="sms-att-list" data-sms-roster>
+					<?php
+					$short = sms_attendance_status_short();
+					foreach ( $students as $s ) :
+						$row      = $sheet[ (int) $s->id ] ?? null;
+						$current  = $row ? $row->status : 'present';
+						$note_val = $row->note ?? '';
 						?>
-						<tr class="sms-roster-row" data-grade="<?php echo (int) ( $s->grade_level ?? 0 ); ?>">
-							<td class="sms-name-cell"><?php echo sms_avatar( sms_student_name( $s ) ); // phpcs:ignore ?><strong><?php echo esc_html( sms_student_name( $s ) ); ?></strong><?php echo isset( $s->grade_level ) ? ' <span class="sms-badge sms-badge-indigo">' . esc_html( sms_grade_label( $s->grade_level ) ) . '</span>' : ''; ?></td>
-							<td>
+						<div class="sms-att-row sms-roster-row" data-grade="<?php echo (int) ( $s->grade_level ?? 0 ); ?>">
+							<span class="sms-att-row-name"><?php echo esc_html( sms_student_name( $s ) ); ?></span>
+							<div class="sms-att-row-status">
 								<div class="sms-seg" role="radiogroup">
 									<?php foreach ( $statuses as $key => $label ) : ?>
 										<label class="sms-seg-item sms-seg-<?php echo esc_attr( $key ); ?>">
 											<input type="radio" name="att_status[<?php echo (int) $s->id; ?>]" value="<?php echo esc_attr( $key ); ?>" <?php checked( $current, $key ); ?>>
-											<span><?php echo esc_html( $label ); ?></span>
+											<span><span class="sms-seg-full"><?php echo esc_html( $label ); ?></span><span class="sms-seg-short"><?php echo esc_html( $short[ $key ] ?? $label ); ?></span></span>
 										</label>
 									<?php endforeach; ?>
 								</div>
-							</td>
-							<td><input type="text" class="sms-input-sm" name="att_note[<?php echo (int) $s->id; ?>]" value="<?php echo esc_attr( $row->note ?? '' ); ?>" placeholder="Not…"></td>
-						</tr>
+								<button type="button" class="sms-note-btn <?php echo $note_val ? 'is-active' : ''; ?>" data-sms-note-toggle title="Not ekle/düzenle">
+									<span class="dashicons dashicons-edit-page"></span>
+								</button>
+							</div>
+							<div class="sms-att-row-note" data-sms-note-field <?php echo $note_val ? '' : 'style="display:none"'; ?>>
+								<input type="text" class="sms-input-sm" name="att_note[<?php echo (int) $s->id; ?>]" value="<?php echo esc_attr( $note_val ); ?>" placeholder="Not…">
+							</div>
+						</div>
 					<?php endforeach; ?>
-					</tbody>
-				</table>
+				</div>
 				<div class="sms-pad">
 					<button type="submit" class="sms-btn sms-btn-primary">Yoklamayı Kaydet</button>
 					<?php if ( $sheet ) : ?><span class="sms-muted sms-ml">Bu tarih/oturum için kayıt mevcut; kaydederseniz güncellenir.</span><?php endif; ?>

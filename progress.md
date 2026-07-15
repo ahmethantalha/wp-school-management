@@ -170,7 +170,21 @@ Ayarlar `wp_options` içinde `sms_settings` anahtarında tutulur (kurum adı, so
   - Branş öğretmeni: kendi derslikleri (kart) → sınav listesi → sınav → öğrenci bazında puanlar.
   - Yönetici / sınıf öğretmeni: branş kartları → branşın derslikleri → sınavlar → öğrenci bazında puanlar (salt okunur; yönetim yetkisi yalnızca dersliğin branş öğretmeni + yönetici).
 - [x] **"Not Gir" ekranı ayrıldı**: tek kartta sınav bilgileri + tek tek puan girişi + "Öğrenci Listesini İndir" (aynı formdaki bilgilerle önceden doldurulmuş CSV) + doldurulmuş liste yükleme.
-- [x] Üst çubuk (admin bar) sınırlı kullanıcılar için tamamen kaldırıldı; **sol menü görünür kalır**, sağ üstte profil çipi (avatar + ad + rol + çıkış). WP bildirimleri (notice/update-nag) da gizlendi.
+
+### Sürüm 1.2.2 — Mobil Kenar Çubuğu Anahtarı + Yoklama Mobil Düzeni
+- [x] **Sol menü artık mobilde açılıp kapanabiliyor**: sınırlı kullanıcılar için üst çubuk (admin bar) tamamen
+  kaldırılmak yerine wp-admin içinde **görünür bırakıldı** — WordPress'in kendi mobil menü anahtarı
+  (hamburger ikonu, `wp_admin_bar_menu_toggle`) bu çubuğun içinde yaşadığından, çubuğu tamamen gizlemek
+  mobil kenar çubuğunu da devre dışı bırakıyordu. Artık: site ön yüzünde tamamen gizli, panelde
+  sadeleştirilmiş halde görünür (logo/güncelleme/yorum/arama düğümleri kaldırılır; sağda kompakt
+  profil bloğu — avatar + ad + rol — ve ayrı bir çıkış düğmesi eklenir, `admin_bar_menu` kancasıyla).
+  Sayfa başlığındaki eski profil çipi kaldırıldı (üst çubuktakiyle çakışmasın diye).
+- [x] **Yoklama cetveli tablo yerine esnek satır listesine döndü** (`.sms-att-list` / `.sms-att-row`):
+  öğrenci adının yanındaki avatar rozeti ve sınıf etiketi kaldırıldı; durum (Geldi/Gelmedi/Geç/İzinli)
+  segmentli kontrolü artık satırın çoğu genişliğini kullanıyor. Dar ekranlarda (≤600px) öğrenci adı
+  kendi satırına geçiyor, durum etiketleri kısaltılıyor (Var/Yok/Geç/İzn) ve segment `nowrap` kalıyor
+  — böylece 4 seçenek yan yana sığıyor, alt alta kaymıyor. Not alanı varsayılan gizli; küçük bir
+  kalem ikonlu düğmeyle açılıp kapanıyor (zaten not girilmişse otomatik açık gelir).
 
 ### Güvenlik Notları (kişisel veri)
 - Tüm formlar nonce + capability; tüm okuma/yazma yolları **kayıt düzeyinde** denetlenir

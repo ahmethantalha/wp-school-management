@@ -208,6 +208,16 @@ function sms_attendance_statuses() {
 	);
 }
 
+/** Dar ekranlarda yoklama segment kontrolü için kısaltılmış etiketler. */
+function sms_attendance_status_short() {
+	return array(
+		'present' => 'Var',
+		'absent'  => 'Yok',
+		'late'    => 'Geç',
+		'excused' => 'İzn',
+	);
+}
+
 function sms_format_date( $date ) {
 	if ( ! $date || '0000-00-00' === $date ) {
 		return '—';
@@ -267,29 +277,7 @@ function sms_view_header( $title, $subtitle = '', $show_term_picker = true ) {
 		}
 		echo '</select></form>';
 	}
-	// WP arayüzü gizlenen kullanıcılar için profil bilgisi + çıkış (üst çubuk yerine geçer).
-	if ( function_exists( 'sms_is_limited_user' ) && sms_is_limited_user() ) {
-		$user  = wp_get_current_user();
-		$roles = (array) $user->roles;
-		if ( in_array( 'sms_teacher', $roles, true ) ) {
-			$role_label = sms_is_class_teacher( $user->ID ) ? 'Sınıf Öğretmeni' : 'Öğretmen';
-		} elseif ( in_array( 'sms_parent', $roles, true ) ) {
-			$role_label = 'Veli';
-		} elseif ( in_array( 'sms_student', $roles, true ) ) {
-			$role_label = 'Öğrenci';
-		} else {
-			$role_label = '';
-		}
-		echo '<div class="sms-user-chip">';
-		echo get_avatar( $user->ID, 28, '', '', array( 'class' => 'sms-user-chip-img' ) ) ?: sms_avatar( $user->display_name ); // phpcs:ignore
-		echo '<span class="sms-user-chip-text"><span class="sms-user-chip-name">' . esc_html( $user->display_name ) . '</span>';
-		if ( $role_label ) {
-			echo '<span class="sms-user-chip-role">' . esc_html( $role_label ) . '</span>';
-		}
-		echo '</span>';
-		echo '<a class="sms-user-chip-logout" href="' . esc_url( wp_logout_url( home_url() ) ) . '" title="Çıkış Yap"><span class="dashicons dashicons-exit"></span></a>';
-		echo '</div>';
-	}
+	// Not: sınırlı kullanıcılar için profil + çıkış artık üst çubukta gösterilir (bkz. admin_bar_menu kancası).
 	echo '</div>';
 	echo '</div>';
 	sms_render_notices();

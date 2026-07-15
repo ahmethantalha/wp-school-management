@@ -80,6 +80,22 @@
 			});
 		}
 
+		/* ---------- Yoklama: not alanını aç/kapat (mobilde yer kazanmak için gizli) ---------- */
+		document.querySelectorAll('[data-sms-note-toggle]').forEach(function (btn) {
+			btn.addEventListener('click', function () {
+				var row = btn.closest('.sms-att-row');
+				var field = row ? row.querySelector('[data-sms-note-field]') : null;
+				if (!field) { return; }
+				var hidden = field.style.display === 'none';
+				field.style.display = hidden ? '' : 'none';
+				btn.classList.toggle('is-active', hidden);
+				if (hidden) {
+					var input = field.querySelector('input');
+					if (input) { input.focus(); }
+				}
+			});
+		});
+
 		/* ---------- Alışkanlık: tümünü "Yaptı" işaretle ---------- */
 		var allDoneBtn = document.querySelector('[data-sms-all-done]');
 		if (allDoneBtn) {
