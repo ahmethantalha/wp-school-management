@@ -3,7 +3,7 @@
  * Plugin Name:       Okul Yönetim Sistemi
  * Plugin URI:        https://github.com/ahmethantalha/wp-school-management
  * Description:       Öğrenci yurtları, okullar ve eğitim kurumları için dönem bazlı öğrenci takip sistemi: öğrenci/öğretmen/veli yönetimi, derslikler, yoklama, not ve alışkanlık takibi, raporlar.
- * Version:           1.2.3
+ * Version:           1.2.4
  * Author:            Ahmet Han Talha
  * License:           GPL-2.0-or-later
  * Text Domain:       wp-school-management
@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SMS_VERSION', '1.2.3' );
+define( 'SMS_VERSION', '1.2.4' );
 define( 'SMS_FILE', __FILE__ );
 define( 'SMS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SMS_URL', plugin_dir_url( __FILE__ ) );
@@ -100,22 +100,32 @@ add_action( 'admin_bar_menu', function ( $wp_admin_bar ) {
 	$html   = '<span class="sms-ab-profile">' . $avatar
 		. '<span class="sms-ab-profile-text"><span class="sms-ab-name">' . esc_html( $user->display_name ) . '</span>'
 		. ( $role_label ? '<span class="sms-ab-role">' . esc_html( $role_label ) . '</span>' : '' )
-		. '</span></span>';
+		. '</span><span class="sms-ab-caret dashicons dashicons-arrow-down-alt2"></span></span>';
 
+	// Alt menüsü olan hesap düğümü: mobilde dokununca (masaüstünde üzerine gelince)
+	// açılır ve içindeki "Çıkış Yap" bağlantısı görünür. WordPress'in kendi
+	// hesap menüsüyle aynı mantık — mobilde de güvenilir çalışır.
 	$wp_admin_bar->add_node( array(
-		'id'     => 'sms-profile',
+		'id'     => 'sms-account',
 		'parent' => 'top-secondary',
 		'title'  => $html,
+		'href'   => wp_logout_url( home_url() ), // JS kapalıysa dahi çıkış erişilebilir kalır.
+		'meta'   => array( 'class' => 'sms-ab-account' ),
+	) );
+
+	$wp_admin_bar->add_node( array(
+		'id'     => 'sms-account-name',
+		'parent' => 'sms-account',
+		'title'  => esc_html( $user->display_name ) . ( $role_label ? ' — ' . esc_html( $role_label ) : '' ),
 		'href'   => false,
-		'meta'   => array( 'class' => 'sms-ab-profile-node', 'tabindex' => -1 ),
+		'meta'   => array( 'class' => 'sms-ab-account-name' ),
 	) );
 
 	$wp_admin_bar->add_node( array(
 		'id'     => 'sms-logout',
-		'parent' => 'top-secondary',
-		'title'  => '<span class="dashicons dashicons-exit"></span>',
+		'parent' => 'sms-account',
+		'title'  => '<span class="dashicons dashicons-exit"></span> Çıkış Yap',
 		'href'   => wp_logout_url( home_url() ),
-		'meta'   => array( 'title' => 'Çıkış Yap' ),
 	) );
 }, 999 );
 
@@ -162,18 +172,23 @@ add_action( 'admin_head', function () {
 		#wpadminbar #wp-admin-bar-menu-toggle .ab-icon:before{color:#fff}
 		#wpadminbar #wp-admin-bar-menu-toggle:hover,
 		#wpadminbar #wp-admin-bar-menu-toggle:focus{background:#4f46e5}
-		#wp-admin-bar-sms-profile{display:flex;align-items:center;height:100%}
-		#wp-admin-bar-sms-profile>.ab-item{display:flex;align-items:center;height:100%;cursor:default}
-		.sms-ab-profile{display:flex;align-items:center;gap:8px;padding:0 10px}
-		.sms-ab-avatar{border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,.28)}
-		.sms-ab-profile-text{display:flex;flex-direction:column;line-height:1.15}
-		.sms-ab-name{font-size:12.5px;font-weight:600;color:#fff}
-		.sms-ab-role{font-size:10px;color:#b5bfc9;text-transform:uppercase;letter-spacing:.03em}
-		#wp-admin-bar-sms-logout>.ab-item{display:flex;align-items:center;justify-content:center;padding:0 12px}
-		#wp-admin-bar-sms-logout .dashicons{font-size:16px;width:16px;height:16px;color:#f0b7b7}
-		#wp-admin-bar-sms-logout:hover>.ab-item{background:#b32d2e}
-		#wp-admin-bar-sms-logout:hover .dashicons{color:#fff}
-		@media (max-width:782px){.sms-ab-role{display:none}}
+		#wpadminbar #wp-admin-bar-sms-account>.ab-item{display:flex;align-items:center;height:46px}
+		#wpadminbar .sms-ab-profile{display:flex;align-items:center;gap:8px}
+		#wpadminbar .sms-ab-avatar{border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,.28);vertical-align:middle}
+		#wpadminbar .sms-ab-profile-text{display:flex;flex-direction:column;line-height:1.15;text-align:left}
+		#wpadminbar .sms-ab-name{font-size:12.5px;font-weight:600;color:#fff}
+		#wpadminbar .sms-ab-role{font-size:10px;color:#b5bfc9;text-transform:uppercase;letter-spacing:.03em}
+		#wpadminbar .sms-ab-caret{font-size:16px;width:16px;height:auto;color:#c3c4c7;margin-left:2px}
+		#wpadminbar #wp-admin-bar-sms-account .ab-sub-wrapper{min-width:190px}
+		#wpadminbar #wp-admin-bar-sms-account-name>.ab-item{color:#8c8f94!important;font-size:11px;text-transform:uppercase;letter-spacing:.03em;cursor:default;height:auto;padding-top:8px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.08)}
+		#wpadminbar #wp-admin-bar-sms-logout .dashicons{font-size:16px;width:16px;height:16px;vertical-align:middle;margin-right:4px}
+		#wpadminbar #wp-admin-bar-sms-logout>.ab-item{color:#f0b7b7!important}
+		#wpadminbar #wp-admin-bar-sms-logout:hover>.ab-item,
+		#wpadminbar #wp-admin-bar-sms-logout>.ab-item:focus{background:#b32d2e;color:#fff!important}
+		@media (max-width:782px){
+			#wpadminbar .sms-ab-name,#wpadminbar .sms-ab-role{display:none}
+			#wpadminbar #wp-admin-bar-sms-account>.ab-item{padding:0 10px}
+		}
 	</style>';
 } );
 
