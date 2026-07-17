@@ -341,9 +341,6 @@
 .sms-seg-num span { min-width: 32px; text-align: center; }
 .sms-seg-num input:checked + span { background: var(--sms-primary); color: #fff; }
 
-/* Dar ekranlarda uzun etiket yerine kısaltma gösterilir (bkz. .sms-att-row-status altında nowrap). */
-.sms-seg-short { display: none; }
-
 /* ---------- Yoklama listesi (satır bazlı, tablo değil — mobilde esnek) ---------- */
 .sms-att-list { display: flex; flex-direction: column; }
 .sms-att-row {
@@ -375,9 +372,7 @@
 @media (max-width: 600px) {
 	.sms-att-row { padding: 9px 14px; gap: 6px; }
 	.sms-att-row-name { flex-basis: 100%; font-size: 13px; margin-bottom: 1px; }
-	.sms-att-row-status .sms-seg-item span { padding: 5px 7px; font-size: 11px; }
-	.sms-seg-full { display: none; }
-	.sms-seg-short { display: inline; }
+	.sms-att-row-status .sms-seg-item span { padding: 5px 8px; font-size: 12px; }
 }
 
 /* ---------- Kadro (roster) yönetimi ---------- */

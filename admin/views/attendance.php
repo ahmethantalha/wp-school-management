@@ -160,7 +160,7 @@ $back_url = $multi_session
 	<div class="sms-card sms-mt">
 		<div class="sms-card-head">
 			<h2><?php echo esc_html( sms_format_date( $date ) ); ?><?php echo $multi_session ? ' — ' . esc_html( $session->name ) : ''; ?></h2>
-			<button type="button" class="sms-btn sms-btn-ghost sms-btn-sm" data-sms-all-present>Tümünü "Geldi" işaretle</button>
+			<button type="button" class="sms-btn sms-btn-ghost sms-btn-sm" data-sms-all-present>Tümünü "Var" işaretle</button>
 		</div>
 		<?php if ( $students ) : ?>
 			<?php sms_form_open( 'sms_save_attendance' ); sms_back_url_field(); ?>
@@ -183,7 +183,7 @@ $back_url = $multi_session
 									<?php foreach ( $statuses as $key => $label ) : ?>
 										<label class="sms-seg-item sms-seg-<?php echo esc_attr( $key ); ?>">
 											<input type="radio" name="att_status[<?php echo (int) $s->id; ?>]" value="<?php echo esc_attr( $key ); ?>" <?php checked( $current, $key ); ?>>
-											<span><span class="sms-seg-full"><?php echo esc_html( $label ); ?></span><span class="sms-seg-short"><?php echo esc_html( $short[ $key ] ?? $label ); ?></span></span>
+											<span><?php echo esc_html( $short[ $key ] ?? $label ); ?></span>
 										</label>
 									<?php endforeach; ?>
 								</div>

@@ -208,13 +208,13 @@ function sms_attendance_statuses() {
 	);
 }
 
-/** Dar ekranlarda yoklama segment kontrolü için kısaltılmış etiketler. */
+/** Yoklama segment kontrolünde kullanılan kısa, tek kelimelik etiketler. */
 function sms_attendance_status_short() {
 	return array(
 		'present' => 'Var',
 		'absent'  => 'Yok',
 		'late'    => 'Geç',
-		'excused' => 'İzn',
+		'excused' => 'İzin',
 	);
 }
 
