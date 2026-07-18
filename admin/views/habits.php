@@ -27,7 +27,7 @@ $habits  = $term_id ? SMS_Habits::for_term( $term_id, $teacher ? get_current_use
 						<div>
 							<h3><?php echo esc_html( $h->name ); ?></h3>
 							<span class="sms-muted">
-								<?php echo 'binary' === $h->track_type ? 'Yaptı / Yapmadı' : 'Dereceli (1–' . (int) $h->scale_max . ')'; ?>
+								<?php echo esc_html( sms_habit_track_type_label( $h ) ); ?>
 								<?php echo $creator ? ' • ' . esc_html( $creator->display_name ) : ''; ?>
 							</span>
 						</div>

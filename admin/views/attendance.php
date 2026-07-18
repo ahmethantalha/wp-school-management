@@ -116,7 +116,7 @@ if ( 'class' === $category->scope ) {
 		wp_die( 'Genel yoklama alma yetkiniz yok.' );
 	}
 	$class_id  = 0;
-	$ids       = sms_general_attendance_student_ids( $term_id );
+	$ids       = sms_general_attendance_student_ids( $term_id, 0, (int) $category->id );
 	$students  = $ids ? SMS_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'ids' => $ids ) ) : array();
 	$scope_lbl = 'Genel';
 }

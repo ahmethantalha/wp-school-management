@@ -73,7 +73,7 @@ $grades = SMS_Students::grades_in_term( $term_id );
 
 						<div class="sms-field">
 							<label>Takip Metodu *</label>
-							<div class="sms-choice-cards">
+							<div class="sms-choice-cards sms-choice-cards-3">
 								<label class="sms-choice-card">
 									<input type="radio" name="track_type" value="binary" <?php checked( ( $habit->track_type ?? 'binary' ), 'binary' ); ?> <?php disabled( ! $can_edit_meta ); ?>>
 									<div><strong>Yaptı / Yapmadı</strong><span class="sms-muted">İki seçenekli basit takip</span></div>
@@ -81,6 +81,10 @@ $grades = SMS_Students::grades_in_term( $term_id );
 								<label class="sms-choice-card">
 									<input type="radio" name="track_type" value="scale" <?php checked( ( $habit->track_type ?? '' ), 'scale' ); ?> <?php disabled( ! $can_edit_meta ); ?>>
 									<div><strong>Dereceli</strong><span class="sms-muted">Yapma derecesine göre puanlı takip</span></div>
+								</label>
+								<label class="sms-choice-card">
+									<input type="radio" name="track_type" value="reading" <?php checked( ( $habit->track_type ?? '' ), 'reading' ); ?> <?php disabled( ! $can_edit_meta ); ?>>
+									<div><strong>Kitap / Sayfa Takibi</strong><span class="sms-muted">Günlük kitap adı + sayfa sayısı; karnede toplam sayfa ve kitap listesi</span></div>
 								</label>
 							</div>
 						</div>

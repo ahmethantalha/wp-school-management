@@ -102,6 +102,26 @@ class SMS_Attendance_Types {
 		), array( 'id' => (int) $id ) );
 	}
 
+	/** Kategorinin bu yoklamada görünecek sınıf seviyeleri (boş dizi = tüm sınıflar). */
+	public static function get_grade_levels( $category_id ) {
+		global $wpdb;
+		$raw = $wpdb->get_var( $wpdb->prepare( 'SELECT grade_levels FROM ' . self::ct() . ' WHERE id = %d', (int) $category_id ) );
+		if ( ! $raw ) {
+			return array();
+		}
+		$grades = json_decode( $raw, true );
+		return is_array( $grades ) ? array_values( array_unique( array_map( 'intval', $grades ) ) ) : array();
+	}
+
+	/** Kategorinin sınıf kısıtlamasını kaydeder; boş dizi = kısıtlama yok (tüm sınıflar). */
+	public static function set_grade_levels( $category_id, array $grades ) {
+		global $wpdb;
+		$grades = array_values( array_unique( array_filter( array_map( 'intval', $grades ) ) ) );
+		$wpdb->update( self::ct(), array(
+			'grade_levels' => $grades ? wp_json_encode( $grades ) : null,
+		), array( 'id' => (int) $category_id ) );
+	}
+
 	/** Sistem kategorileri silinemez; diğerlerinde bağlı oturum ve yoklamalar da silinir. */
 	public static function delete_category( $id ) {
 		global $wpdb;

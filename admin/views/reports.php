@@ -44,8 +44,14 @@ foreach ( $cat_sessions as $s ) {
 $default_from = $term && $term->start_date && '0000-00-00' !== $term->start_date
 	? $term->start_date
 	: gmdate( 'Y-m-d', strtotime( '-29 days', current_time( 'timestamp' ) ) );
-$from = isset( $_GET['from'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $_GET['from'] ) ? sanitize_text_field( wp_unslash( $_GET['from'] ) ) : $default_from;
-$to   = isset( $_GET['to'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $_GET['to'] ) ? sanitize_text_field( wp_unslash( $_GET['to'] ) ) : current_time( 'Y-m-d' );
+$dates      = sms_resolve_report_dates( $default_from );
+$date_mode  = $dates['mode'];
+$sel_month  = $dates['month'];
+$sel_year   = $dates['year'];
+$from       = $dates['from'];
+$to         = $dates['to'];
+$year_options = range( (int) current_time( 'Y' ) - 3, (int) current_time( 'Y' ) + 1 );
+$month_names  = sms_month_names();
 
 // Öğretmenler yalnızca sorumlu oldukları öğrencileri analiz edebilir (kayıt düzeyi erişim).
 $student_ids = $teacher ? sms_teacher_student_ids() : null;
@@ -91,8 +97,11 @@ $export_url = wp_nonce_url( add_query_arg( array(
 	'cat'      => $cat_id,
 	'rsession' => $sess_id,
 	'metric'   => $metric,
+	'datemode' => $date_mode,
 	'from'     => $from,
 	'to'       => $to,
+	'rmonth'   => $sel_month,
+	'ryear'    => $sel_year,
 	'sms_term' => $term_id,
 ), admin_url( 'admin-post.php' ) ), 'sms_export_report' );
 $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $export_url ) . '"><span class="dashicons dashicons-download"></span> CSV İndir</a>';
@@ -153,9 +162,28 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 					<?php else : ?>
 						<input type="hidden" name="metric" value="<?php echo esc_attr( $metric ); ?>">
 					<?php endif; ?>
-					<label class="sms-muted">Aralık</label>
-					<input type="date" name="from" value="<?php echo esc_attr( $from ); ?>">
-					<input type="date" name="to" value="<?php echo esc_attr( $to ); ?>">
+
+					<select name="datemode" data-sms-datemode-toggle>
+						<option value="range" <?php selected( $date_mode, 'range' ); ?>>Tarih Aralığı</option>
+						<option value="month" <?php selected( $date_mode, 'month' ); ?>>Ay / Yıl</option>
+					</select>
+					<span class="sms-daterange-fields" <?php echo 'month' === $date_mode ? 'style="display:none"' : ''; ?>>
+						<input type="date" name="from" value="<?php echo esc_attr( $from ); ?>" class="sms-date-compact">
+						<input type="date" name="to" value="<?php echo esc_attr( $to ); ?>" class="sms-date-compact">
+					</span>
+					<span class="sms-monthyear-fields" <?php echo 'month' !== $date_mode ? 'style="display:none"' : ''; ?>>
+						<select name="rmonth">
+							<option value="0" <?php selected( $sel_month, 0 ); ?>>Tüm Yıl</option>
+							<?php foreach ( $month_names as $mnum => $mname ) : ?>
+								<option value="<?php echo (int) $mnum; ?>" <?php selected( $sel_month, $mnum ); ?>><?php echo esc_html( $mname ); ?></option>
+							<?php endforeach; ?>
+						</select>
+						<select name="ryear">
+							<?php foreach ( $year_options as $y ) : ?>
+								<option value="<?php echo (int) $y; ?>" <?php selected( $sel_year, $y ); ?>><?php echo (int) $y; ?></option>
+							<?php endforeach; ?>
+						</select>
+					</span>
 				<?php endif; ?>
 
 				<button type="submit" class="sms-btn sms-btn-primary sms-btn-sm">Analiz Et</button>

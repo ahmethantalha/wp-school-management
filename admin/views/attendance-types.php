@@ -11,13 +11,15 @@ $icons = array(
 	'dashicons-welcome-learn-more', 'dashicons-clipboard', 'dashicons-yes-alt', 'dashicons-heart',
 	'dashicons-book', 'dashicons-coffee', 'dashicons-buddicons-activity', 'dashicons-groups',
 );
+$settings     = sms_get_settings();
+$edit_grades  = $edit ? SMS_Attendance_Types::get_grade_levels( (int) $edit->id ) : array();
 ?>
 <div class="wrap sms-wrap">
 	<?php sms_view_header( 'Yoklama Türleri', 'Yoklama kategorilerini ve oturumlarını yönetin. Namaz gibi bir kategori altında birden çok oturum (vakit) olabilir.', false ); ?>
 
 	<div class="sms-grid-2 sms-grid-uneven">
 		<div>
-			<?php foreach ( $categories as $cat ) : $sessions = SMS_Attendance_Types::sessions( (int) $cat->id ); ?>
+			<?php foreach ( $categories as $cat ) : $sessions = SMS_Attendance_Types::sessions( (int) $cat->id ); $cat_grades = 'general' === $cat->scope ? SMS_Attendance_Types::get_grade_levels( (int) $cat->id ) : array(); ?>
 				<div class="sms-card sms-mb">
 					<div class="sms-card-head">
 						<h2>
@@ -25,6 +27,9 @@ $icons = array(
 							<?php echo esc_html( $cat->name ); ?>
 							<span class="sms-badge <?php echo 'class' === $cat->scope ? 'sms-badge-indigo' : 'sms-badge-green'; ?>"><?php echo 'class' === $cat->scope ? 'Derslik bazlı' : 'Genel'; ?></span>
 							<?php echo $cat->is_system ? '<span class="sms-badge">sistem</span>' : ''; ?>
+							<?php if ( 'general' === $cat->scope ) : ?>
+								<span class="sms-badge sms-badge-amber"><?php echo $cat_grades ? esc_html( implode( ', ', $cat_grades ) ) . '. sınıflar' : 'Tüm sınıflar'; ?></span>
+							<?php endif; ?>
 						</h2>
 						<div class="sms-actions-cell">
 							<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-att-types&cat=' . (int) $cat->id ) ); ?>">Adı Düzenle</a>
@@ -92,6 +97,19 @@ $icons = array(
 							</div>
 						</div>
 						<div class="sms-field"><label>İlk Oturum Adı</label><input type="text" name="first_session" placeholder="Boşsa kategori adı kullanılır"></div>
+					<?php elseif ( 'general' === $edit->scope ) : ?>
+						<div class="sms-field sms-ct-block">
+							<label>Bu yoklamada hangi sınıflar görünsün?</label>
+							<p class="sms-muted" style="margin:2px 0 0">Hiçbiri işaretlenmezse tüm sınıflar bu yoklamada yer alır.</p>
+							<div class="sms-grade-checks">
+								<?php for ( $g = (int) $settings['min_grade']; $g <= (int) $settings['max_grade']; $g++ ) : ?>
+									<label class="sms-grade-check">
+										<input type="checkbox" name="cat_grades[]" value="<?php echo (int) $g; ?>" <?php checked( in_array( $g, $edit_grades, true ) ); ?>>
+										<span><?php echo (int) $g; ?></span>
+									</label>
+								<?php endfor; ?>
+							</div>
+						</div>
 					<?php endif; ?>
 
 					<button type="submit" class="sms-btn sms-btn-primary sms-btn-block"><?php echo $edit ? 'Kaydet' : 'Kategori Oluştur'; ?></button>

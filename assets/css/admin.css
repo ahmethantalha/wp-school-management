@@ -250,6 +250,9 @@
 .sms-filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .sms-filters input[type="search"] { min-width: 240px; }
 .sms-filters select, .sms-filters input { width: auto; }
+.sms-daterange-fields, .sms-monthyear-fields { display: inline-flex; gap: 8px; align-items: center; }
+.sms-filters input.sms-date-compact { max-width: 142px; min-width: 0; }
+.sms-filters .sms-monthyear-fields select { max-width: 128px; }
 
 /* ---------- Bildirimler ---------- */
 .sms-notice {
@@ -406,7 +409,9 @@
 
 /* ---------- Seçim kartları (takip metodu) ---------- */
 .sms-choice-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-@media (max-width: 782px) { .sms-choice-cards { grid-template-columns: 1fr; } }
+.sms-choice-cards-3 { grid-template-columns: 1fr 1fr 1fr; }
+@media (max-width: 900px) { .sms-choice-cards-3 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 782px) { .sms-choice-cards, .sms-choice-cards-3 { grid-template-columns: 1fr; } }
 .sms-choice-card {
 	display: flex;
 	gap: 10px;

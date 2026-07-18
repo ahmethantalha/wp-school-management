@@ -18,12 +18,20 @@ if ( sms_is_teacher() && (int) $habit->created_by !== get_current_user_id() ) {
 		return in_array( (int) $s->id, $my_ids, true );
 	} ) );
 }
-$logs     = SMS_Habits::logs_for_date( $habit_id, $date );
-$is_scale = 'scale' === $habit->track_type;
-$max      = $is_scale ? (int) $habit->scale_max : 1;
+$logs      = SMS_Habits::logs_for_date( $habit_id, $date );
+$is_scale  = 'scale' === $habit->track_type;
+$is_reading = 'reading' === $habit->track_type;
+$max       = $is_scale ? (int) $habit->scale_max : 1;
+
+$subtitle = 'Yaptı / yapmadı takibi';
+if ( $is_scale ) {
+	$subtitle = 'Dereceli takip (1–' . $max . '); boş bırakılan öğrenci için kayıt girilmez.';
+} elseif ( $is_reading ) {
+	$subtitle = 'Kitap adı ve o gün okunan sayfa sayısını girin; sayfa boş bırakılan öğrenci için kayıt girilmez.';
+}
 ?>
 <div class="wrap sms-wrap">
-	<?php sms_view_header( 'Takip: ' . $habit->name, $is_scale ? 'Dereceli takip (1–' . $max . '); boş bırakılan öğrenci için kayıt girilmez.' : 'Yaptı / yapmadı takibi' ); ?>
+	<?php sms_view_header( 'Takip: ' . $habit->name, $subtitle ); ?>
 
 	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-habits&sms_term=' . $term_id ) ); ?>">← Alışkanlık listesine dön</a></p>
 
@@ -44,7 +52,7 @@ $max      = $is_scale ? (int) $habit->scale_max : 1;
 	<div class="sms-card sms-mt">
 		<div class="sms-card-head">
 			<h2><?php echo esc_html( sms_format_date( $date ) ); ?></h2>
-			<?php if ( ! $is_scale ) : ?>
+			<?php if ( ! $is_scale && ! $is_reading ) : ?>
 				<button type="button" class="sms-btn sms-btn-ghost sms-btn-sm" data-sms-all-done>Tümünü "Yaptı" işaretle</button>
 			<?php endif; ?>
 		</div>
@@ -53,13 +61,25 @@ $max      = $is_scale ? (int) $habit->scale_max : 1;
 				<input type="hidden" name="habit_id" value="<?php echo (int) $habit_id; ?>">
 				<input type="hidden" name="log_date" value="<?php echo esc_attr( $date ); ?>">
 				<table class="sms-table">
-					<thead><tr><th>Öğrenci</th><th><?php echo $is_scale ? 'Derece (1–' . $max . ')' : 'Durum'; ?></th><th>Not</th></tr></thead>
+					<thead><tr><th>Öğrenci</th><th><?php
+						if ( $is_scale ) {
+							echo 'Derece (1–' . esc_html( $max ) . ')';
+						} elseif ( $is_reading ) {
+							echo 'Kitap Adı';
+						} else {
+							echo 'Durum';
+						}
+					?></th><th><?php echo $is_reading ? 'Sayfa Sayısı' : 'Not'; ?></th></tr></thead>
 					<tbody>
 					<?php foreach ( $students as $s ) :
 						$log = $logs[ (int) $s->id ] ?? null;
 						?>
 						<tr>
 							<td class="sms-name-cell"><?php echo sms_avatar( sms_student_name( $s ) ); // phpcs:ignore ?><strong><?php echo esc_html( sms_student_name( $s ) ); ?></strong></td>
+							<?php if ( $is_reading ) : ?>
+								<td><input type="text" class="sms-input-sm" name="log_note[<?php echo (int) $s->id; ?>]" value="<?php echo esc_attr( $log->note ?? '' ); ?>" placeholder="Kitap adı…"></td>
+								<td><input type="number" class="sms-input-sm" name="log_value[<?php echo (int) $s->id; ?>]" min="0" max="3000" value="<?php echo esc_attr( $log->value ?? '' ); ?>" placeholder="Sayfa"></td>
+							<?php else : ?>
 							<td>
 								<?php if ( $is_scale ) : ?>
 									<div class="sms-seg sms-seg-scale">
@@ -92,13 +112,14 @@ $max      = $is_scale ? (int) $habit->scale_max : 1;
 								<?php endif; ?>
 							</td>
 							<td><input type="text" class="sms-input-sm" name="log_note[<?php echo (int) $s->id; ?>]" value="<?php echo esc_attr( $log->note ?? '' ); ?>" placeholder="Not…"></td>
+							<?php endif; ?>
 						</tr>
 					<?php endforeach; ?>
 					</tbody>
 				</table>
 				<div class="sms-pad">
 					<button type="submit" class="sms-btn sms-btn-primary">Takibi Kaydet</button>
-					<span class="sms-muted sms-ml">"—" seçili öğrenciler için kayıt girilmez / mevcut kayıt silinir.</span>
+					<span class="sms-muted sms-ml"><?php echo $is_reading ? 'Sayfa sayısı boş bırakılan öğrenci için kayıt girilmez.' : '"—" seçili öğrenciler için kayıt girilmez / mevcut kayıt silinir.'; ?></span>
 				</div>
 			</form>
 		<?php else : ?>

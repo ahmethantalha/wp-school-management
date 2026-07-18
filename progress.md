@@ -30,9 +30,10 @@
 | `wp_sms_classes` | Derslikler/şubeler (ör. "Türkçe 6-A"): branş, sınıf seviyesi, öğretmen, dönem |
 | `wp_sms_class_students` | Derslik ↔ öğrenci eşleşmesi (bir öğrenci birden çok derslikte olabilir) |
 | `wp_sms_attendance` | Yoklama: derslik × öğrenci × tarih × durum (geldi/gelmedi/geç/izinli) |
-| `wp_sms_habits` | Alışkanlıklar: ad, açıklama, takip tipi (`binary` = yaptı/yapmadı, `scale` = 1–N derece), dönem, oluşturan |
+| `wp_sms_habits` | Alışkanlıklar: ad, açıklama, takip tipi (`binary`=yaptı/yapmadı, `scale`=1–N derece, `reading`=kitap/sayfa), dönem, oluşturan |
 | `wp_sms_habit_students` | Alışkanlığa atanan öğrenciler |
-| `wp_sms_habit_logs` | Günlük alışkanlık kayıtları (öğrenci × tarih × değer) |
+| `wp_sms_habit_logs` | Günlük alışkanlık kayıtları (öğrenci × tarih × değer); `reading` türünde value=sayfa, note=kitap adı |
+| `wp_sms_att_categories` | Yoklama kategorileri (Ders/Namaz/Temizlik/…); `grade_levels` (JSON) genel kategorilerde sınıf kısıtlaması |
 | `wp_sms_grades` | Notlar: derslik × öğrenci × sınav adı/türü × puan |
 
 Ayarlar `wp_options` içinde `sms_settings` anahtarında tutulur (kurum adı, son sınıf seviyesi vb.).
@@ -201,6 +202,45 @@ Ayarlar `wp_options` içinde `sms_settings` anahtarında tutulur (kurum adı, so
 - CSV indirmeleri nonce'lu ve `nocache_headers()` ile sunulur; not şablonu yalnızca derslik yetkisi olana verilir.
 - Yüklenen dosyalar sunucuda saklanmaz; yalnızca geçici dosyadan okunur, uzantı beyaz listesi uygulanır.
 - Toplu not girişinde kimlik `ogrenci_id` + ad-soyad çifte doğrulamasıyla teyit edilir.
+
+## 9. Sürüm 1.3 — Kategori Sınıf Kısıtlaması, Kitap/Sayfa Takibi, PDF Karne, Ay/Yıl Filtresi
+
+### Yoklama kategorisi bazında sınıf kısıtlaması
+- [x] `wp_sms_att_categories` tablosuna `grade_levels` (JSON, boş = tüm sınıflar) eklendi.
+- [x] **Yoklama Türleri** sayfasında genel kategoriler (Namaz, Temizlik, Telefon, yönetici eklediği diğerleri)
+  düzenlenirken "Bu yoklamada hangi sınıflar görünsün?" seçici çıkar; kart başlığında kısıtlama özeti gösterilir.
+- [x] `sms_general_attendance_student_ids()` artık kategori parametresi alır; yoklama alma ekranı ve kayıt
+  handler'ı kategori kısıtlaması + sınıf öğretmeninin sorumlu seviyeleriyle **kesişim** alır. Tek kontrol noktası
+  veri girişinde olduğundan tüm raporlar zaten kısıtlamaya uygun veriyi görür.
+
+### Alışkanlıklarda "Kitap / Sayfa Takibi" türü
+- [x] Üçüncü takip türü: `track_type = 'reading'`. Günlük giriş = kitap adı (mevcut `note` alanı) +
+  o gün okunan sayfa sayısı (mevcut `value` alanı, SMALLINT'e genişletildi). Şema/kod değişikliği minimal
+  tutuldu çünkü mevcut iki sütun yeniden kullanıldı.
+- [x] Takip doldurma ekranında bu tür için segment kontrolü yerine metin (kitap adı) + sayı (sayfa) girişi.
+- [x] Tamamlama oranı hesaplarında (liste, dashboard, raporlar) 'reading' de 'binary' gibi ele alınır
+  (o gün kayıt girildiyse tamamlandı sayılır); ham kitap/sayfa verisi ayrıca karnede gösterilir.
+- [x] Karnede yeni "📖 Kitap Okuma" kartı: alışkanlık başına toplam sayfa + okunan kitapların listesi
+  (kitap adı, sayfa, gün sayısı, son okuma tarihi).
+
+### PDF Karne (tek sayfa)
+- [x] "PDF Karne İndir" butonu → bağımsız, WP admin çerçevesi olmayan, A4 tek sayfaya göre tasarlanmış
+  yazdırılabilir HTML (`admin/views/print/student-report-print.php`); tarayıcının "Yazdır → PDF olarak kaydet"
+  özelliğiyle gerçek bir PDF üretir (harici PDF kütüphanesi eklemeden, bağımlılıksız).
+- [x] İçerik: kimlik bilgisi, 4 KPI karosu, ders yoklama özeti, genel yoklama (namaz vb.) kompakt satırlar,
+  alışkanlıklar tablosu, kitap okuma özeti, ders ortalamaları — hepsi tek sayfaya sığacak yoğunlukta.
+- [x] Erişim: `sms_can_access_student()` + nonce; kişisel veri güvenliği için aynı yetki modeli.
+
+### Karnede "Son Yoklamalar" sınırlandı
+- [x] `SMS_Attendance::recent_for_student()` çağrısı doğrudan limit=3 ile yapılır (önceden 20 çekilip 8'i
+  gösteriliyordu); başlık "Son 3 Yoklama" oldu.
+
+### Raporlarda ay/yıl filtresi + kompakt tarih alanı
+- [x] `sms_resolve_report_dates()` ortak yardımcısı: `datemode=range` (mevcut from/to) veya `datemode=month`
+  (Ay + Yıl seçici; ay="Tüm Yıl" seçilirse o yılın tamamı). Hem Raporlar sayfası hem CSV dışa aktarma aynı
+  mantığı kullanır, aralarında sürüklenme olmaz.
+- [x] Filtre satırında mod seçilince JS ile ilgili alan (aralık ya da ay/yıl) gösterilir/gizlenir; tarih
+  girdileri `max-width` ile kompaklaştırıldı, artık diğer filtrelerin yanında akışkan duruyor.
 
 ## 6. Puanlama / "En İyi Öğrenciler" Formülü
 

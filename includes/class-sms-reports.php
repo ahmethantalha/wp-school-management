@@ -184,7 +184,7 @@ class SMS_Reports {
 		$ids = implode( ',', array_map( function ( $s ) { return (int) $s->id; }, $students ) );
 		$raw = $wpdb->get_results( $wpdb->prepare(
 			"SELECT l.student_id, l.habit_id, COUNT(*) AS logs,
-				ROUND(AVG(CASE WHEN h.track_type = 'binary' THEN LEAST(l.value,1) * 100 ELSE l.value / h.scale_max * 100 END)) AS rate
+				ROUND(AVG(CASE WHEN h.track_type IN ('binary','reading') THEN LEAST(l.value,1) * 100 ELSE l.value / h.scale_max * 100 END)) AS rate
 			 FROM {$wpdb->prefix}sms_habit_logs l
 			 INNER JOIN {$wpdb->prefix}sms_habits h ON h.id = l.habit_id
 			 WHERE h.term_id = %d AND l.student_id IN ($ids)
@@ -391,8 +391,9 @@ class SMS_Reports {
 			'attendance' => SMS_Attendance::student_summary( $student_id, $term_id, sms_ders_category_id() ),
 			'att_all'    => SMS_Attendance::student_summary( $student_id, $term_id ),
 			'att_cats'   => SMS_Attendance::student_category_breakdown( $student_id, $term_id ),
-			'recent_att' => SMS_Attendance::recent_for_student( $student_id, $term_id ),
+			'recent_att' => SMS_Attendance::recent_for_student( $student_id, $term_id, 3 ),
 			'habits'     => SMS_Habits::student_habit_summary( $student_id, $term_id ),
+			'reading'    => SMS_Habits::reading_summary( $student_id, $term_id ),
 			'grades'     => SMS_Grades::for_student( $student_id, $term_id ),
 			'grade_avgs' => SMS_Grades::student_class_averages( $student_id, $term_id ),
 		);

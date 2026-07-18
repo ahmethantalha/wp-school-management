@@ -130,13 +130,25 @@
 			});
 		}
 
-		/* ---------- Alışkanlık formu: dereceli seçilince ölçek alanını göster ---------- */
+		/* ---------- Alışkanlık formu: takip türüne göre ek alanları göster ---------- */
 		var scaleField = document.querySelector('[data-sms-scale-field]');
 		if (scaleField) {
 			document.querySelectorAll('input[name="track_type"]').forEach(function (radio) {
 				radio.addEventListener('change', function () {
 					scaleField.style.display = radio.value === 'scale' && radio.checked ? '' : 'none';
 				});
+			});
+		}
+
+		/* ---------- Raporlar: tarih aralığı / ay-yıl geçişi ---------- */
+		var dateModeSelect = document.querySelector('[data-sms-datemode-toggle]');
+		if (dateModeSelect) {
+			var rangeFields = document.querySelector('.sms-daterange-fields');
+			var monthFields = document.querySelector('.sms-monthyear-fields');
+			dateModeSelect.addEventListener('change', function () {
+				var isMonth = dateModeSelect.value === 'month';
+				if (rangeFields) { rangeFields.style.display = isMonth ? 'none' : ''; }
+				if (monthFields) { monthFields.style.display = isMonth ? '' : 'none'; }
 			});
 		}
 	});

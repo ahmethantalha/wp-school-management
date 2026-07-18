@@ -46,6 +46,29 @@ class SMS_Actions {
 		add_action( 'admin_post_sms_import_template', array( __CLASS__, 'handle_import_template' ) );
 		add_action( 'admin_post_sms_grade_template', array( __CLASS__, 'handle_grade_template' ) );
 		add_action( 'admin_post_sms_export_report', array( __CLASS__, 'handle_export_report' ) );
+		add_action( 'admin_post_sms_print_report', array( __CLASS__, 'handle_print_report' ) );
+	}
+
+	/**
+	 * Öğrenci karnesinin tek sayfalık, yazdırılabilir (PDF olarak kaydedilebilir) görünümü.
+	 * WP admin arayüzü (menü/çubuk) olmadan bağımsız bir HTML belgesi döner.
+	 */
+	public static function handle_print_report() {
+		$student_id = isset( $_GET['student'] ) ? (int) $_GET['student'] : 0;
+		if ( ! $student_id || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'sms_print_report_' . $student_id ) ) {
+			wp_die( 'Geçersiz istek.' );
+		}
+		if ( ! sms_can_access_student( $student_id ) ) {
+			wp_die( 'Bu öğrencinin karnesine erişim yetkiniz yok.' );
+		}
+		$term_id = isset( $_GET['sms_term'] ) ? (int) $_GET['sms_term'] : sms_current_term_id();
+		if ( ! $term_id ) {
+			wp_die( 'Dönem bulunamadı.' );
+		}
+
+		nocache_headers();
+		include SMS_DIR . 'admin/views/print/student-report-print.php';
+		exit;
 	}
 
 	/**
@@ -89,9 +112,10 @@ class SMS_Actions {
 		if ( ! in_array( $metric, array( 'rate', 'present', 'absent', 'late', 'excused' ), true ) ) {
 			$metric = 'rate';
 		}
-		$cat_id = isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
-		$from   = isset( $_GET['from'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $_GET['from'] ) ? sanitize_text_field( wp_unslash( $_GET['from'] ) ) : gmdate( 'Y-m-d', strtotime( '-29 days', current_time( 'timestamp' ) ) );
-		$to     = isset( $_GET['to'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $_GET['to'] ) ? sanitize_text_field( wp_unslash( $_GET['to'] ) ) : current_time( 'Y-m-d' );
+		$cat_id  = isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
+		$dates   = sms_resolve_report_dates();
+		$from    = $dates['from'];
+		$to      = $dates['to'];
 
 		// Öğretmenler yalnızca sorumlu oldukları öğrencilerin verisini dışa aktarabilir.
 		$student_ids = sms_is_teacher() ? sms_teacher_student_ids() : null;
@@ -629,7 +653,7 @@ class SMS_Actions {
 			}
 			$class_id = 0;
 			$term_id  = sms_current_term_id();
-			$allowed  = sms_general_attendance_student_ids( $term_id );
+			$allowed  = sms_general_attendance_student_ids( $term_id, 0, $category_id );
 		}
 		$allowed = array_map( 'intval', $allowed );
 
@@ -789,6 +813,11 @@ class SMS_Actions {
 		}
 		if ( $id ) {
 			SMS_Attendance_Types::update_category( $id, $name, $icon );
+			$cat = SMS_Attendance_Types::get_category( $id );
+			if ( $cat && 'general' === $cat->scope ) {
+				$grades = isset( $_POST['cat_grades'] ) ? array_map( 'intval', (array) $_POST['cat_grades'] ) : array();
+				SMS_Attendance_Types::set_grade_levels( $id, $grades );
+			}
 			self::back( 'Kategori güncellendi.' );
 		}
 		$scope   = self::post( 'scope', 'general' );

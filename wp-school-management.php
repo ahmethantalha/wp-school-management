@@ -3,7 +3,7 @@
  * Plugin Name:       Okul Yönetim Sistemi
  * Plugin URI:        https://github.com/ahmethantalha/wp-school-management
  * Description:       Öğrenci yurtları, okullar ve eğitim kurumları için dönem bazlı öğrenci takip sistemi: öğrenci/öğretmen/veli yönetimi, derslikler, yoklama, not ve alışkanlık takibi, raporlar.
- * Version:           1.2.4
+ * Version:           1.3.0
  * Author:            Ahmet Han Talha
  * License:           GPL-2.0-or-later
  * Text Domain:       wp-school-management
@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SMS_VERSION', '1.2.4' );
+define( 'SMS_VERSION', '1.3.0' );
 define( 'SMS_FILE', __FILE__ );
 define( 'SMS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SMS_URL', plugin_dir_url( __FILE__ ) );

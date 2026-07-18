@@ -3,7 +3,8 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Alışkanlıklar, öğrenci atamaları ve günlük takip kayıtları.
- * track_type: 'binary' (yaptı/yapmadı) veya 'scale' (1..scale_max derece).
+ * track_type: 'binary' (yaptı/yapmadı), 'scale' (1..scale_max derece) veya
+ * 'reading' (kitap okuma: value=o günkü sayfa sayısı, note=kitap adı).
  */
 class SMS_Habits {
 
@@ -43,11 +44,12 @@ class SMS_Habits {
 
 	public static function save( $data, $id = 0 ) {
 		global $wpdb;
-		$row = array(
+		$track_type = $data['track_type'] ?? '';
+		$row        = array(
 			'term_id'     => (int) ( $data['term_id'] ?? 0 ),
 			'name'        => sanitize_text_field( $data['name'] ?? '' ),
 			'description' => sanitize_textarea_field( $data['description'] ?? '' ),
-			'track_type'  => ( 'scale' === ( $data['track_type'] ?? '' ) ) ? 'scale' : 'binary',
+			'track_type'  => in_array( $track_type, array( 'scale', 'reading' ), true ) ? $track_type : 'binary',
 			'scale_max'   => max( 2, min( 10, (int) ( $data['scale_max'] ?? 5 ) ) ),
 		);
 		if ( $id ) {
@@ -124,7 +126,13 @@ class SMS_Habits {
 		if ( ! $habit ) {
 			return;
 		}
-		$max      = 'binary' === $habit->track_type ? 1 : (int) $habit->scale_max;
+		if ( 'binary' === $habit->track_type ) {
+			$max = 1;
+		} elseif ( 'reading' === $habit->track_type ) {
+			$max = 3000; // makul bir sayfa sayısı üst sınırı (güvenlik/sağlık kontrolü).
+		} else {
+			$max = (int) $habit->scale_max;
+		}
 		$existing = self::logs_for_date( $habit_id, $date );
 
 		foreach ( $entries as $student_id => $entry ) {
@@ -163,7 +171,7 @@ class SMS_Habits {
 	public static function completion_rate( $habit_id ) {
 		global $wpdb;
 		return $wpdb->get_var( $wpdb->prepare(
-			"SELECT ROUND(AVG(CASE WHEN h.track_type = 'binary' THEN LEAST(l.value,1) * 100
+			"SELECT ROUND(AVG(CASE WHEN h.track_type IN ('binary','reading') THEN LEAST(l.value,1) * 100
 				ELSE l.value / h.scale_max * 100 END))
 			 FROM {$wpdb->prefix}sms_habit_logs l
 			 INNER JOIN " . self::table() . ' h ON h.id = l.habit_id
@@ -182,7 +190,7 @@ class SMS_Habits {
 		global $wpdb;
 		$rows = $wpdb->get_results( $wpdb->prepare(
 			"SELECT l.student_id,
-				ROUND(AVG(CASE WHEN h.track_type = 'binary' THEN LEAST(l.value,1) * 100
+				ROUND(AVG(CASE WHEN h.track_type IN ('binary','reading') THEN LEAST(l.value,1) * 100
 					ELSE l.value / h.scale_max * 100 END)) AS rate
 			 FROM {$wpdb->prefix}sms_habit_logs l
 			 INNER JOIN " . self::table() . ' h ON h.id = l.habit_id
@@ -203,7 +211,7 @@ class SMS_Habits {
 		$start = gmdate( 'Y-m-d', strtotime( '-' . ( $days - 1 ) . ' days', current_time( 'timestamp' ) ) );
 
 		$sql = "SELECT l.log_date,
-				ROUND(AVG(CASE WHEN h.track_type = 'binary' THEN LEAST(l.value,1) * 100
+				ROUND(AVG(CASE WHEN h.track_type IN ('binary','reading') THEN LEAST(l.value,1) * 100
 					ELSE l.value / h.scale_max * 100 END)) AS rate
 			 FROM {$wpdb->prefix}sms_habit_logs l
 			 INNER JOIN " . self::table() . ' h ON h.id = l.habit_id
@@ -239,7 +247,7 @@ class SMS_Habits {
 		return $wpdb->get_results( $wpdb->prepare(
 			"SELECT h.id, h.name, h.track_type, h.scale_max,
 				COUNT(l.id) AS log_count,
-				ROUND(AVG(CASE WHEN h.track_type = 'binary' THEN LEAST(l.value,1) * 100
+				ROUND(AVG(CASE WHEN h.track_type IN ('binary','reading') THEN LEAST(l.value,1) * 100
 					ELSE l.value / h.scale_max * 100 END)) AS rate
 			 FROM {$wpdb->prefix}sms_habit_students hs
 			 INNER JOIN " . self::table() . " h ON h.id = hs.habit_id
@@ -249,5 +257,48 @@ class SMS_Habits {
 			 ORDER BY h.name",
 			$student_id, $term_id
 		) );
+	}
+
+	/**
+	 * Öğrencinin 'reading' (kitap okuma) türündeki alışkanlıklarında okuduğu kitaplar
+	 * ve toplam sayfa sayısı. Kitap adı serbest metin (note) olduğundan aynı isim
+	 * (baş/son boşluk temizlenmiş) altında gruplanır.
+	 *
+	 * @return array [ ['habit_id'=>, 'habit_name'=>, 'total_pages'=>, 'books'=> [ ['title'=>,'pages'=>,'days'=>,'last_date'=>] ] ] ]
+	 */
+	public static function reading_summary( $student_id, $term_id ) {
+		global $wpdb;
+		$rows = $wpdb->get_results( $wpdb->prepare(
+			"SELECT h.id AS habit_id, h.name AS habit_name,
+				COALESCE(NULLIF(TRIM(l.note),''), '(İsimsiz kitap)') AS book,
+				SUM(l.value) AS pages, COUNT(*) AS days, MAX(l.log_date) AS last_date
+			 FROM {$wpdb->prefix}sms_habit_logs l
+			 INNER JOIN " . self::table() . " h ON h.id = l.habit_id
+			 WHERE l.student_id = %d AND h.term_id = %d AND h.track_type = 'reading'
+			 GROUP BY h.id, h.name, book
+			 ORDER BY h.name, last_date DESC",
+			$student_id, $term_id
+		) );
+
+		$out = array();
+		foreach ( $rows as $r ) {
+			$hid = (int) $r->habit_id;
+			if ( ! isset( $out[ $hid ] ) ) {
+				$out[ $hid ] = array(
+					'habit_id'    => $hid,
+					'habit_name'  => $r->habit_name,
+					'total_pages' => 0,
+					'books'       => array(),
+				);
+			}
+			$out[ $hid ]['total_pages'] += (int) $r->pages;
+			$out[ $hid ]['books'][]      = array(
+				'title'     => $r->book,
+				'pages'     => (int) $r->pages,
+				'days'      => (int) $r->days,
+				'last_date' => $r->last_date,
+			);
+		}
+		return array_values( $out );
 	}
 }

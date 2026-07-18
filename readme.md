@@ -60,18 +60,22 @@ Yoklama artık **kategori** ve **oturum** bazlıdır. **Yoklama → Yoklama Al**
 (namaz/temizlik/telefon) alabilen sorumlu hocadır. İsteğe bağlı olarak sorumlu olduğu sınıf
 seviyeleri seçilebilir (boş bırakılırsa tüm seviyeler).
 
-Yönetici **Yoklama Türleri** sayfasından yeni kategori ekleyebilir ve mevcut kategorilere oturum
-ekleyip çıkarabilir (örn. "Etüt" kategorisi, Namaz'a yeni bir vakit vb.). Raporlarda öğrencinin
-her vakit/oturumdaki katılımı ayrı ayrı görüntülenir.
+Yönetici **Yoklama Türleri** sayfasından yeni kategori ekleyebilir, mevcut kategorilere oturum
+ekleyip çıkarabilir (örn. "Etüt" kategorisi, Namaz'a yeni bir vakit vb.) ve **genel kategorilerin
+hangi sınıflarda görüneceğini** seçebilir (örn. Namaz yoklaması yalnızca 6-8. sınıflarda). Raporlarda
+öğrencinin her vakit/oturumdaki katılımı ayrı ayrı görüntülenir.
 
 ## Raporlar ve Karneler
 
 - **Raporlar** sayfası analiz merkezidir: Yoklama / Alışkanlık / Not / Genel Başarı sekmeleri,
   öğrenci ya da sınıf bazında gruplama, sınıf filtresi.
-  - *Yoklama Analizi*: kategori (örn. Namaz) ve tarih aralığı seçin — her öğrencinin 5 vakit için
-    ayrı ayrı katılım oranı, metrik seçimiyle (geldi/gelmedi/geç/izinli %) görüntülenir;
-    en alttaki "Toplu" satırı liste genelini özetler.
-- **Karneler** sayfası bireysel öğrenci karnelerine açılır.
+  - *Yoklama Analizi*: kategori (örn. Namaz) seçin — her öğrencinin 5 vakit için ayrı ayrı katılım
+    oranı, metrik seçimiyle (geldi/gelmedi/geç/izinli %) görüntülenir; en alttaki "Toplu" satırı
+    liste genelini özetler.
+  - Tarih filtresi iki modludur: **Tarih Aralığı** (mevcut from/to) veya **Ay / Yıl** (belirli bir ay,
+    ya da "Tüm Yıl" seçilerek o yılın tamamı) — kompakt, diğer filtrelerin yanında.
+- **Karneler** sayfası bireysel öğrenci karnelerine açılır; her karnede **"PDF Karne İndir"** butonu
+  bulunur, tarayıcının yazdırma özelliğiyle tek sayfalık bir PDF üretir.
 - Dashboard'da sınıf bazında özet ve yoklama türlerine göre katılım tabloları bulunur.
 
 ## Toplu Not Yükleme (güvenli akış)
@@ -87,15 +91,17 @@ uyuşmayan satırlar kaydedilmez ve tek tek raporlanır.
 
 ## Erişim Güvenliği
 
-Yönetici dışındaki tüm kullanıcılar (öğretmen/veli/öğrenci) WordPress arayüzünü hiç görmez:
-admin çubuğu ve WP menüleri gizlenir, eklenti sayfaları dışına yönlendirme yapılır; çıkış,
-sayfa başlığındaki hesap çipinden yapılır.
+Yönetici dışındaki tüm kullanıcılar (öğretmen/veli/öğrenci) WordPress arayüzünü sadeleştirilmiş
+görür: WP menüleri gizlenir, eklenti sayfaları dışına yönlendirme yapılır. Üst çubuk mobil menü
+anahtarı için korunur ama sadeleştirilir; sağ üstteki profil menüsünden çıkış yapılır.
 
 ## Alışkanlık Takibi
 
 - Alışkanlık oluştururken **takip metodu** seçilir:
   - **Yaptı / Yapmadı** — iki seçenekli takip
   - **Dereceli** — 1'den N'e (2–10 arası ayarlanabilir) yapma derecesi
+  - **Kitap / Sayfa Takibi** — günlük kitap adı + o gün okunan sayfa sayısı; karnede toplam sayfa
+    ve okunan kitapların listesi (kitap bazlı toplam sayfa, gün sayısı, son okuma tarihi) görüntülenir.
 - Öğrenci ataması sınıf filtresi ve "görünenleri seç" toplu seçimiyle yapılır.
 - Öğretmenler kendi öğrencilerinin kayıtlarını doldurur; yönetici herkesinkini doldurabilir.
 

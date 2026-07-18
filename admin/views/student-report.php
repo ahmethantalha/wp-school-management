@@ -33,13 +33,26 @@ if ( $report['grade_avgs'] ) {
 	$grade_avg = (int) round( array_sum( $vals ) / count( $vals ) );
 }
 $parent = $student->parent_user_id ? get_userdata( (int) $student->parent_user_id ) : null;
+
+$print_url = wp_nonce_url( add_query_arg( array(
+	'action'   => 'sms_print_report',
+	'student'  => $student_id,
+	'sms_term' => $term_id,
+), admin_url( 'admin-post.php' ) ), 'sms_print_report_' . $student_id );
 ?>
 <div class="wrap sms-wrap">
 	<?php sms_view_header( 'Öğrenci Karnesi', '' ); ?>
 
-	<?php if ( current_user_can( 'sms_teach' ) ) : ?>
-		<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-cards&sms_term=' . $term_id ) ); ?>">← Karnelere dön</a></p>
-	<?php endif; ?>
+	<div class="sms-toolbar">
+		<?php if ( current_user_can( 'sms_teach' ) ) : ?>
+			<a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-cards&sms_term=' . $term_id ) ); ?>">← Karnelere dön</a>
+		<?php else : ?>
+			<span></span>
+		<?php endif; ?>
+		<a class="sms-btn sms-btn-primary sms-btn-sm" href="<?php echo esc_url( $print_url ); ?>" target="_blank" rel="noopener">
+			<span class="dashicons dashicons-pdf"></span> PDF Karne İndir
+		</a>
+	</div>
 
 	<div class="sms-card sms-profile-card">
 		<?php echo sms_avatar( sms_student_name( $student ), 'sms-avatar-lg' ); // phpcs:ignore ?>
@@ -89,7 +102,7 @@ $parent = $student->parent_user_id ? get_userdata( (int) $student->parent_user_i
 					<?php foreach ( $report['habits'] as $h ) : ?>
 						<tr>
 							<td><strong><?php echo esc_html( $h->name ); ?></strong></td>
-							<td class="sms-muted"><?php echo 'binary' === $h->track_type ? 'Yaptı/Yapmadı' : '1–' . (int) $h->scale_max; ?></td>
+							<td class="sms-muted"><?php echo esc_html( sms_habit_track_type_label( $h ) ); ?></td>
 							<td><?php echo (int) $h->log_count; ?></td>
 							<td>
 								<?php if ( $h->log_count > 0 ) : ?>
@@ -120,9 +133,9 @@ $parent = $student->parent_user_id ? get_userdata( (int) $student->parent_user_i
 					<?php endforeach; ?>
 				</div>
 				<?php if ( $report['recent_att'] ) : ?>
-					<h4 class="sms-mt">Son Yoklamalar</h4>
+					<h4 class="sms-mt">Son 3 Yoklama</h4>
 					<ul class="sms-mini-list">
-						<?php foreach ( array_slice( $report['recent_att'], 0, 8 ) as $a ) : ?>
+						<?php foreach ( $report['recent_att'] as $a ) : ?>
 							<li>
 								<span class="sms-dot sms-att-<?php echo esc_attr( $a->status ); ?>"></span>
 								<?php
@@ -137,6 +150,29 @@ $parent = $student->parent_user_id ? get_userdata( (int) $student->parent_user_i
 			</div>
 		</div>
 	</div>
+
+	<?php if ( ! empty( $report['reading'] ) ) : ?>
+		<div class="sms-card sms-mt">
+			<div class="sms-card-head"><h2>📖 Kitap Okuma</h2><span class="sms-muted">Dönem geneli okunan kitaplar ve toplam sayfa</span></div>
+			<div class="sms-pad sms-cat-report">
+				<?php foreach ( $report['reading'] as $rh ) : ?>
+					<div class="sms-cat-report-block">
+						<h4><span class="dashicons dashicons-book"></span> <?php echo esc_html( $rh['habit_name'] ); ?>
+							<span class="sms-badge sms-badge-indigo"><?php echo (int) $rh['total_pages']; ?> sayfa • <?php echo count( $rh['books'] ); ?> kitap</span>
+						</h4>
+						<ul class="sms-mini-list">
+							<?php foreach ( $rh['books'] as $book ) : ?>
+								<li>
+									<strong><?php echo esc_html( $book['title'] ); ?></strong>
+									<span class="sms-muted"> — <?php echo (int) $book['pages']; ?> sayfa (<?php echo (int) $book['days']; ?> gün) • son: <?php echo esc_html( sms_format_date( $book['last_date'] ) ); ?></span>
+								</li>
+							<?php endforeach; ?>
+						</ul>
+					</div>
+				<?php endforeach; ?>
+			</div>
+		</div>
+	<?php endif; ?>
 
 	<?php if ( ! empty( $report['att_cats'] ) ) : ?>
 		<div class="sms-card sms-mt">

@@ -104,18 +104,26 @@ function sms_can_take_general_attendance() {
 /**
  * Genel yoklama için görülebilecek öğrenci ID'leri.
  * Yönetici: dönemdeki tüm aktif öğrenciler. Sınıf öğretmeni: sorumlu seviyeler (boşsa tümü).
+ * $category_id verilirse, kategorinin "hangi sınıflar bu yoklamada görünsün" kısıtlamasıyla
+ * (Yoklama Türleri sayfasında ayarlanır) da kesişim alınır.
  */
-function sms_general_attendance_student_ids( $term_id = 0, $user_id = 0 ) {
+function sms_general_attendance_student_ids( $term_id = 0, $user_id = 0, $category_id = 0 ) {
 	$term_id = $term_id ? (int) $term_id : sms_current_term_id();
 	$user_id = $user_id ? (int) $user_id : get_current_user_id();
 
 	$args = array( 'term_id' => $term_id, 'status' => 'active' );
 	$students = SMS_Students::query( $args );
 
-	$grades = user_can( $user_id, 'manage_options' ) ? array() : sms_class_teacher_grades( $user_id );
-	$ids    = array();
+	$teacher_grades = user_can( $user_id, 'manage_options' ) ? array() : sms_class_teacher_grades( $user_id );
+	$cat_grades     = $category_id ? SMS_Attendance_Types::get_grade_levels( $category_id ) : array();
+
+	$ids = array();
 	foreach ( $students as $s ) {
-		if ( $grades && ! in_array( (int) ( $s->grade_level ?? 0 ), $grades, true ) ) {
+		$g = (int) ( $s->grade_level ?? 0 );
+		if ( $teacher_grades && ! in_array( $g, $teacher_grades, true ) ) {
+			continue;
+		}
+		if ( $cat_grades && ! in_array( $g, $cat_grades, true ) ) {
 			continue;
 		}
 		$ids[] = (int) $s->id;
@@ -218,6 +226,58 @@ function sms_attendance_status_short() {
 	);
 }
 
+/** Alışkanlık takip türü etiketi (liste/karne kartlarında kullanılır). */
+function sms_habit_track_type_label( $habit ) {
+	if ( 'reading' === $habit->track_type ) {
+		return 'Kitap / Sayfa Takibi';
+	}
+	if ( 'scale' === $habit->track_type ) {
+		return 'Dereceli (1–' . (int) $habit->scale_max . ')';
+	}
+	return 'Yaptı / Yapmadı';
+}
+
+/** Rapor filtrelerinde kullanılan Türkçe ay adları. */
+function sms_month_names() {
+	return array(
+		1 => 'Ocak', 2 => 'Şubat', 3 => 'Mart', 4 => 'Nisan', 5 => 'Mayıs', 6 => 'Haziran',
+		7 => 'Temmuz', 8 => 'Ağustos', 9 => 'Eylül', 10 => 'Ekim', 11 => 'Kasım', 12 => 'Aralık',
+	);
+}
+
+/**
+ * Raporlar sayfası ve CSV dışa aktarmada ortak tarih aralığı çözümü.
+ * datemode=range → from/to (varsayılan davranış); datemode=month → rmonth/ryear
+ * (ay=0 ise seçili yılın tamamı). Reports.php ile export handler'ının aynı
+ * mantığı kullanmasını sağlar, ikisi arasında sürüklenmeyi önler.
+ */
+function sms_resolve_report_dates( $default_from = '' ) {
+	$mode     = isset( $_GET['datemode'] ) && 'month' === $_GET['datemode'] ? 'month' : 'range';
+	$cur_year = (int) current_time( 'Y' );
+
+	if ( 'month' === $mode ) {
+		$month = isset( $_GET['rmonth'] ) ? max( 0, min( 12, (int) $_GET['rmonth'] ) ) : 0;
+		$year  = isset( $_GET['ryear'] ) ? max( 2000, min( 2100, (int) $_GET['ryear'] ) ) : $cur_year;
+		if ( $month > 0 ) {
+			$from = sprintf( '%04d-%02d-01', $year, $month );
+			$to   = gmdate( 'Y-m-t', strtotime( $from ) );
+		} else {
+			$from = sprintf( '%04d-01-01', $year );
+			$to   = sprintf( '%04d-12-31', $year );
+		}
+		return array( 'mode' => 'month', 'month' => $month, 'year' => $year, 'from' => $from, 'to' => $to );
+	}
+
+	$from = isset( $_GET['from'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $_GET['from'] )
+		? sanitize_text_field( wp_unslash( $_GET['from'] ) )
+		: ( $default_from ?: gmdate( 'Y-m-d', strtotime( '-29 days', current_time( 'timestamp' ) ) ) );
+	$to   = isset( $_GET['to'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $_GET['to'] )
+		? sanitize_text_field( wp_unslash( $_GET['to'] ) )
+		: current_time( 'Y-m-d' );
+
+	return array( 'mode' => 'range', 'month' => 0, 'year' => $cur_year, 'from' => $from, 'to' => $to );
+}
+
 function sms_format_date( $date ) {
 	if ( ! $date || '0000-00-00' === $date ) {
 		return '—';
@@ -260,7 +320,7 @@ function sms_view_header( $title, $subtitle = '', $show_term_picker = true ) {
 	if ( $show_term_picker && $terms ) {
 		echo '<form method="get" class="sms-term-picker">';
 		// Mevcut sayfa parametrelerini koru.
-		foreach ( array( 'page', 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'rsession', 'tab', 'rtype', 'group', 'grade', 'metric', 'from', 'to', 'gview', 'subject', 'title', 'exam_date', 'exam_type' ) as $keep ) {
+		foreach ( array( 'page', 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'rsession', 'tab', 'rtype', 'group', 'grade', 'metric', 'from', 'to', 'datemode', 'rmonth', 'ryear', 'gview', 'subject', 'title', 'exam_date', 'exam_type' ) as $keep ) {
 			if ( isset( $_GET[ $keep ] ) ) {
 				echo '<input type="hidden" name="' . esc_attr( $keep ) . '" value="' . esc_attr( sanitize_text_field( wp_unslash( $_GET[ $keep ] ) ) ) . '">';
 			}

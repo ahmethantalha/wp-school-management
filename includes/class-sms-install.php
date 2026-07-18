@@ -100,12 +100,14 @@ class SMS_Install {
 		) $charset;";
 
 		// Yoklama kategorileri (Namaz, Temizlik, Telefon, Ders...) — yönetici genişletebilir.
+		// grade_levels: JSON dizi (örn. [6,7,8]); boş/NULL = tüm sınıflar bu yoklamada görünür.
 		$sql[] = "CREATE TABLE {$p}att_categories (
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			name VARCHAR(100) NOT NULL,
 			slug VARCHAR(60) NOT NULL,
 			icon VARCHAR(60) NULL,
 			scope VARCHAR(15) NOT NULL DEFAULT 'general',
+			grade_levels TEXT NULL,
 			is_system TINYINT(1) NOT NULL DEFAULT 0,
 			sort_order INT NOT NULL DEFAULT 0,
 			is_active TINYINT(1) NOT NULL DEFAULT 1,
@@ -167,12 +169,14 @@ class SMS_Install {
 			KEY student_id (student_id)
 		) $charset;";
 
+		// value: binary/scale için 0..scale_max; 'reading' (kitap okuma) türünde o günkü sayfa sayısı.
+		// note: binary/scale için serbest not; 'reading' türünde okunan kitabın adı.
 		$sql[] = "CREATE TABLE {$p}habit_logs (
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			habit_id BIGINT UNSIGNED NOT NULL,
 			student_id BIGINT UNSIGNED NOT NULL,
 			log_date DATE NOT NULL,
-			value TINYINT NOT NULL DEFAULT 0,
+			value SMALLINT NOT NULL DEFAULT 0,
 			note VARCHAR(255) NULL,
 			recorded_by BIGINT UNSIGNED NULL,
 			PRIMARY KEY  (id),
