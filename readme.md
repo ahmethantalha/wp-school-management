@@ -75,7 +75,9 @@ hangi sınıflarda görüneceğini** seçebilir (örn. Namaz yoklaması yalnızc
   - Tarih filtresi iki modludur: **Tarih Aralığı** (mevcut from/to) veya **Ay / Yıl** (belirli bir ay,
     ya da "Tüm Yıl" seçilerek o yılın tamamı) — kompakt, diğer filtrelerin yanında.
 - **Karneler** sayfası bireysel öğrenci karnelerine açılır; her karnede **"PDF Karne İndir"** butonu
-  bulunur, tarayıcının yazdırma özelliğiyle tek sayfalık bir PDF üretir.
+  bulunur ve sunucu tarafında (Dompdf ile) üretilmiş gerçek bir `.pdf` dosyasını doğrudan indirir.
+  - Karneler listesinde öğrenciler onay kutularıyla **toplu seçilebilir** ("tümünü seç" dahil); seçilen
+    öğrencilerin karneleri **her öğrenci için ayrı bir PDF** olacak şekilde tek bir **ZIP** dosyasında indirilir.
 - Dashboard'da sınıf bazında özet ve yoklama türlerine göre katılım tabloları bulunur.
 
 ## Toplu Not Yükleme (güvenli akış)

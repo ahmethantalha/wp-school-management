@@ -49,25 +49,42 @@ $grades = $term_id ? SMS_Students::grades_in_term( $term_id ) : array();
 
 	<div class="sms-card">
 		<?php if ( $scores ) : ?>
-			<div class="sms-table-scroll">
-			<table class="sms-table">
-				<thead><tr><th>#</th><th>Öğrenci</th><th>Sınıf</th><th>Devam</th><th>Alışkanlık</th><th>Not Ort.</th><th>Bileşik Skor</th><th></th></tr></thead>
-				<tbody>
-				<?php foreach ( $scores as $i => $row ) : $s = $row['student']; ?>
-					<tr>
-						<td class="sms-muted">#<?php echo $i + 1; ?></td>
-						<td class="sms-name-cell"><?php echo sms_avatar( sms_student_name( $s ) ); // phpcs:ignore ?><strong><?php echo esc_html( sms_student_name( $s ) ); ?></strong></td>
-						<td><?php echo isset( $s->grade_level ) ? esc_html( sms_grade_label( $s->grade_level ) ) : '—'; ?></td>
-						<td><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['attendance'] ) ); ?>"><?php echo null !== $row['attendance'] ? (int) $row['attendance'] . '%' : '—'; ?></span></td>
-						<td><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? (int) $row['habit'] . '%' : '—'; ?></span></td>
-						<td><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['grade'] ) ); ?>"><?php echo null !== $row['grade'] ? (int) $row['grade'] . '%' : '—'; ?></span></td>
-						<td><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $row['score'] ) ); ?>"><?php echo (int) $row['score']; ?></span></td>
-						<td class="sms-actions-cell"><a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $s->id . '&sms_term=' . $term_id ) ); ?>">Karne</a></td>
-					</tr>
-				<?php endforeach; ?>
-				</tbody>
-			</table>
-			</div>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" target="_blank" rel="noopener" data-sms-bulk-print-form>
+				<input type="hidden" name="action" value="sms_print_report_bulk">
+				<?php wp_nonce_field( 'sms_print_report_bulk', '_sms_nonce' ); ?>
+				<input type="hidden" name="sms_term" value="<?php echo (int) $term_id; ?>">
+
+				<div class="sms-toolbar">
+					<span class="sms-muted"><span data-sms-bulk-count>0</span> öğrenci seçili</span>
+					<button type="submit" class="sms-btn sms-btn-primary sms-btn-sm" data-sms-bulk-submit disabled>
+						<span class="dashicons dashicons-download"></span> Seçilenleri ZIP Olarak İndir (Her Öğrenci Ayrı PDF)
+					</button>
+				</div>
+
+				<div class="sms-table-scroll">
+				<table class="sms-table">
+					<thead><tr>
+						<th class="sms-check-col"><input type="checkbox" data-sms-bulk-all title="Tümünü seç"></th>
+						<th>#</th><th>Öğrenci</th><th>Sınıf</th><th>Devam</th><th>Alışkanlık</th><th>Not Ort.</th><th>Bileşik Skor</th><th></th>
+					</tr></thead>
+					<tbody>
+					<?php foreach ( $scores as $i => $row ) : $s = $row['student']; ?>
+						<tr>
+							<td class="sms-check-col"><input type="checkbox" name="student_ids[]" value="<?php echo (int) $s->id; ?>" data-sms-bulk-item></td>
+							<td class="sms-muted">#<?php echo $i + 1; ?></td>
+							<td class="sms-name-cell"><?php echo sms_avatar( sms_student_name( $s ) ); // phpcs:ignore ?><strong><?php echo esc_html( sms_student_name( $s ) ); ?></strong></td>
+							<td><?php echo isset( $s->grade_level ) ? esc_html( sms_grade_label( $s->grade_level ) ) : '—'; ?></td>
+							<td><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['attendance'] ) ); ?>"><?php echo null !== $row['attendance'] ? (int) $row['attendance'] . '%' : '—'; ?></span></td>
+							<td><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? (int) $row['habit'] . '%' : '—'; ?></span></td>
+							<td><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['grade'] ) ); ?>"><?php echo null !== $row['grade'] ? (int) $row['grade'] . '%' : '—'; ?></span></td>
+							<td><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $row['score'] ) ); ?>"><?php echo (int) $row['score']; ?></span></td>
+							<td class="sms-actions-cell"><a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $s->id . '&sms_term=' . $term_id ) ); ?>">Karne</a></td>
+						</tr>
+					<?php endforeach; ?>
+					</tbody>
+				</table>
+				</div>
+			</form>
 		<?php else : ?>
 			<div class="sms-empty">
 				<span class="dashicons dashicons-id-alt"></span>

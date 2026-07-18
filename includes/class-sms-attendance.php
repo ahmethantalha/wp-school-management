@@ -88,8 +88,13 @@ class SMS_Attendance {
 	}
 
 	/**
-	 * Öğrencinin genel (namaz/temizlik/telefon...) kategorilerdeki oturum bazlı katılımı.
-	 * @return array [ ['category'=>ad, 'scope'=>, 'sessions'=> [ ['name'=>, 'present'=>, 'total'=>, 'rate'=> ] ] ] ]
+	 * Öğrencinin yoklama türü (kategori) bazında katılımı — Ders dahil TÜM kategoriler.
+	 * Her kategori için genel bir oran (overall_rate) döner; birden çok oturumu olan
+	 * kategorilerde (örn. Namaz'ın 5 vakti) oturum bazlı kırılım da eklenir.
+	 * Karnede tek bir "toplu Geldi/Gelmedi" sayısı yerine tür bazlı yüzde göstermek için kullanılır.
+	 *
+	 * @return array [ ['category'=>ad, 'icon'=>, 'scope'=>, 'overall_rate'=>, 'overall_total'=>,
+	 *                  'multi_session'=>bool, 'sessions'=> [ ['name'=>, 'present'=>, 'total'=>, 'rate'=> ] ] ] ]
 	 */
 	public static function student_category_breakdown( $student_id, $term_id ) {
 		global $wpdb;
@@ -111,10 +116,13 @@ class SMS_Attendance {
 
 		$out = array();
 		foreach ( SMS_Attendance_Types::categories( false ) as $cat ) {
-			if ( 'class' === $cat->scope || empty( $by_cs[ (int) $cat->id ] ) ) {
+			if ( empty( $by_cs[ (int) $cat->id ] ) ) {
 				continue;
 			}
-			$sessions = array();
+			$sessions   = array();
+			$ov_present = 0;
+			$ov_late    = 0;
+			$ov_total   = 0;
 			foreach ( SMS_Attendance_Types::sessions( (int) $cat->id ) as $sess ) {
 				$row = $by_cs[ (int) $cat->id ][ (int) $sess->id ] ?? null;
 				if ( ! $row ) {
@@ -128,9 +136,20 @@ class SMS_Attendance {
 					'total'   => $total,
 					'rate'    => $rate,
 				);
+				$ov_present += (int) $row->present;
+				$ov_late    += (int) $row->late;
+				$ov_total   += $total;
 			}
 			if ( $sessions ) {
-				$out[] = array( 'category' => $cat->name, 'icon' => $cat->icon, 'sessions' => $sessions );
+				$out[] = array(
+					'category'      => $cat->name,
+					'icon'          => $cat->icon,
+					'scope'         => $cat->scope,
+					'overall_rate'  => $ov_total ? round( ( $ov_present + 0.5 * $ov_late ) / $ov_total * 100 ) : null,
+					'overall_total' => $ov_total,
+					'multi_session' => count( $sessions ) > 1,
+					'sessions'      => $sessions,
+				);
 			}
 		}
 		return $out;

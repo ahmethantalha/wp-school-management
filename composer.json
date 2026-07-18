@@ -1,0 +1,15 @@
+{
+    "name": "ahmethantalha/wp-school-management",
+    "description": "Okul Yönetim Sistemi eklentisi için sunucu taraflı bağımlılıklar (PDF üretimi).",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=7.4",
+        "dompdf/dompdf": "^2.0"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true,
+        "platform-check": false
+    }
+}

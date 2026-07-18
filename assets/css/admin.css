@@ -153,6 +153,7 @@
 .sms-name-cell { display: flex; align-items: center; gap: 10px; }
 .sms-name-cell .sms-muted { display: block; font-size: 12px; }
 .sms-actions-cell { text-align: right; white-space: nowrap; }
+.sms-check-col { width: 34px; text-align: center; }
 
 /* ---------- Avatar ---------- */
 .sms-avatar {
@@ -437,14 +438,6 @@
 .sms-avg-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; }
 .sms-avg-row > span:first-child { flex: 1; font-weight: 500; }
 
-/* Yoklama özet kutuları */
-.sms-att-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-.sms-att-summary-item { text-align: center; border-radius: 12px; padding: 12px 6px; background: #f8fafc; }
-.sms-att-count { display: block; font-size: 20px; font-weight: 800; }
-.sms-att-summary-item.sms-att-present .sms-att-count { color: var(--sms-green); }
-.sms-att-summary-item.sms-att-absent .sms-att-count { color: var(--sms-red); }
-.sms-att-summary-item.sms-att-late .sms-att-count { color: var(--sms-amber); }
-.sms-att-summary-item.sms-att-excused .sms-att-count { color: var(--sms-primary); }
 .sms-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; flex-shrink: 0; }
 .sms-dot.sms-att-present { background: #22c55e; }
 .sms-dot.sms-att-absent { background: #ef4444; }
@@ -570,6 +563,15 @@
 .sms-session-stat-name { flex: 1; font-weight: 500; }
 .sms-session-stat-rate { font-weight: 700; min-width: 44px; text-align: right; }
 
+/* Karne: yoklama türüne göre özet liste (kategori + oran, alt oturumlar açılabilir) */
+.sms-cat-summary-list { display: flex; flex-direction: column; gap: 4px; }
+.sms-cat-summary-row { padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+.sms-cat-summary-row:last-child { border-bottom: none; }
+.sms-cat-summary-head { display: flex; align-items: center; gap: 8px; }
+.sms-cat-summary-head .dashicons { color: var(--sms-primary); font-size: 16px; width: 16px; height: 16px; }
+.sms-cat-summary-count { flex: 1; font-size: 11.5px; }
+.sms-cat-summary-row .sms-session-stats { margin: 6px 0 0 24px; }
+
 /* ---------- Analiz matrisi ---------- */
 .sms-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .sms-center { text-align: center !important; }
@@ -604,7 +606,6 @@
 	.sms-table th, .sms-table td { padding: 10px 12px; }
 	.sms-filters input[type="search"] { min-width: 0; flex: 1; }
 	.sms-seg-item span { padding: 5px 9px; font-size: 12px; }
-	.sms-att-summary { grid-template-columns: repeat(2, 1fr); }
 	.sms-profile-card { flex-direction: column; text-align: center; }
 	.sms-profile-meta { justify-content: center; }
 	.sms-tabs { overflow-x: auto; }

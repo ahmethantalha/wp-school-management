@@ -278,6 +278,59 @@ function sms_resolve_report_dates( $default_from = '' ) {
 	return array( 'mode' => 'range', 'month' => 0, 'year' => $cur_year, 'from' => $from, 'to' => $to );
 }
 
+/**
+ * Karne PDF'lerinin paylaştığı CSS. Dompdf (sunucu taraflı PDF motoru) tarafından
+ * işlendiğinden bilinçli olarak flexbox kullanılmaz — tablo/blok tabanlı, dompdf'in
+ * en güvenilir desteklediği düzen teknikleriyle yazılmıştır.
+ */
+function sms_print_report_css() {
+	return '
+	* { box-sizing: border-box; }
+	@page { margin: 12mm; }
+	body {
+		font-family: "DejaVu Sans", sans-serif;
+		font-size: 11px;
+		color: #1e293b;
+		margin: 0;
+	}
+	.doc { width: 100%; }
+
+	.head-table { width: 100%; border-bottom: 2px solid #4f46e5; padding-bottom: 8px; margin-bottom: 10px; }
+	.head-table td { border: none; padding: 0; vertical-align: bottom; }
+	.head h1 { font-size: 17px; margin: 0 0 2px; color: #4f46e5; }
+	.head .school { font-size: 12px; font-weight: 700; }
+	.head-meta { text-align: right; font-size: 10px; color: #64748b; }
+
+	.identity { width: 100%; background: #f8fafc; border-radius: 10px; margin-bottom: 10px; }
+	.identity td { border: none; padding: 10px 14px; vertical-align: middle; }
+	.identity .avatar-cell { width: 46px; }
+	.identity .avatar {
+		width: 40px; height: 40px; border-radius: 50%; background: #eef2ff; color: #4f46e5;
+		text-align: center; font-weight: 700; font-size: 15px; line-height: 40px;
+	}
+	.identity .name { font-size: 15px; font-weight: 700; margin: 0 0 2px; }
+	.identity .sub { color: #64748b; font-size: 10.5px; }
+
+	.tiles { width: 100%; margin-bottom: 10px; }
+	.tiles td { border: none; padding: 0 4px; width: 25%; }
+	.tile { background: #f8fafc; border-radius: 8px; padding: 8px 6px; text-align: center; }
+	.tile .v { display: block; font-size: 16px; font-weight: 800; }
+	.tile .l { font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: .03em; }
+
+	h2.sec { font-size: 12px; margin: 12px 0 6px; padding-bottom: 3px; border-bottom: 1px solid #e2e8f0; color: #334155; }
+	table.data { width: 100%; border-collapse: collapse; font-size: 10.5px; margin-bottom: 4px; }
+	table.data th, table.data td { text-align: left; padding: 3px 6px; border-bottom: 1px solid #f1f5f9; }
+	table.data th { color: #64748b; font-weight: 700; font-size: 9.5px; text-transform: uppercase; }
+	.center { text-align: center; }
+
+	.cat-line { margin-bottom: 4px; font-size: 10.5px; }
+	.cat-line b { display: inline-block; min-width: 80px; }
+	.chip { background: #f1f5f9; border-radius: 999px; padding: 1px 7px; margin-left: 4px; font-size: 9.5px; }
+
+	.foot { margin-top: 14px; padding-top: 6px; border-top: 1px solid #e2e8f0; font-size: 9px; color: #94a3b8; text-align: center; }
+	';
+}
+
 function sms_format_date( $date ) {
 	if ( ! $date || '0000-00-00' === $date ) {
 		return '—';

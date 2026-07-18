@@ -151,5 +151,32 @@
 				if (monthFields) { monthFields.style.display = isMonth ? '' : 'none'; }
 			});
 		}
+
+		/* ---------- Karneler: toplu seçim + toplu PDF indirme ---------- */
+		var bulkForm = document.querySelector('[data-sms-bulk-print-form]');
+		if (bulkForm) {
+			var bulkAll    = bulkForm.querySelector('[data-sms-bulk-all]');
+			var bulkItems  = bulkForm.querySelectorAll('[data-sms-bulk-item]');
+			var bulkCount  = bulkForm.querySelector('[data-sms-bulk-count]');
+			var bulkSubmit = bulkForm.querySelector('[data-sms-bulk-submit]');
+
+			function updateBulkState() {
+				var checked = bulkForm.querySelectorAll('[data-sms-bulk-item]:checked').length;
+				if (bulkCount) { bulkCount.textContent = checked; }
+				if (bulkSubmit) { bulkSubmit.disabled = checked === 0; }
+				if (bulkAll) { bulkAll.checked = checked > 0 && checked === bulkItems.length; }
+			}
+
+			if (bulkAll) {
+				bulkAll.addEventListener('change', function () {
+					bulkItems.forEach(function (cb) { cb.checked = bulkAll.checked; });
+					updateBulkState();
+				});
+			}
+			bulkItems.forEach(function (cb) {
+				cb.addEventListener('change', updateBulkState);
+			});
+			updateBulkState();
+		}
 	});
 })();

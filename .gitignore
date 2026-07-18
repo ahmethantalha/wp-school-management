@@ -1,0 +1,9 @@
+# İşletim sistemi / editör dosyaları
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Composer geliştirme dosyaları (vendor/ dağıtım için kasıtlı olarak repoda tutulur)
+composer.phar

@@ -27,7 +27,7 @@ $subtitle = 'Yaptı / yapmadı takibi';
 if ( $is_scale ) {
 	$subtitle = 'Dereceli takip (1–' . $max . '); boş bırakılan öğrenci için kayıt girilmez.';
 } elseif ( $is_reading ) {
-	$subtitle = 'Kitap adı ve o gün okunan sayfa sayısını girin; sayfa boş bırakılan öğrenci için kayıt girilmez.';
+	$subtitle = 'Kitap adı ve o gün okunan sayfa sayısını girin (daha önce girilen kitaplar öneri olarak çıkar); sayfa boş bırakılan öğrenci için kayıt girilmez.';
 }
 ?>
 <div class="wrap sms-wrap">
@@ -76,8 +76,17 @@ if ( $is_scale ) {
 						?>
 						<tr>
 							<td class="sms-name-cell"><?php echo sms_avatar( sms_student_name( $s ) ); // phpcs:ignore ?><strong><?php echo esc_html( sms_student_name( $s ) ); ?></strong></td>
-							<?php if ( $is_reading ) : ?>
-								<td><input type="text" class="sms-input-sm" name="log_note[<?php echo (int) $s->id; ?>]" value="<?php echo esc_attr( $log->note ?? '' ); ?>" placeholder="Kitap adı…"></td>
+							<?php if ( $is_reading ) :
+								$book_options = SMS_Habits::book_titles_for_student( $habit_id, (int) $s->id );
+								?>
+								<td>
+									<input type="text" class="sms-input-sm" name="log_note[<?php echo (int) $s->id; ?>]" value="<?php echo esc_attr( $log->note ?? '' ); ?>" placeholder="Kitap adı…" list="sms-books-<?php echo (int) $s->id; ?>" autocomplete="off">
+									<?php if ( $book_options ) : ?>
+										<datalist id="sms-books-<?php echo (int) $s->id; ?>">
+											<?php foreach ( $book_options as $b ) : ?><option value="<?php echo esc_attr( $b ); ?>"><?php endforeach; ?>
+										</datalist>
+									<?php endif; ?>
+								</td>
 								<td><input type="number" class="sms-input-sm" name="log_value[<?php echo (int) $s->id; ?>]" min="0" max="3000" value="<?php echo esc_attr( $log->value ?? '' ); ?>" placeholder="Sayfa"></td>
 							<?php else : ?>
 							<td>

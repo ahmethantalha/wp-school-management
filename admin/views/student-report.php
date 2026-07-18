@@ -122,16 +122,35 @@ $print_url = wp_nonce_url( add_query_arg( array(
 		</div>
 
 		<div class="sms-card">
-			<div class="sms-card-head"><h2>Yoklama Özeti</h2></div>
+			<div class="sms-card-head"><h2>Yoklama Özeti</h2><span class="sms-muted">Yoklama türüne göre katılım oranı</span></div>
 			<div class="sms-pad">
-				<div class="sms-att-summary">
-					<?php foreach ( $statuses as $key => $label ) : ?>
-						<div class="sms-att-summary-item sms-att-<?php echo esc_attr( $key ); ?>">
-							<span class="sms-att-count"><?php echo (int) $att[ $key ]; ?></span>
-							<span class="sms-muted"><?php echo esc_html( $label ); ?></span>
-						</div>
-					<?php endforeach; ?>
-				</div>
+				<?php if ( $report['att_cats'] ) : ?>
+					<div class="sms-cat-summary-list">
+						<?php foreach ( $report['att_cats'] as $cat ) : ?>
+							<div class="sms-cat-summary-row">
+								<div class="sms-cat-summary-head">
+									<span class="dashicons <?php echo esc_attr( $cat['icon'] ?: 'dashicons-clipboard' ); ?>"></span>
+									<strong><?php echo esc_html( $cat['category'] ); ?></strong>
+									<span class="sms-muted sms-cat-summary-count"><?php echo (int) $cat['overall_total']; ?> kayıt</span>
+									<span class="sms-score <?php echo esc_attr( sms_rate_class( $cat['overall_rate'] ) ); ?>"><?php echo null !== $cat['overall_rate'] ? (int) $cat['overall_rate'] . '%' : '—'; ?></span>
+								</div>
+								<?php if ( $cat['multi_session'] ) : ?>
+									<div class="sms-session-stats">
+										<?php foreach ( $cat['sessions'] as $s ) : ?>
+											<div class="sms-session-stat">
+												<span class="sms-session-stat-name"><?php echo esc_html( $s['name'] ); ?></span>
+												<span class="sms-session-stat-rate <?php echo esc_attr( sms_rate_class( $s['rate'] ) ); ?>"><?php echo null !== $s['rate'] ? (int) $s['rate'] . '%' : '—'; ?></span>
+												<span class="sms-muted"><?php echo (int) $s['present']; ?>/<?php echo (int) $s['total']; ?></span>
+											</div>
+										<?php endforeach; ?>
+									</div>
+								<?php endif; ?>
+							</div>
+						<?php endforeach; ?>
+					</div>
+				<?php else : ?>
+					<p class="sms-muted">Bu dönemde yoklama kaydı yok.</p>
+				<?php endif; ?>
 				<?php if ( $report['recent_att'] ) : ?>
 					<h4 class="sms-mt">Son 3 Yoklama</h4>
 					<ul class="sms-mini-list">
@@ -168,28 +187,6 @@ $print_url = wp_nonce_url( add_query_arg( array(
 								</li>
 							<?php endforeach; ?>
 						</ul>
-					</div>
-				<?php endforeach; ?>
-			</div>
-		</div>
-	<?php endif; ?>
-
-	<?php if ( ! empty( $report['att_cats'] ) ) : ?>
-		<div class="sms-card sms-mt">
-			<div class="sms-card-head"><h2>Genel Yoklama Katılımı</h2><span class="sms-muted">Namaz, temizlik ve diğer genel yoklamalar</span></div>
-			<div class="sms-pad sms-cat-report">
-				<?php foreach ( $report['att_cats'] as $cat ) : ?>
-					<div class="sms-cat-report-block">
-						<h4><span class="dashicons <?php echo esc_attr( $cat['icon'] ?: 'dashicons-clipboard' ); ?>"></span> <?php echo esc_html( $cat['category'] ); ?></h4>
-						<div class="sms-session-stats">
-							<?php foreach ( $cat['sessions'] as $s ) : ?>
-								<div class="sms-session-stat">
-									<span class="sms-session-stat-name"><?php echo esc_html( $s['name'] ); ?></span>
-									<span class="sms-session-stat-rate <?php echo esc_attr( sms_rate_class( $s['rate'] ) ); ?>"><?php echo null !== $s['rate'] ? (int) $s['rate'] . '%' : '—'; ?></span>
-									<span class="sms-muted"><?php echo (int) $s['present']; ?>/<?php echo (int) $s['total']; ?> katılım</span>
-								</div>
-							<?php endforeach; ?>
-						</div>
 					</div>
 				<?php endforeach; ?>
 			</div>

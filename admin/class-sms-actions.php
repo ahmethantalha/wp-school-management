@@ -47,12 +47,29 @@ class SMS_Actions {
 		add_action( 'admin_post_sms_grade_template', array( __CLASS__, 'handle_grade_template' ) );
 		add_action( 'admin_post_sms_export_report', array( __CLASS__, 'handle_export_report' ) );
 		add_action( 'admin_post_sms_print_report', array( __CLASS__, 'handle_print_report' ) );
+		add_action( 'admin_post_sms_print_report_bulk', array( __CLASS__, 'handle_print_report_bulk' ) );
 	}
 
 	/**
 	 * Öğrenci karnesinin tek sayfalık, yazdırılabilir (PDF olarak kaydedilebilir) görünümü.
 	 * WP admin arayüzü (menü/çubuk) olmadan bağımsız bir HTML belgesi döner.
 	 */
+	/** Bir öğrencinin karne HTML'ini (dompdf'e verilecek) üretir. */
+	private static function render_report_html( $student_id, $term_id ) {
+		ob_start();
+		include SMS_DIR . 'admin/views/print/student-report-print.php';
+		return ob_get_clean();
+	}
+
+	/** Dosya adı için güvenli, öğrenciye özgü bir isim üretir (çakışmaya karşı id son ek). */
+	private static function report_filename( $student, $suffix = '' ) {
+		$name = sms_student_name( $student );
+		$name = remove_accents( $name );
+		$name = preg_replace( '/[^A-Za-z0-9]+/', '_', $name );
+		$name = trim( $name, '_' ) ?: 'Ogrenci';
+		return $name . '-Karne' . ( $suffix ? '-' . $suffix : '' ) . '.pdf';
+	}
+
 	public static function handle_print_report() {
 		$student_id = isset( $_GET['student'] ) ? (int) $_GET['student'] : 0;
 		if ( ! $student_id || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'sms_print_report_' . $student_id ) ) {
@@ -65,9 +82,81 @@ class SMS_Actions {
 		if ( ! $term_id ) {
 			wp_die( 'Dönem bulunamadı.' );
 		}
+		$student = SMS_Students::get( $student_id );
+		if ( ! $student ) {
+			wp_die( 'Öğrenci bulunamadı.' );
+		}
+
+		$html = self::render_report_html( $student_id, $term_id );
+		SMS_Pdf::stream( $html, self::report_filename( $student ) );
+	}
+
+	/**
+	 * Seçilen birden çok öğrencinin karnesini AYRI AYRI PDF dosyaları olarak üretip
+	 * tek bir ZIP arşivinde indirir. Karneler sayfasındaki toplu seçim formundan
+	 * POST edilir; erişimi olmayan öğrenci id'leri sessizce elenir.
+	 */
+	public static function handle_print_report_bulk() {
+		if ( ! current_user_can( 'sms_teach' ) || ! wp_verify_nonce( sanitize_key( $_POST['_sms_nonce'] ?? '' ), 'sms_print_report_bulk' ) ) {
+			wp_die( 'Geçersiz istek.' );
+		}
+		$term_id = isset( $_POST['sms_term'] ) ? (int) $_POST['sms_term'] : sms_current_term_id();
+		if ( ! $term_id ) {
+			wp_die( 'Dönem bulunamadı.' );
+		}
+
+		$requested   = isset( $_POST['student_ids'] ) ? array_map( 'intval', (array) $_POST['student_ids'] ) : array();
+		$student_ids = array_values( array_filter( array_unique( $requested ), 'sms_can_access_student' ) );
+		if ( ! $student_ids ) {
+			wp_die( 'Seçili öğrenci bulunamadı ya da erişim yetkiniz yok.' );
+		}
+		// Sunucu yükünü sınırlamak için makul bir üst sınır.
+		$student_ids = array_slice( $student_ids, 0, 200 );
+
+		if ( ! class_exists( 'ZipArchive' ) ) {
+			wp_die( 'Sunucuda ZipArchive bulunamadığından toplu indirme kullanılamıyor.' );
+		}
+
+		$tmp_zip = wp_tempnam( 'sms-karneler' );
+		$zip     = new ZipArchive();
+		if ( true !== $zip->open( $tmp_zip, ZipArchive::OVERWRITE ) ) {
+			wp_die( 'Geçici ZIP dosyası oluşturulamadı.' );
+		}
+
+		$used_names = array();
+		foreach ( $student_ids as $student_id ) {
+			$student = SMS_Students::get( $student_id );
+			if ( ! $student ) {
+				continue;
+			}
+			$html = self::render_report_html( $student_id, $term_id );
+			$pdf  = SMS_Pdf::render( $html );
+			if ( is_wp_error( $pdf ) ) {
+				continue; // tek bir öğrencide sorun olsa da toplu indirme devam eder.
+			}
+			$filename = self::report_filename( $student );
+			if ( isset( $used_names[ $filename ] ) ) {
+				$filename = self::report_filename( $student, (string) $student_id );
+			}
+			$used_names[ $filename ] = true;
+			$zip->addFromString( $filename, $pdf );
+		}
+		$zip->close();
+
+		if ( ! filesize( $tmp_zip ) ) {
+			wp_delete_file( $tmp_zip );
+			wp_die( 'Hiçbir karne oluşturulamadı.' );
+		}
+
+		$term        = SMS_Terms::get( $term_id );
+		$zip_name    = 'Karneler-' . sanitize_file_name( $term ? $term->name : current_time( 'Y-m-d' ) ) . '.zip';
 
 		nocache_headers();
-		include SMS_DIR . 'admin/views/print/student-report-print.php';
+		header( 'Content-Type: application/zip' );
+		header( 'Content-Disposition: attachment; filename="' . $zip_name . '"' );
+		header( 'Content-Length: ' . filesize( $tmp_zip ) );
+		readfile( $tmp_zip ); // phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData
+		wp_delete_file( $tmp_zip );
 		exit;
 	}
 

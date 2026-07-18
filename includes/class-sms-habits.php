@@ -260,6 +260,20 @@ class SMS_Habits {
 	}
 
 	/**
+	 * Öğrencinin bu alışkanlıkta daha önce girdiği kitap adları (en son girilen önce),
+	 * takip doldurma ekranında öneri (dropdown/datalist) olarak kullanılır.
+	 */
+	public static function book_titles_for_student( $habit_id, $student_id ) {
+		global $wpdb;
+		return $wpdb->get_col( $wpdb->prepare(
+			"SELECT note FROM {$wpdb->prefix}sms_habit_logs
+			 WHERE habit_id = %d AND student_id = %d AND note IS NOT NULL AND note != ''
+			 GROUP BY note ORDER BY MAX(log_date) DESC LIMIT 30",
+			$habit_id, $student_id
+		) );
+	}
+
+	/**
 	 * Öğrencinin 'reading' (kitap okuma) türündeki alışkanlıklarında okuduğu kitaplar
 	 * ve toplam sayfa sayısı. Kitap adı serbest metin (note) olduğundan aynı isim
 	 * (baş/son boşluk temizlenmiş) altında gruplanır.
