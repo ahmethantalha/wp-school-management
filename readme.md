@@ -4,8 +4,6 @@
 Öğrenci/öğretmen/veli yönetimi, derslik (şube) yönetimi, yoklama, not girişi,
 alışkanlık takibi ve görsel raporlar sunar.
 
-> Geliştirme planı ve mimari kararlar için [progress.md](progress.md) dosyasına bakın.
-
 ## Kurulum
 
 1. Bu depoyu `wp-content/plugins/wp-school-management` klasörüne kopyalayın
@@ -111,6 +109,8 @@ anahtarı için korunur ama sadeleştirilir; sağ üstteki profil menüsünden �
 
 - Veriler `wp_sms_*` önekli özel tablolarda tutulur; tüm operasyonel kayıtlar **dönem bazlıdır**.
 - Grafikler harici kütüphane olmadan hafif bir SVG motoruyla çizilir (CDN bağımlılığı yok).
+- PDF karne üretimi için [Dompdf](https://github.com/dompdf/dompdf) (LGPL) kütüphanesi `vendor/`
+  altında paket içinde gelir; hiçbir uzak sunucuya istek atmaz (`isRemoteEnabled` kapalı).
 - Tüm formlar nonce + yetenek (capability) kontrollüdür; kayıt düzeyinde erişim denetimi yapılır.
 - Eklenti kaldırıldığında veriler varsayılan olarak **korunur**
   (silmek için `SMS_REMOVE_DATA_ON_UNINSTALL` sabitine bakın: `uninstall.php`).

@@ -4,8 +4,10 @@
  * Plugin URI:        https://github.com/ahmethantalha/wp-school-management
  * Description:       Öğrenci yurtları, okullar ve eğitim kurumları için dönem bazlı öğrenci takip sistemi: öğrenci/öğretmen/veli yönetimi, derslikler, yoklama, not ve alışkanlık takibi, raporlar.
  * Version:           1.3.1
- * Author:            Ahmet Han Talha
+ * Author:            Ahmethan T. Gültekin
+ * Author URI:        https://github.com/ahmethantalha
  * License:           GPL-2.0-or-later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       wp-school-management
  * Requires at least: 6.0
  * Requires PHP:      7.4
