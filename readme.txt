@@ -8,7 +8,7 @@ Stable tag: 1.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A term-based student tracking system for boarding schools, schools and educational institutions: attendance, grades, habit tracking and PDF report cards.
+Term-based student tracking for schools and boarding schools: attendance, grades, habit tracking and PDF report cards.
 
 == Description ==
 

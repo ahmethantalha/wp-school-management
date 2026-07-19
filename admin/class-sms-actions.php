@@ -580,6 +580,7 @@ class SMS_Actions {
 		$username = self::post( 'account_username' );
 		if ( $username && empty( $data['user_id'] ) ) {
 			$email = sanitize_email( self::post( 'account_email' ) );
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- parola değerine kasıtlı olarak sanitize_text_field uygulanmaz (geçerli karakterleri bozar); yalnızca wp_unslash yeterlidir.
 			$pass  = isset( $_POST['account_password'] ) ? (string) wp_unslash( $_POST['account_password'] ) : '';
 			if ( ! $pass ) {
 				$pass = wp_generate_password( 12 );
@@ -625,12 +626,14 @@ class SMS_Actions {
 				'display_name' => $name,
 				'user_email'   => $email,
 			) );
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- parola değerine kasıtlı olarak sanitize_text_field uygulanmaz (geçerli karakterleri bozar); yalnızca wp_unslash yeterlidir.
 			$pass = isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : '';
 			if ( ! is_wp_error( $result ) && $pass ) {
 				wp_set_password( $pass, $user_id );
 			}
 		} else {
 			$username = self::post( 'username' );
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- parola değerine kasıtlı olarak sanitize_text_field uygulanmaz (geçerli karakterleri bozar); yalnızca wp_unslash yeterlidir.
 			$pass     = isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : '';
 			if ( ! $username || ! $email ) {
 				self::back( '', 'Kullanıcı adı ve e-posta zorunludur.' );
@@ -968,7 +971,7 @@ class SMS_Actions {
 			self::back( '', 'Lütfen bir .xlsx veya .csv dosyası seçin.' );
 		}
 
-		$tmp  = $_FILES['import_file']['tmp_name']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- PHP-generated temp path, not user input.
+		$tmp  = $_FILES['import_file']['tmp_name']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- yukarıdaki self::back()/exit kontrolü nedeniyle 'error' boşsa (UPLOAD_ERR_OK) tmp_name PHP tarafından garanti doldurulur.
 		$ext  = strtolower( pathinfo( sanitize_file_name( wp_unslash( $_FILES['import_file']['name'] ) ), PATHINFO_EXTENSION ) );
 		$rows = SMS_Import::read_file( $tmp, $ext );
 		if ( is_wp_error( $rows ) ) {
@@ -1004,6 +1007,7 @@ class SMS_Actions {
 		}
 		$title     = isset( $_GET['title'] ) ? sanitize_text_field( wp_unslash( $_GET['title'] ) ) : 'Sınav';
 		$exam_type = isset( $_GET['exam_type'] ) ? sanitize_text_field( wp_unslash( $_GET['exam_type'] ) ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- ham değer yalnızca regex biçim doğrulaması için okunur, kullanılan değer sanitize_text_field(wp_unslash()) ile temizlenir.
 		$exam_date = isset( $_GET['exam_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['exam_date'] ) ) ? sanitize_text_field( wp_unslash( $_GET['exam_date'] ) ) : current_time( 'Y-m-d' );
 		$max_score = isset( $_GET['max_score'] ) ? max( 1, (float) $_GET['max_score'] ) : 100;
 
@@ -1022,7 +1026,7 @@ class SMS_Actions {
 		if ( empty( $_FILES['grade_file']['name'] ) || ! empty( $_FILES['grade_file']['error'] ) ) {
 			self::back( '', 'Lütfen doldurulmuş not listesini (.csv veya .xlsx) seçin.' );
 		}
-		$tmp  = $_FILES['grade_file']['tmp_name']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- PHP-generated temp path, not user input.
+		$tmp  = $_FILES['grade_file']['tmp_name']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- yukarıdaki self::back()/exit kontrolü nedeniyle 'error' boşsa (UPLOAD_ERR_OK) tmp_name PHP tarafından garanti doldurulur.
 		$ext  = strtolower( pathinfo( sanitize_file_name( wp_unslash( $_FILES['grade_file']['name'] ) ), PATHINFO_EXTENSION ) );
 		$rows = SMS_Import::read_file( $tmp, $ext );
 		if ( is_wp_error( $rows ) ) {

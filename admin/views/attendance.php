@@ -104,7 +104,7 @@ if ( ! $session || (int) $session->category_id !== (int) $category->id ) {
 }
 
 /* ============================ 4) YOKLAMA CETVELİ ============================ */
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET) filtresi, durum değişikliği yok.
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- salt görüntüleme (GET), durum değişikliği yok; ham değer yalnızca regex biçim doğrulaması için okunur, kullanılan değer sanitize_text_field(wp_unslash()) ile temizlenir.
 $date = isset( $_GET['att_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['att_date'] ) ) ? sanitize_text_field( wp_unslash( $_GET['att_date'] ) ) : current_time( 'Y-m-d' );
 
 if ( 'class' === $category->scope ) {

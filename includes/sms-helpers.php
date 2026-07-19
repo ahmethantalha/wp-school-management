@@ -25,13 +25,14 @@ function sms_active_term() {
  * Görüntülenen dönem: ?sms_term=ID parametresi varsa o, yoksa aktif dönem.
  */
 function sms_current_term_id() {
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme parametresi, durum değişikliği yok.
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme parametresi, durum değişikliği yok.
 	if ( isset( $_GET['sms_term'] ) && (int) $_GET['sms_term'] > 0 ) {
 		$term = SMS_Terms::get( (int) $_GET['sms_term'] );
 		if ( $term ) {
 			return (int) $term->id;
 		}
 	}
+	// phpcs:enable WordPress.Security.NonceVerification.Recommended
 	$active = sms_active_term();
 	return $active ? (int) $active->id : 0;
 }
@@ -69,10 +70,11 @@ function sms_teacher_student_ids( $user_id = 0, $term_id = 0 ) {
 	$class_ids = sms_teacher_class_ids( $user_id, $term_id );
 	if ( $class_ids ) {
 		$in  = implode( ',', array_map( 'intval', $class_ids ) ); // intval ile temizlenmiş, sorguya güvenle gömülür.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- özel eklenti tablosu; $in yalnızca intval edilmiş id'lerden oluşur.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- özel eklenti tablosu; $in yalnızca intval edilmiş id'lerden oluşur.
 		$ids = array_map( 'intval', $wpdb->get_col(
 			"SELECT DISTINCT student_id FROM {$wpdb->prefix}sms_class_students WHERE class_id IN ($in)"
 		) );
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	// Sınıf öğretmeni: sorumlu sınıf seviyelerindeki (veya tüm) aktif öğrenciler.
@@ -254,7 +256,7 @@ function sms_month_names() {
  * (ay=0 ise seçili yılın tamamı). Reports.php ile export handler'ının aynı
  * mantığı kullanmasını sağlar, ikisi arasında sürüklenmeyi önler.
  */
-// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme/dışa aktarma filtreleri (GET), durum değişikliği yok; her değer whitelist/regex ile doğrulanıp sanitize edilir.
+// phpcs:disable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- salt görüntüleme/dışa aktarma filtreleri (GET), durum değişikliği yok; ham değer yalnızca regex biçim doğrulaması için okunur, kullanılan değer sanitize_text_field(wp_unslash()) ile temizlenir.
 function sms_resolve_report_dates( $default_from = '' ) {
 	$mode     = isset( $_GET['datemode'] ) && 'month' === $_GET['datemode'] ? 'month' : 'range';
 	$cur_year = (int) current_time( 'Y' );
@@ -281,7 +283,7 @@ function sms_resolve_report_dates( $default_from = '' ) {
 
 	return array( 'mode' => 'range', 'month' => 0, 'year' => $cur_year, 'from' => $from, 'to' => $to );
 }
-// phpcs:enable WordPress.Security.NonceVerification.Recommended
+// phpcs:enable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 /**
  * Karne PDF'lerinin paylaştığı CSS. Dompdf (sunucu taraflı PDF motoru) tarafından
