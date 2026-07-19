@@ -37,7 +37,7 @@ $term_id  = sms_current_term_id();
 					</div>
 					<div class="sms-class-card-meta">
 						<span><span class="dashicons dashicons-clipboard"></span> Devam: <strong class="<?php echo esc_attr( sms_rate_class( $att['rate'] ) ); ?>"><?php echo null !== $att['rate'] ? (int) $att['rate'] . '%' : '—'; ?></strong></span>
-						<span><span class="dashicons dashicons-yes-alt"></span> Alışkanlık: <strong class="<?php echo esc_attr( sms_rate_class( $habit_avg ) ); ?>"><?php echo null !== $habit_avg ? $habit_avg . '%' : '—'; ?></strong></span>
+						<span><span class="dashicons dashicons-yes-alt"></span> Alışkanlık: <strong class="<?php echo esc_attr( sms_rate_class( $habit_avg ) ); ?>"><?php echo null !== $habit_avg ? esc_html( $habit_avg . '%' ) : '—'; ?></strong></span>
 					</div>
 					<div class="sms-class-card-actions">
 						<a class="sms-btn sms-btn-primary sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $c->id . '&sms_term=' . $term_id ) ); ?>">Detaylı Karne</a>

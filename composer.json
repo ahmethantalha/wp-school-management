@@ -1,5 +1,5 @@
 {
-    "name": "ahmethantalha/wp-school-management",
+    "name": "ahmethantalha/okul-yonetim-sistemi",
     "description": "Okul Yönetim Sistemi eklentisi için sunucu taraflı bağımlılıklar (PDF üretimi).",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",

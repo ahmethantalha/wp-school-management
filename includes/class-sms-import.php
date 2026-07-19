@@ -22,7 +22,8 @@ class SMS_Import {
 	}
 
 	private static function read_csv( $path ) {
-		$rows   = array();
+		$rows = array();
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- fgetcsv() satır satır ayrıştırma için yerel bir PHP akışı gerektirir; WP_Filesystem'de karşılığı yoktur. $path, PHP'nin ürettiği geçici yükleme dosyasıdır.
 		$handle = fopen( $path, 'r' );
 		if ( ! $handle ) {
 			return new WP_Error( 'sms_read', 'Dosya okunamadı.' );
@@ -36,16 +37,17 @@ class SMS_Import {
 				$rows[] = $data;
 			}
 		}
-		fclose( $handle );
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 		return self::rows_to_assoc( $rows );
 	}
 
 	private static function detect_delimiter( $path ) {
 		$line = '';
-		$h    = fopen( $path, 'r' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- ilk satırı ayırıcı tespiti için okur; WP_Filesystem'de fgets karşılığı yoktur. $path, PHP'nin ürettiği geçici yükleme dosyasıdır.
+		$h = fopen( $path, 'r' );
 		if ( $h ) {
 			$line = (string) fgets( $h );
-			fclose( $h );
+			fclose( $h ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 		}
 		$semic = substr_count( $line, ';' );
 		$comma = substr_count( $line, ',' );
@@ -453,6 +455,7 @@ class SMS_Import {
 			}
 
 			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- özel eklenti tablosu, $wpdb->insert() kendi kaçış işlemini yapar.
 			$wpdb->insert( $wpdb->prefix . 'sms_grades', array(
 				'class_id'    => $class_id,
 				'student_id'  => $student_id,

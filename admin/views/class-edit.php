@@ -1,6 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok; yetki aşağıda sms_can_manage_class() ile kontrol edilir.
 $class_id = isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
 $class    = $class_id ? SMS_Classes::get( $class_id ) : null;
 $term_id  = $class ? (int) $class->term_id : sms_current_term_id();

@@ -1,6 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok.
 $habit_id = isset( $_GET['habit_id'] ) ? (int) $_GET['habit_id'] : 0;
 $habit    = $habit_id ? SMS_Habits::get( $habit_id ) : null;
 $term_id  = $habit ? (int) $habit->term_id : sms_current_term_id();

@@ -2,9 +2,11 @@
 defined( 'ABSPATH' ) || exit;
 
 $term_id = sms_current_term_id();
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme filtreleri (GET), durum değişikliği yok.
 $cat_id  = isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
 $sess_id = isset( $_GET['session'] ) ? (int) $_GET['session'] : 0;
 $class_id = isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
+// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 // Eski bağlantı uyumu: class_id var ama kategori yoksa Ders kategorisini varsay.
 if ( $class_id && ! $cat_id ) {
@@ -31,7 +33,7 @@ if ( ! $category ) {
 						<span class="sms-cat-icon"><span class="dashicons <?php echo esc_attr( $cat->icon ?: 'dashicons-clipboard' ); ?>"></span></span>
 						<span class="sms-cat-name"><?php echo esc_html( $cat->name ); ?></span>
 						<span class="sms-cat-meta">
-							<?php echo 'class' === $cat->scope ? 'Derslik bazlı' : ( $scount > 1 ? $scount . ' oturum' : 'Genel yoklama' ); ?>
+							<?php echo 'class' === $cat->scope ? 'Derslik bazlı' : ( $scount > 1 ? esc_html( $scount . ' oturum' ) : 'Genel yoklama' ); ?>
 						</span>
 					</a>
 				<?php endforeach; ?>
@@ -102,7 +104,8 @@ if ( ! $session || (int) $session->category_id !== (int) $category->id ) {
 }
 
 /* ============================ 4) YOKLAMA CETVELİ ============================ */
-$date = isset( $_GET['att_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $_GET['att_date'] ) ? sanitize_text_field( wp_unslash( $_GET['att_date'] ) ) : current_time( 'Y-m-d' );
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET) filtresi, durum değişikliği yok.
+$date = isset( $_GET['att_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['att_date'] ) ) ? sanitize_text_field( wp_unslash( $_GET['att_date'] ) ) : current_time( 'Y-m-d' );
 
 if ( 'class' === $category->scope ) {
 	if ( ! sms_can_manage_class( $class_id ) ) {

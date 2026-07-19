@@ -5,6 +5,7 @@ if ( ! sms_is_manager() ) {
 	wp_die( 'Öğrenci düzenleme yetkiniz yok.' );
 }
 
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok; yetki üstte sms_is_manager() ile kontrol edilir.
 $student_id = isset( $_GET['student'] ) ? (int) $_GET['student'] : 0;
 $student    = $student_id ? SMS_Students::get( $student_id ) : null;
 $term_id    = sms_current_term_id();

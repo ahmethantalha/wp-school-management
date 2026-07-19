@@ -93,7 +93,7 @@ $settings = sms_get_settings();
 				<ul class="sms-rank-list">
 					<?php foreach ( $top as $i => $row ) : $st = $row['student']; ?>
 						<li>
-							<span class="sms-rank">#<?php echo $i + 1; ?></span>
+							<span class="sms-rank">#<?php echo (int) $i + 1; ?></span>
 							<?php echo sms_avatar( sms_student_name( $st ) ); // phpcs:ignore ?>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $st->id . '&sms_term=' . $term_id ) ); ?>"><?php echo esc_html( sms_student_name( $st ) ); ?></a>
 							<span class="sms-score sms-rate-good"><?php echo (int) $row['score']; ?></span>
@@ -137,9 +137,9 @@ $settings = sms_get_settings();
 						<tr>
 							<td><strong><?php echo esc_html( sms_grade_label( $row['grade'] ) ); ?></strong></td>
 							<td class="sms-muted"><?php echo (int) $row['count']; ?></td>
-							<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['att'] ) ); ?>"><?php echo null !== $row['att'] ? $row['att'] . '%' : '—'; ?></span></td>
-							<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? $row['habit'] . '%' : '—'; ?></span></td>
-							<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['grade_avg'] ) ); ?>"><?php echo null !== $row['grade_avg'] ? $row['grade_avg'] . '%' : '—'; ?></span></td>
+							<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['att'] ) ); ?>"><?php echo null !== $row['att'] ? esc_html( $row['att'] . '%' ) : '—'; ?></span></td>
+							<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? esc_html( $row['habit'] . '%' ) : '—'; ?></span></td>
+							<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['grade_avg'] ) ); ?>"><?php echo null !== $row['grade_avg'] ? esc_html( $row['grade_avg'] . '%' ) : '—'; ?></span></td>
 						</tr>
 					<?php endforeach; ?>
 					</tbody>
@@ -161,7 +161,7 @@ $settings = sms_get_settings();
 					<?php foreach ( $cat_sum as $row ) : ?>
 						<tr>
 							<td><span class="dashicons <?php echo esc_attr( $row['icon'] ?: 'dashicons-clipboard' ); ?>"></span> <strong><?php echo esc_html( $row['name'] ); ?></strong></td>
-							<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $row['rate'] ) ); ?>"><?php echo null !== $row['rate'] ? $row['rate'] . '%' : '—'; ?></span></td>
+							<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $row['rate'] ) ); ?>"><?php echo null !== $row['rate'] ? esc_html( $row['rate'] . '%' ) : '—'; ?></span></td>
 							<td class="sms-center sms-rate-good"><?php echo (int) $row['present']; ?></td>
 							<td class="sms-center sms-rate-low"><?php echo (int) $row['absent']; ?></td>
 							<td class="sms-center sms-rate-mid"><?php echo (int) $row['late']; ?></td>

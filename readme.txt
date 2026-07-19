@@ -8,125 +8,126 @@ Stable tag: 1.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Öğrenci yurtları, okullar ve eğitim kurumları için dönem bazlı öğrenci takip sistemi: yoklama, not, alışkanlık takibi ve PDF karneler.
+A term-based student tracking system for boarding schools, schools and educational institutions: attendance, grades, habit tracking and PDF report cards.
 
 == Description ==
 
-**Okul Yönetim Sistemi**, öğrenci yurtları, okullar ve eğitim kurumları için hazırlanmış, dönem
-bazlı çalışan kapsamlı bir öğrenci takip eklentisidir. Öğrenci, öğretmen ve veli yönetiminden
-yoklama, not girişi, alışkanlık takibine ve görsel raporlara kadar bir kurumun ihtiyaç duyduğu
-temel takip araçlarını tek bir panelde toplar.
+**Okul Yönetim Sistemi** (School Management System) is a comprehensive, term-based student
+tracking plugin built for boarding schools, schools and educational institutions. From student,
+teacher and parent management to attendance, grade entry, habit tracking and visual reports, it
+brings together the essential tracking tools an institution needs in a single panel.
 
-= Öne Çıkan Özellikler =
+= Key Features =
 
-* **Öğrenci / Öğretmen / Veli Yönetimi** — her rol için ayrı WordPress kullanıcı rolü ve giriş sonrası doğrudan panele yönlendirme.
-* **Derslik (şube) yönetimi** — sınıf filtresi ve toplu seçimli kadro ekranı ile hızlı öğrenci atama.
-* **Kategori ve oturum bazlı yoklama** — ders yoklamasının yanı sıra namaz vakitleri, temizlik, telefon gibi genel kategoriler; yönetici yeni kategori/oturum tanımlayabilir ve kategorinin hangi sınıf seviyelerinde görüneceğini seçebilir.
-* **Alışkanlık takibi** — Yaptı/Yapmadı, dereceli (1'den N'e) veya kitap/sayfa takibi (günlük kitap adı + okunan sayfa sayısı) yöntemleriyle.
-* **Not girişi ve toplu yükleme** — derslik bazlı sınav notları; CSV şablonu indirip toplu yükleme desteği.
-* **Raporlar** — yoklama, alışkanlık, not ve genel başarı için öğrenci/sınıf bazlı analiz sekmeleri; tarih aralığı veya ay/yıl bazlı filtreleme.
-* **PDF Karneler** — her öğrenci için gerçek, indirilebilir bir `.pdf` karne üretir; Karneler sayfasından birden fazla öğrenci seçip karnelerini **tek bir ZIP dosyası** (öğrenci başına ayrı PDF) olarak toplu indirebilirsiniz.
-* **Toplu içe aktarma** — öğrenci/öğretmen/veli listelerini Excel (.xlsx) veya CSV ile içe aktarma, örnek şablonlarla.
-* **Dönem geçişi** — yeni dönem açıldığında tüm öğrenciler otomatik bir üst sınıfa taşınır, mezuniyet seviyesindekiler mezun statüsüne geçip arşivlenir.
-* **Kayıt düzeyinde erişim denetimi** — öğretmenler yalnızca kendi derslik/öğrencilerini, veliler yalnızca kendi çocuklarını görür.
+* **Student / Teacher / Parent Management** — a dedicated WordPress user role for each role, with direct redirection to the panel after login.
+* **Classroom management** — quick student assignment via a class filter and bulk-selection roster screen.
+* **Category and session based attendance** — in addition to regular class attendance, general categories such as prayer times, cleaning duty and phone checks; the administrator can define new categories/sessions and choose which grade levels each category applies to.
+* **Habit tracking** — Done/Not done, graded (1 to N), or book/page tracking (daily book title + pages read) methods.
+* **Grade entry and bulk upload** — classroom-based exam grades; CSV template download and bulk upload support.
+* **Reports** — analysis tabs for attendance, habits, grades and overall performance, grouped by student or class; date-range or month/year filtering.
+* **PDF Report Cards** — generates a real, downloadable `.pdf` report card for every student; from the Report Cards page you can select multiple students and download their report cards in bulk as a **single ZIP file** (one PDF per student).
+* **Bulk import** — import student/teacher/parent lists via Excel (.xlsx) or CSV, with sample templates.
+* **Term transition** — when a new term opens, all students are automatically promoted to the next grade; those at the graduation level are marked as graduated and archived.
+* **Record-level access control** — teachers only see their own classrooms/students, parents only see their own children.
 
-= Roller =
+= Roles =
 
-* **Yönetici** — tam yetki.
-* **Öğretmen** — kendi derslikleri için yoklama/not/alışkanlık girişi, kendi öğrencilerini görüntüleme.
-* **Veli** — yalnızca kendi çocuklarının karnesini görüntüleme.
-* **Öğrenci** — yalnızca kendi karnesini görüntüleme.
+* **Administrator** — full access.
+* **Teacher** — attendance/grade/habit entry for their own classrooms, viewing their own students.
+* **Parent** — viewing only their own children's report cards.
+* **Student** — viewing only their own report card.
 
-= Üçüncü Taraf Kütüphane =
+= Third-Party Library =
 
-PDF karne üretimi, eklentiyle birlikte paket içinde gelen [Dompdf](https://github.com/dompdf/dompdf)
-kütüphanesi (LGPL lisanslı, GPL ile uyumlu) ile sunucu tarafında yapılır. Dompdf uzak sunuculara
-istek atmayacak şekilde yapılandırılmıştır (`isRemoteEnabled` kapalı); eklenti hiçbir harici
-servise veri göndermez.
+PDF report card generation is done server-side using the [Dompdf](https://github.com/dompdf/dompdf)
+library (LGPL licensed, GPL compatible), which is bundled with the plugin. Dompdf is configured
+so it never makes requests to remote servers (`isRemoteEnabled` is disabled); the plugin does not
+send any data to external services.
 
 == Installation ==
 
-1. Eklenti dosyalarını `wp-content/plugins/wp-school-management` klasörüne yükleyin (veya
-   **Eklentiler → Yeni Ekle → Eklenti Yükle** ile zip dosyasını yükleyin).
-2. **Eklentiler** sayfasından *Okul Yönetim Sistemi*'ni etkinleştirin.
-3. Sol menüde beliren **Okul Yönetimi** menüsünden **Ayarlar**'a girip kurum adını ve mezuniyet
-   sınıf seviyesini belirleyin.
-4. **Dönemler** sayfasından ilk dönemi oluşturun, ardından öğretmen/veli/öğrenci kayıtlarını
-   ekleyin veya toplu içe aktarın.
+1. Upload the plugin files to the `wp-content/plugins/okul-yonetim-sistemi` folder (or upload the
+   zip file via **Plugins → Add New → Upload Plugin**).
+2. Activate *Okul Yönetim Sistemi* from the **Plugins** page.
+3. Open the **Okul Yönetimi** menu that appears in the left sidebar, go to **Settings**, and set
+   your institution's name and the graduation grade level.
+4. Create your first term from the **Terms** page, then add or bulk-import your teacher/parent/
+   student records.
 
 == Frequently Asked Questions ==
 
-= Öğrenci verileri eklenti kaldırıldığında silinir mi? =
+= Is student data deleted when the plugin is uninstalled? =
 
-Hayır, varsayılan olarak korunur. Verilerin de silinmesini istiyorsanız `wp-config.php`
-dosyanıza `define( 'SMS_REMOVE_DATA_ON_UNINSTALL', true );` satırını eklemeniz gerekir.
+No, data is preserved by default. If you also want the data to be removed, add the line
+`define( 'SMS_REMOVE_DATA_ON_UNINSTALL', true );` to your `wp-config.php` file.
 
-= Eklenti harici bir servise veri gönderiyor mu? =
+= Does the plugin send data to any external service? =
 
-Hayır. Tüm veriler kendi veritabanınızdaki `wp_sms_*` önekli tablolarda tutulur, hiçbir uzak
-sunucuya istek gönderilmez. PDF üretimi de tamamen sunucu tarafında, paket içindeki Dompdf
-kütüphanesiyle yapılır.
+No. All data is stored in custom tables prefixed `wp_sms_*` in your own database; no requests
+are sent to any remote server. PDF generation is also done entirely server-side with the bundled
+Dompdf library.
 
-= Birden fazla dersliğe / şubeye ihtiyacım var, destekliyor mu? =
+= I need multiple classrooms/sections, is that supported? =
 
-Evet. Derslikler bağımsız şubeler olarak tanımlanır (örn. "Türkçe 6-A"), her dersliğe öğretmen
-ve öğrenci ataması yapılabilir.
+Yes. Classrooms are defined as independent sections (e.g. "Turkish 6-A"), and each classroom can
+have a teacher and students assigned to it.
 
-= Namaz vakitleri gibi özel yoklama kategorileri tanımlayabilir miyim? =
+= Can I define custom attendance categories, like prayer times? =
 
-Evet. **Yoklama Türleri** sayfasından yeni kategori ve oturum (vakit/seans) tanımlayabilir,
-kategorinin hangi sınıf seviyelerinde görüneceğini seçebilirsiniz.
+Yes. From the **Attendance Types** page you can define new categories and sessions (times/slots),
+and choose which grade levels each category appears in.
 
-= Karneleri toplu olarak indirebilir miyim? =
+= Can I download report cards in bulk? =
 
-Evet. **Karneler** sayfasında öğrencileri onay kutularıyla (tümünü seç dahil) seçip, her biri
-için ayrı bir PDF içeren tek bir ZIP dosyası indirebilirsiniz.
+Yes. On the **Report Cards** page you can select students with checkboxes (including "select all")
+and download a single ZIP file containing a separate PDF for each student.
 
 == Screenshots ==
 
-1. Dashboard — sınıf bazında özet ve yoklama katılım tabloları.
-2. Yoklama alma ekranı — kategori/oturum kartları.
-3. Raporlar — yoklama/alışkanlık/not analiz sekmeleri.
-4. Öğrenci karnesi — yoklama özeti, alışkanlıklar ve not ortalamaları.
+1. Dashboard — class-based summary and attendance participation tables.
+2. Attendance entry screen — category/session cards.
+3. Reports — attendance/habit/grade analysis tabs.
+4. Student report card — attendance summary, habits and grade averages.
 
 == Changelog ==
 
 = 1.3.1 =
-* Karne "Yoklama Özeti" artık her yoklama kategorisi için ayrı yüzde gösteriyor (önceden tüm
-  kategoriler karışık toplam olarak gösteriliyordu); çoklu oturumlu kategoriler (namaz vakitleri
-  gibi) alt kırılımlarıyla listeleniyor.
-* Karneler sayfasına toplu öğrenci seçimi ve seçilen öğrencilerin karnelerini ZIP içinde
-  (öğrenci başına ayrı PDF) toplu indirme özelliği eklendi.
-* PDF karne indirme artık tarayıcı yazdırmasına değil, paket içindeki Dompdf kütüphanesiyle
-  sunucu tarafında üretilen gerçek `.pdf` dosyasına dayanıyor.
-* Kitap okuma alışkanlığı eklerken öğrencinin daha önce okuduğu kitaplar otomatik önerilir.
+* The report card's "Attendance Summary" now shows a separate percentage for each attendance
+  category (previously all categories were shown mixed into one total); multi-session categories
+  (such as prayer times) are listed with their sub-breakdowns.
+* Added bulk student selection to the Report Cards page and bulk ZIP download of the selected
+  students' report cards (one PDF per student).
+* PDF report card download now relies on a real `.pdf` file generated server-side with the
+  bundled Dompdf library, instead of the browser's print function.
+* When adding a reading habit, books the student has previously read are now suggested
+  automatically.
 
 = 1.3.0 =
-* Genel yoklama kategorileri (namaz vb.) için sınıf seviyesi kısıtlaması eklendi.
-* Kitap/sayfa takibi alışkanlık türü eklendi.
-* Raporlarda ay/yıl bazlı tarih filtresi eklendi.
-* Karnede "Son Yoklamalar" listesi 3 kayıtla sınırlandırıldı.
+* Added grade-level restriction for general attendance categories (e.g. prayer times).
+* Added book/page tracking habit type.
+* Added month/year based date filter to reports.
+* Limited the "Recent Attendance" list on the report card to 3 records.
 
 = 1.2.2 - 1.2.4 =
-* Mobil kenar çubuğu ve yoklama ekranı düzeni iyileştirildi.
-* Giriş sonrası performans: tekrarlanan sorgular önbelleğe alındı, veritabanı sürüm kontrolü
-  yalnızca yönetim panelinde çalışacak şekilde taşındı.
-* Yoklama raporlarına oturum (vakit) bazlı kırılım eklendi.
-* Mobilde profil menüsünden çıkış yapılamama hatası düzeltildi.
+* Improved mobile sidebar and attendance screen layout.
+* Post-login performance: repeated queries are now cached, and the database version check now
+  only runs in the admin panel.
+* Added session (time slot) based breakdown to attendance reports.
+* Fixed an issue where logging out from the profile menu did not work on mobile.
 
 = 1.2.0 =
-* Analiz raporları sekmeleri, güvenli toplu not yükleme akışı ve arayüz sadeleştirmesi eklendi.
-* Analiz tablolarına CSV dışa aktarma butonu eklendi.
+* Added analysis report tabs, a safer bulk grade upload flow, and interface simplification.
+* Added a CSV export button to analysis tables.
 
 = 1.1.0 =
-* Toplu içe aktarma (Excel/CSV) ve kategori/oturum bazlı yoklama sistemi eklendi.
+* Added bulk import (Excel/CSV) and category/session based attendance system.
 
 = 1.0.0 =
-* İlk sürüm: dönem bazlı öğrenci takip altyapısı, öğrenci/öğretmen/veli yönetimi, temel yoklama,
-  not ve alışkanlık takibi.
+* Initial release: term-based student tracking infrastructure, student/teacher/parent
+  management, basic attendance, grade and habit tracking.
 
 == Upgrade Notice ==
 
 = 1.3.1 =
-Karne PDF üretimi artık sunucu tarafında gerçekleşiyor ve toplu ZIP indirme desteği ekleniyor;
-güncelleme sonrası ek bir işlem gerekmez.
+Report card PDF generation now happens server-side and bulk ZIP download is supported; no extra
+steps are required after updating.

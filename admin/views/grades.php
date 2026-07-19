@@ -2,9 +2,11 @@
 defined( 'ABSPATH' ) || exit;
 
 $term_id = sms_current_term_id();
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme filtreleri (GET), durum değişikliği yok; her değer sanitize edilir.
 $gview   = isset( $_GET['gview'] ) ? sanitize_key( $_GET['gview'] ) : '';
 $subject = isset( $_GET['subject'] ) ? sanitize_text_field( wp_unslash( $_GET['subject'] ) ) : '';
 $class_id = isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
+// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 // Eski bağlantı uyumu: class_id verilmiş ama görünüm seçilmemişse sınav listesine git.
 if ( $class_id && ! $gview ) {
@@ -125,9 +127,11 @@ if ( 'entry' === $gview && $class ) {
 
 /* ============================ SINAV DETAYI (öğrenci bazında) ============================ */
 if ( 'exam' === $gview && $class ) {
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme filtreleri (GET), durum değişikliği yok; her değer sanitize edilir.
 	$title     = isset( $_GET['title'] ) ? sanitize_text_field( wp_unslash( $_GET['title'] ) ) : '';
 	$exam_date = isset( $_GET['exam_date'] ) ? sanitize_text_field( wp_unslash( $_GET['exam_date'] ) ) : '';
 	$exam_type = isset( $_GET['exam_type'] ) ? sanitize_text_field( wp_unslash( $_GET['exam_type'] ) ) : '';
+	// phpcs:enable WordPress.Security.NonceVerification.Recommended
 	$scores    = $title ? SMS_Grades::exam_scores( $class_id, $title, $exam_date, $exam_type ) : array();
 	$class_url = add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'class', 'class_id' => $class_id, 'sms_term' => $term_id ), admin_url( 'admin.php' ) );
 
@@ -157,10 +161,10 @@ if ( 'exam' === $gview && $class ) {
 						$rate = $r->max_score > 0 ? (int) round( $r->score / $r->max_score * 100 ) : null;
 						?>
 						<tr>
-							<td class="sms-muted">#<?php echo $i + 1; ?></td>
+							<td class="sms-muted">#<?php echo (int) $i + 1; ?></td>
 							<td class="sms-name-cell"><?php echo sms_avatar( $r->first_name . ' ' . $r->last_name ); // phpcs:ignore ?><strong><?php echo esc_html( $r->first_name . ' ' . $r->last_name ); ?></strong></td>
 							<td><strong><?php echo esc_html( rtrim( rtrim( (string) $r->score, '0' ), '.' ) ); ?></strong> <span class="sms-muted">/ <?php echo esc_html( rtrim( rtrim( (string) $r->max_score, '0' ), '.' ) ); ?></span></td>
-							<td><span class="sms-score <?php echo esc_attr( sms_rate_class( $rate ) ); ?>"><?php echo null !== $rate ? $rate . '%' : '—'; ?></span></td>
+							<td><span class="sms-score <?php echo esc_attr( sms_rate_class( $rate ) ); ?>"><?php echo null !== $rate ? esc_html( $rate . '%' ) : '—'; ?></span></td>
 							<?php if ( $can_manage ) : ?>
 								<td class="sms-actions-cell">
 									<?php sms_form_open( 'sms_delete_grade', 'sms-inline sms-confirm' ); sms_back_url_field(); ?>

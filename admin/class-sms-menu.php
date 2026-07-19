@@ -63,6 +63,7 @@ class SMS_Menu {
 
 	/** Sayfa parametresine göre görünüm dosyasını yükler. */
 	public static function render() {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt sayfa yönlendirme (GET), durum değişikliği yok.
 		$page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
 		$view = isset( $_GET['view'] ) ? sanitize_key( $_GET['view'] ) : '';
 
@@ -116,6 +117,7 @@ class SMS_Menu {
 				self::load_view( 'settings' );
 				break;
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 	}
 
 	private static function load_view( $view ) {
@@ -126,6 +128,7 @@ class SMS_Menu {
 	}
 
 	public static function enqueue_assets( $hook ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt sayfa yönlendirme (GET), durum değişikliği yok.
 		if ( ! isset( $_GET['page'] ) || 0 !== strpos( sanitize_key( $_GET['page'] ), 'sms-' ) ) {
 			return;
 		}

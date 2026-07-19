@@ -25,6 +25,7 @@ function sms_active_term() {
  * Görüntülenen dönem: ?sms_term=ID parametresi varsa o, yoksa aktif dönem.
  */
 function sms_current_term_id() {
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme parametresi, durum değişikliği yok.
 	if ( isset( $_GET['sms_term'] ) && (int) $_GET['sms_term'] > 0 ) {
 		$term = SMS_Terms::get( (int) $_GET['sms_term'] );
 		if ( $term ) {
@@ -48,6 +49,7 @@ function sms_teacher_class_ids( $user_id = 0, $term_id = 0 ) {
 	global $wpdb;
 	$user_id = $user_id ? (int) $user_id : get_current_user_id();
 	$term_id = $term_id ? (int) $term_id : sms_current_term_id();
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- özel eklenti tablosu, parametreler $wpdb->prepare() ile bağlanır.
 	return array_map( 'intval', $wpdb->get_col( $wpdb->prepare(
 		"SELECT id FROM {$wpdb->prefix}sms_classes WHERE teacher_id = %d AND term_id = %d",
 		$user_id, $term_id
@@ -66,7 +68,8 @@ function sms_teacher_student_ids( $user_id = 0, $term_id = 0 ) {
 	$ids       = array();
 	$class_ids = sms_teacher_class_ids( $user_id, $term_id );
 	if ( $class_ids ) {
-		$in  = implode( ',', array_map( 'intval', $class_ids ) );
+		$in  = implode( ',', array_map( 'intval', $class_ids ) ); // intval ile temizlenmiş, sorguya güvenle gömülür.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- özel eklenti tablosu; $in yalnızca intval edilmiş id'lerden oluşur.
 		$ids = array_map( 'intval', $wpdb->get_col(
 			"SELECT DISTINCT student_id FROM {$wpdb->prefix}sms_class_students WHERE class_id IN ($in)"
 		) );
@@ -251,6 +254,7 @@ function sms_month_names() {
  * (ay=0 ise seçili yılın tamamı). Reports.php ile export handler'ının aynı
  * mantığı kullanmasını sağlar, ikisi arasında sürüklenmeyi önler.
  */
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme/dışa aktarma filtreleri (GET), durum değişikliği yok; her değer whitelist/regex ile doğrulanıp sanitize edilir.
 function sms_resolve_report_dates( $default_from = '' ) {
 	$mode     = isset( $_GET['datemode'] ) && 'month' === $_GET['datemode'] ? 'month' : 'range';
 	$cur_year = (int) current_time( 'Y' );
@@ -268,15 +272,16 @@ function sms_resolve_report_dates( $default_from = '' ) {
 		return array( 'mode' => 'month', 'month' => $month, 'year' => $year, 'from' => $from, 'to' => $to );
 	}
 
-	$from = isset( $_GET['from'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $_GET['from'] )
+	$from = isset( $_GET['from'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['from'] ) )
 		? sanitize_text_field( wp_unslash( $_GET['from'] ) )
 		: ( $default_from ?: gmdate( 'Y-m-d', strtotime( '-29 days', current_time( 'timestamp' ) ) ) );
-	$to   = isset( $_GET['to'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $_GET['to'] )
+	$to   = isset( $_GET['to'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['to'] ) )
 		? sanitize_text_field( wp_unslash( $_GET['to'] ) )
 		: current_time( 'Y-m-d' );
 
 	return array( 'mode' => 'range', 'month' => 0, 'year' => $cur_year, 'from' => $from, 'to' => $to );
 }
+// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 /**
  * Karne PDF'lerinin paylaştığı CSS. Dompdf (sunucu taraflı PDF motoru) tarafından
@@ -351,12 +356,14 @@ function sms_users_by_role( $role ) {
 
 /** Sayfa içi başarı/hata bildirimini yazdırır (?sms_msg & ?sms_err). */
 function sms_render_notices() {
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok; çıktı esc_html ile kaçışlanır.
 	if ( ! empty( $_GET['sms_msg'] ) ) {
 		echo '<div class="sms-notice sms-notice-success"><span class="dashicons dashicons-yes-alt"></span>' . esc_html( sanitize_text_field( wp_unslash( $_GET['sms_msg'] ) ) ) . '</div>';
 	}
 	if ( ! empty( $_GET['sms_err'] ) ) {
 		echo '<div class="sms-notice sms-notice-error"><span class="dashicons dashicons-warning"></span>' . esc_html( sanitize_text_field( wp_unslash( $_GET['sms_err'] ) ) ) . '</div>';
 	}
+	// phpcs:enable WordPress.Security.NonceVerification.Recommended
 }
 
 /** Ortak sayfa başlığı + dönem seçici (+ sınırlı kullanıcılar için hesap çipi). */
@@ -373,11 +380,13 @@ function sms_view_header( $title, $subtitle = '', $show_term_picker = true ) {
 	if ( $show_term_picker && $terms ) {
 		echo '<form method="get" class="sms-term-picker">';
 		// Mevcut sayfa parametrelerini koru.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET) parametrelerini forma taşır, durum değişikliği yok; çıktı esc_attr ile kaçışlanır.
 		foreach ( array( 'page', 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'rsession', 'tab', 'rtype', 'group', 'grade', 'metric', 'from', 'to', 'datemode', 'rmonth', 'ryear', 'gview', 'subject', 'title', 'exam_date', 'exam_type' ) as $keep ) {
 			if ( isset( $_GET[ $keep ] ) ) {
 				echo '<input type="hidden" name="' . esc_attr( $keep ) . '" value="' . esc_attr( sanitize_text_field( wp_unslash( $_GET[ $keep ] ) ) ) . '">';
 			}
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		echo '<label>Dönem</label><select name="sms_term" onchange="this.form.submit()">';
 		foreach ( $terms as $t ) {
 			printf(

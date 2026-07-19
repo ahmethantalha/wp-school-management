@@ -9,8 +9,10 @@ if ( ! current_user_can( 'sms_teach' ) ) {
 
 $term_id = sms_current_term_id();
 $teacher = sms_is_teacher();
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme filtreleri (GET), durum değişikliği yok.
 $grade_f = isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
 $search  = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+// phpcs:enable WordPress.Security.NonceVerification.Recommended
 $scores  = $term_id ? SMS_Reports::student_scores( $term_id, $teacher ? sms_teacher_student_ids() : null ) : array();
 
 // Sınıf ve arama filtreleri.
@@ -71,7 +73,7 @@ $grades = $term_id ? SMS_Students::grades_in_term( $term_id ) : array();
 					<?php foreach ( $scores as $i => $row ) : $s = $row['student']; ?>
 						<tr>
 							<td class="sms-check-col"><input type="checkbox" name="student_ids[]" value="<?php echo (int) $s->id; ?>" data-sms-bulk-item></td>
-							<td class="sms-muted">#<?php echo $i + 1; ?></td>
+							<td class="sms-muted">#<?php echo (int) $i + 1; ?></td>
 							<td class="sms-name-cell"><?php echo sms_avatar( sms_student_name( $s ) ); // phpcs:ignore ?><strong><?php echo esc_html( sms_student_name( $s ) ); ?></strong></td>
 							<td><?php echo isset( $s->grade_level ) ? esc_html( sms_grade_label( $s->grade_level ) ) : '—'; ?></td>
 							<td><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['attendance'] ) ); ?>"><?php echo null !== $row['attendance'] ? (int) $row['attendance'] . '%' : '—'; ?></span></td>

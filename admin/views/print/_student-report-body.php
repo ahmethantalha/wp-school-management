@@ -72,8 +72,8 @@ $rate_color = function ( $v ) {
 
 <table class="tiles"><tr>
 	<td><div class="tile"><span class="v" style="color:<?php echo esc_attr( $rate_color( $att['rate'] ) ); ?>"><?php echo null !== $att['rate'] ? (int) $att['rate'] . '%' : '—'; ?></span><span class="l">Devam</span></div></td>
-	<td><div class="tile"><span class="v" style="color:<?php echo esc_attr( $rate_color( $habit_avg ) ); ?>"><?php echo null !== $habit_avg ? $habit_avg . '%' : '—'; ?></span><span class="l">Alışkanlık</span></div></td>
-	<td><div class="tile"><span class="v" style="color:<?php echo esc_attr( $rate_color( $grade_avg ) ); ?>"><?php echo null !== $grade_avg ? $grade_avg . '%' : '—'; ?></span><span class="l">Not Ortalaması</span></div></td>
+	<td><div class="tile"><span class="v" style="color:<?php echo esc_attr( $rate_color( $habit_avg ) ); ?>"><?php echo null !== $habit_avg ? esc_html( $habit_avg . '%' ) : '—'; ?></span><span class="l">Alışkanlık</span></div></td>
+	<td><div class="tile"><span class="v" style="color:<?php echo esc_attr( $rate_color( $grade_avg ) ); ?>"><?php echo null !== $grade_avg ? esc_html( $grade_avg . '%' ) : '—'; ?></span><span class="l">Not Ortalaması</span></div></td>
 	<td><div class="tile"><span class="v"><?php echo (int) $att['total']; ?></span><span class="l">Toplam Yoklama</span></div></td>
 </tr></table>
 

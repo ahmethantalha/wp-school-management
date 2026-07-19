@@ -6,7 +6,7 @@ alışkanlık takibi ve görsel raporlar sunar.
 
 ## Kurulum
 
-1. Bu depoyu `wp-content/plugins/wp-school-management` klasörüne kopyalayın
+1. Bu depoyu `wp-content/plugins/okul-yonetim-sistemi` klasörüne kopyalayın
    (veya depoyu zip olarak indirip WordPress **Eklentiler → Yeni Ekle → Eklenti Yükle** ile yükleyin).
 2. **Eklentiler** sayfasından *Okul Yönetim Sistemi*'ni etkinleştirin.
 3. Sol menüde **Okul Yönetimi** menüsü belirir.

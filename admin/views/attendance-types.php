@@ -2,6 +2,7 @@
 defined( 'ABSPATH' ) || exit;
 
 $categories = SMS_Attendance_Types::categories( false );
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok.
 $edit_id    = isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
 $edit       = $edit_id ? SMS_Attendance_Types::get_category( $edit_id ) : null;
 

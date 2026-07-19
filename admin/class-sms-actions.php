@@ -155,7 +155,7 @@ class SMS_Actions {
 		header( 'Content-Type: application/zip' );
 		header( 'Content-Disposition: attachment; filename="' . $zip_name . '"' );
 		header( 'Content-Length: ' . filesize( $tmp_zip ) );
-		readfile( $tmp_zip ); // phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData
+		readfile( $tmp_zip ); // phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData, WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- geçici, sunucuda üretilmiş ZIP dosyasını indirmeye gönderir; WP_Filesystem büyük dosyaları belleğe yükler.
 		wp_delete_file( $tmp_zip );
 		exit;
 	}
@@ -477,6 +477,11 @@ class SMS_Actions {
 		}
 	}
 
+	// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
+	// Aşağıdaki private handle_* metotları yalnızca init()'teki dispatcher üzerinden çağrılır;
+	// dispatcher her çağrıdan önce self::guard() ile nonce + yetenek kontrolü yapar (bkz. yukarısı).
+	// public handle_grade_template()/handle_import_template() kendi GET nonce kontrolünü içeride yapar.
+
 	private static function back( $msg = '', $err = '', $override_url = '' ) {
 		$url = $override_url;
 		if ( ! $url && isset( $_POST['_sms_back'] ) ) {
@@ -575,7 +580,7 @@ class SMS_Actions {
 		$username = self::post( 'account_username' );
 		if ( $username && empty( $data['user_id'] ) ) {
 			$email = sanitize_email( self::post( 'account_email' ) );
-			$pass  = (string) ( $_POST['account_password'] ?? '' );
+			$pass  = isset( $_POST['account_password'] ) ? (string) wp_unslash( $_POST['account_password'] ) : '';
 			if ( ! $pass ) {
 				$pass = wp_generate_password( 12 );
 			}
@@ -620,13 +625,13 @@ class SMS_Actions {
 				'display_name' => $name,
 				'user_email'   => $email,
 			) );
-			$pass = (string) ( $_POST['password'] ?? '' );
+			$pass = isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : '';
 			if ( ! is_wp_error( $result ) && $pass ) {
 				wp_set_password( $pass, $user_id );
 			}
 		} else {
 			$username = self::post( 'username' );
-			$pass     = (string) ( $_POST['password'] ?? '' );
+			$pass     = isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : '';
 			if ( ! $username || ! $email ) {
 				self::back( '', 'Kullanıcı adı ve e-posta zorunludur.' );
 			}
@@ -671,9 +676,11 @@ class SMS_Actions {
 		}
 		global $wpdb;
 		// Bağları temizle: velisi olduğu öğrenciler ve öğretmeni olduğu derslikler.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- özel eklenti tablosu, $wpdb->update() kendi kaçış işlemini yapar.
 		$wpdb->update( $wpdb->prefix . 'sms_students', array( 'parent_user_id' => null ), array( 'parent_user_id' => $user_id ) );
 		$wpdb->update( $wpdb->prefix . 'sms_students', array( 'user_id' => null ), array( 'user_id' => $user_id ) );
 		$wpdb->update( $wpdb->prefix . 'sms_classes', array( 'teacher_id' => null ), array( 'teacher_id' => $user_id ) );
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		wp_delete_user( $user_id );
 		self::back( 'Hesap silindi.' );
 	}
@@ -746,8 +753,9 @@ class SMS_Actions {
 		}
 		$allowed = array_map( 'intval', $allowed );
 
-		$statuses = isset( $_POST['att_status'] ) ? (array) $_POST['att_status'] : array();
-		$notes    = isset( $_POST['att_note'] ) ? (array) $_POST['att_note'] : array();
+		// Ham diziler; her öğe aşağıdaki döngüde sanitize_key()/sanitize_text_field(wp_unslash()) ile işlenir.
+		$statuses = isset( $_POST['att_status'] ) ? (array) $_POST['att_status'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		$notes    = isset( $_POST['att_note'] ) ? (array) $_POST['att_note'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		$entries  = array();
 		foreach ( $statuses as $student_id => $status ) {
 			$student_id = (int) $student_id;
@@ -831,8 +839,9 @@ class SMS_Actions {
 			$assigned = array_intersect( $assigned, sms_teacher_student_ids() );
 		}
 
-		$values  = isset( $_POST['log_value'] ) ? (array) $_POST['log_value'] : array();
-		$notes   = isset( $_POST['log_note'] ) ? (array) $_POST['log_note'] : array();
+		// Ham diziler; değer (int) cast ile, not aşağıda sanitize_text_field(wp_unslash()) ile işlenir.
+		$values  = isset( $_POST['log_value'] ) ? (array) $_POST['log_value'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		$notes   = isset( $_POST['log_note'] ) ? (array) $_POST['log_note'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		$entries = array();
 		foreach ( $assigned as $student_id ) {
 			$raw = isset( $values[ $student_id ] ) ? trim( (string) $values[ $student_id ] ) : '';
@@ -959,8 +968,8 @@ class SMS_Actions {
 			self::back( '', 'Lütfen bir .xlsx veya .csv dosyası seçin.' );
 		}
 
-		$tmp  = $_FILES['import_file']['tmp_name'];
-		$ext  = strtolower( pathinfo( $_FILES['import_file']['name'], PATHINFO_EXTENSION ) );
+		$tmp  = $_FILES['import_file']['tmp_name']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- PHP-generated temp path, not user input.
+		$ext  = strtolower( pathinfo( sanitize_file_name( wp_unslash( $_FILES['import_file']['name'] ) ), PATHINFO_EXTENSION ) );
 		$rows = SMS_Import::read_file( $tmp, $ext );
 		if ( is_wp_error( $rows ) ) {
 			self::back( '', $rows->get_error_message() );
@@ -995,7 +1004,7 @@ class SMS_Actions {
 		}
 		$title     = isset( $_GET['title'] ) ? sanitize_text_field( wp_unslash( $_GET['title'] ) ) : 'Sınav';
 		$exam_type = isset( $_GET['exam_type'] ) ? sanitize_text_field( wp_unslash( $_GET['exam_type'] ) ) : '';
-		$exam_date = isset( $_GET['exam_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $_GET['exam_date'] ) ? sanitize_text_field( wp_unslash( $_GET['exam_date'] ) ) : current_time( 'Y-m-d' );
+		$exam_date = isset( $_GET['exam_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['exam_date'] ) ) ? sanitize_text_field( wp_unslash( $_GET['exam_date'] ) ) : current_time( 'Y-m-d' );
 		$max_score = isset( $_GET['max_score'] ) ? max( 1, (float) $_GET['max_score'] ) : 100;
 
 		$content = SMS_Import::grade_template( $class_id, $title ?: 'Sınav', $exam_type, $exam_date, $max_score );
@@ -1013,8 +1022,8 @@ class SMS_Actions {
 		if ( empty( $_FILES['grade_file']['name'] ) || ! empty( $_FILES['grade_file']['error'] ) ) {
 			self::back( '', 'Lütfen doldurulmuş not listesini (.csv veya .xlsx) seçin.' );
 		}
-		$tmp  = $_FILES['grade_file']['tmp_name'];
-		$ext  = strtolower( pathinfo( $_FILES['grade_file']['name'], PATHINFO_EXTENSION ) );
+		$tmp  = $_FILES['grade_file']['tmp_name']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- PHP-generated temp path, not user input.
+		$ext  = strtolower( pathinfo( sanitize_file_name( wp_unslash( $_FILES['grade_file']['name'] ) ), PATHINFO_EXTENSION ) );
 		$rows = SMS_Import::read_file( $tmp, $ext );
 		if ( is_wp_error( $rows ) ) {
 			self::back( '', $rows->get_error_message() );

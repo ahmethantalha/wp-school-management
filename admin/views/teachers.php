@@ -3,6 +3,7 @@ defined( 'ABSPATH' ) || exit;
 
 $teachers = sms_users_by_role( 'sms_teacher' );
 $term_id  = sms_current_term_id();
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok.
 $edit_id  = isset( $_GET['user'] ) ? (int) $_GET['user'] : 0;
 $edit     = $edit_id ? get_userdata( $edit_id ) : null;
 if ( $edit && ! in_array( 'sms_teacher', (array) $edit->roles, true ) ) {

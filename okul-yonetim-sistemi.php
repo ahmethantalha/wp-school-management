@@ -8,7 +8,7 @@
  * Author URI:        https://github.com/ahmethantalha
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       wp-school-management
+ * Text Domain:       okul-yonetim-sistemi
  * Requires at least: 6.0
  * Requires PHP:      7.4
  */
@@ -138,6 +138,7 @@ add_action( 'admin_init', function () {
 		return;
 	}
 	global $pagenow;
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only route check, no state change.
 	$page    = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
 	$allowed = ( 'admin.php' === $pagenow && 0 === strpos( $page, 'sms-' ) )
 		|| 'admin-post.php' === $pagenow;

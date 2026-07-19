@@ -1,6 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), yetki sms_can_access_student() ile ayrıca doğrulanır.
 $student_id = isset( $_GET['student'] ) ? (int) $_GET['student'] : 0;
 
 if ( ! $student_id || ! sms_can_access_student( $student_id ) ) {
@@ -80,11 +81,11 @@ $print_url = wp_nonce_url( add_query_arg( array(
 		</div>
 		<div class="sms-stat-card">
 			<span class="sms-stat-icon" style="--c:#6366f1"><span class="dashicons dashicons-yes-alt"></span></span>
-			<div><span class="sms-stat-value <?php echo esc_attr( sms_rate_class( $habit_avg ) ); ?>"><?php echo null !== $habit_avg ? $habit_avg . '%' : '—'; ?></span><span class="sms-stat-label">Alışkanlık Tamamlama</span></div>
+			<div><span class="sms-stat-value <?php echo esc_attr( sms_rate_class( $habit_avg ) ); ?>"><?php echo null !== $habit_avg ? esc_html( $habit_avg . '%' ) : '—'; ?></span><span class="sms-stat-label">Alışkanlık Tamamlama</span></div>
 		</div>
 		<div class="sms-stat-card">
 			<span class="sms-stat-icon" style="--c:#f59e0b"><span class="dashicons dashicons-welcome-write-blog"></span></span>
-			<div><span class="sms-stat-value <?php echo esc_attr( sms_rate_class( $grade_avg ) ); ?>"><?php echo null !== $grade_avg ? $grade_avg . '%' : '—'; ?></span><span class="sms-stat-label">Not Ortalaması</span></div>
+			<div><span class="sms-stat-value <?php echo esc_attr( sms_rate_class( $grade_avg ) ); ?>"><?php echo null !== $grade_avg ? esc_html( $grade_avg . '%' ) : '—'; ?></span><span class="sms-stat-label">Not Ortalaması</span></div>
 		</div>
 		<div class="sms-stat-card">
 			<span class="sms-stat-icon" style="--c:#0ea5e9"><span class="dashicons dashicons-calendar-alt"></span></span>

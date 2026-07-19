@@ -12,6 +12,7 @@ $teacher = sms_is_teacher();
 $term    = $term_id ? SMS_Terms::get( $term_id ) : null;
 
 /* ---------- Filtre parametreleri ---------- */
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme filtreleri (GET), durum değişikliği yok; her değer sanitize/whitelist edilir.
 $rtype  = isset( $_GET['rtype'] ) ? sanitize_key( $_GET['rtype'] ) : 'yoklama';
 if ( ! in_array( $rtype, array( 'yoklama', 'aliskanlik', 'not', 'genel' ), true ) ) {
 	$rtype = 'yoklama';
@@ -40,6 +41,7 @@ foreach ( $cat_sessions as $s ) {
 		break;
 	}
 }
+// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 $default_from = $term && $term->start_date && '0000-00-00' !== $term->start_date
 	? $term->start_date
@@ -312,11 +314,11 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 							<tr>
 								<td><strong><?php echo esc_html( sms_grade_label( $g ) ); ?></strong> <span class="sms-muted">(<?php echo (int) $gr['count']; ?> öğrenci)</span></td>
 								<?php foreach ( $sessions as $s ) : $v = $cell_value( $gr['cells'][ (int) $s->id ] ); ?>
-									<td class="sms-center"><span class="sms-score <?php echo esc_attr( $cell_class( $v ) ); ?>"><?php echo null !== $v ? $v . '%' : '—'; ?></span>
+									<td class="sms-center"><span class="sms-score <?php echo esc_attr( $cell_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span>
 									<?php if ( null !== $v ) : ?><span class="sms-cell-sub"><?php echo (int) $gr['cells'][ (int) $s->id ][ 'rate' === $metric ? 'present' : $metric ]; ?>/<?php echo (int) $gr['cells'][ (int) $s->id ]['total']; ?></span><?php endif; ?></td>
 								<?php endforeach; ?>
 								<?php $v = $cell_value( $gr['overall'] ); ?>
-								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( $cell_class( $v ) ); ?>"><?php echo null !== $v ? $v . '%' : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( $cell_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
 							</tr>
 						<?php endforeach; ?>
 					<?php else : ?>
@@ -329,21 +331,21 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 								</td>
 								<?php foreach ( $sessions as $s ) : $cell = $row['cells'][ (int) $s->id ]; $v = $cell_value( $cell ); ?>
 									<td class="sms-center">
-										<span class="sms-score <?php echo esc_attr( $cell_class( $v ) ); ?>"><?php echo null !== $v ? $v . '%' : '—'; ?></span>
+										<span class="sms-score <?php echo esc_attr( $cell_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span>
 										<?php if ( null !== $v ) : ?><span class="sms-cell-sub"><?php echo (int) $cell[ 'rate' === $metric ? 'present' : $metric ]; ?>/<?php echo (int) $cell['total']; ?></span><?php endif; ?>
 									</td>
 								<?php endforeach; ?>
 								<?php $v = $cell_value( $row['overall'] ); ?>
-								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( $cell_class( $v ) ); ?>"><?php echo null !== $v ? $v . '%' : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( $cell_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
 							</tr>
 						<?php endforeach; ?>
 						<tr class="sms-total-row">
 							<td><strong>Toplu (tüm liste)</strong></td>
 							<?php foreach ( $sessions as $s ) : $v = $cell_value( $matrix['totals'][ (int) $s->id ] ?? null ); ?>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( $cell_class( $v ) ); ?>"><?php echo null !== $v ? $v . '%' : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( $cell_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
 							<?php endforeach; ?>
 							<?php $v = $cell_value( $matrix['totals']['overall'] ?? null ); ?>
-							<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( $cell_class( $v ) ); ?>"><?php echo null !== $v ? $v . '%' : '—'; ?></span></td>
+							<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( $cell_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
 						</tr>
 					<?php endif; ?>
 					</tbody>
@@ -407,10 +409,10 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 										$g_cnt++;
 									}
 									?>
-									<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? $v . '%' : '—'; ?></span></td>
+									<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
 								<?php endforeach; ?>
 								<?php $v = $g_cnt ? (int) round( $g_sum / $g_cnt ) : null; ?>
-								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? $v . '%' : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
 							</tr>
 						<?php endforeach; ?>
 					<?php else : ?>
@@ -429,13 +431,13 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 										<?php else : ?>—<?php endif; ?>
 									</td>
 								<?php endforeach; ?>
-								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $row['overall'] ) ); ?>"><?php echo null !== $row['overall'] ? $row['overall'] . '%' : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $row['overall'] ) ); ?>"><?php echo null !== $row['overall'] ? esc_html( $row['overall'] . '%' ) : '—'; ?></span></td>
 							</tr>
 						<?php endforeach; ?>
 						<tr class="sms-total-row">
 							<td><strong>Toplu (tüm liste)</strong></td>
 							<?php foreach ( $habits as $h ) : $v = $matrix['totals'][ (int) $h->id ]; ?>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? $v . '%' : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
 							<?php endforeach; ?>
 							<td></td>
 						</tr>
@@ -501,10 +503,10 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 										$g_cnt++;
 									}
 									?>
-									<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? $v . '%' : '—'; ?></span></td>
+									<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
 								<?php endforeach; ?>
 								<?php $v = $g_cnt ? (int) round( $g_sum / $g_cnt ) : null; ?>
-								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? $v . '%' : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
 							</tr>
 						<?php endforeach; ?>
 					<?php else : ?>
@@ -523,13 +525,13 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 										<?php else : ?>—<?php endif; ?>
 									</td>
 								<?php endforeach; ?>
-								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $row['overall'] ) ); ?>"><?php echo null !== $row['overall'] ? $row['overall'] . '%' : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $row['overall'] ) ); ?>"><?php echo null !== $row['overall'] ? esc_html( $row['overall'] . '%' ) : '—'; ?></span></td>
 							</tr>
 						<?php endforeach; ?>
 						<tr class="sms-total-row">
 							<td><strong>Toplu (tüm liste)</strong></td>
 							<?php foreach ( $classes as $c ) : $v = $matrix['totals'][ (int) $c->id ]; ?>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? $v . '%' : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
 							<?php endforeach; ?>
 							<td></td>
 						</tr>
@@ -559,9 +561,9 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 							<tr>
 								<td><strong><?php echo esc_html( sms_grade_label( $row['grade'] ) ); ?></strong></td>
 								<td><?php echo (int) $row['count']; ?></td>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['att'] ) ); ?>"><?php echo null !== $row['att'] ? $row['att'] . '%' : '—'; ?></span></td>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? $row['habit'] . '%' : '—'; ?></span></td>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['grade_avg'] ) ); ?>"><?php echo null !== $row['grade_avg'] ? $row['grade_avg'] . '%' : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['att'] ) ); ?>"><?php echo null !== $row['att'] ? esc_html( $row['att'] . '%' ) : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? esc_html( $row['habit'] . '%' ) : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['grade_avg'] ) ); ?>"><?php echo null !== $row['grade_avg'] ? esc_html( $row['grade_avg'] . '%' ) : '—'; ?></span></td>
 							</tr>
 						<?php endforeach; ?>
 						</tbody>
@@ -588,12 +590,12 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 						<tbody>
 						<?php foreach ( $scores as $i => $row ) : $s = $row['student']; ?>
 							<tr>
-								<td class="sms-muted">#<?php echo $i + 1; ?></td>
+								<td class="sms-muted">#<?php echo (int) $i + 1; ?></td>
 								<td class="sms-name-cell"><?php echo sms_avatar( sms_student_name( $s ) ); // phpcs:ignore ?><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $s->id . '&sms_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( sms_student_name( $s ) ); ?></strong></a></td>
 								<td><?php echo isset( $s->grade_level ) ? esc_html( sms_grade_label( $s->grade_level ) ) : '—'; ?></td>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['attendance'] ) ); ?>"><?php echo null !== $row['attendance'] ? $row['attendance'] . '%' : '—'; ?></span></td>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? $row['habit'] . '%' : '—'; ?></span></td>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['grade'] ) ); ?>"><?php echo null !== $row['grade'] ? $row['grade'] . '%' : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['attendance'] ) ); ?>"><?php echo null !== $row['attendance'] ? esc_html( $row['attendance'] . '%' ) : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? esc_html( $row['habit'] . '%' ) : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['grade'] ) ); ?>"><?php echo null !== $row['grade'] ? esc_html( $row['grade'] . '%' ) : '—'; ?></span></td>
 								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $row['score'] ) ); ?>"><?php echo (int) $row['score']; ?></span></td>
 							</tr>
 						<?php endforeach; ?>

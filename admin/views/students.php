@@ -2,9 +2,11 @@
 defined( 'ABSPATH' ) || exit;
 
 $term_id  = sms_current_term_id();
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme filtreleri (GET), durum değişikliği yok.
 $grade_f  = isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
 $status_f = isset( $_GET['status'] ) ? sanitize_key( $_GET['status'] ) : 'active';
 $search   = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+// phpcs:enable WordPress.Security.NonceVerification.Recommended
 $teacher  = sms_is_teacher();
 
 $args = array(
