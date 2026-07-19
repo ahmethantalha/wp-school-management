@@ -1,0 +1,4 @@
+# Bu dosyalar `git archive` (ör. WordPress.org gönderimi için ZIP oluştururken
+# veya GitHub'ın "Download ZIP" özelliğiyle) üretilen pakete dahil edilmez.
+.gitattributes export-ignore
+.gitignore export-ignore
