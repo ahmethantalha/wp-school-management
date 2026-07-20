@@ -3,7 +3,7 @@ defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- salt görüntüleme filtreleri (GET), durum değişikliği yok; ham değer yalnızca regex biçim doğrulaması için okunur, kullanılan değer sanitize_text_field(wp_unslash()) ile temizlenir.
 $habit_id = isset( $_GET['habit_id'] ) ? (int) $_GET['habit_id'] : 0;
-$habit    = $habit_id ? SMS_Habits::get( $habit_id ) : null;
+$habit    = $habit_id ? Nizamiye_Habits::get( $habit_id ) : null;
 if ( ! $habit ) {
 	echo '<div class="wrap sms-wrap"><div class="sms-card sms-empty"><h2>Alışkanlık bulunamadı</h2></div></div>';
 	return;
@@ -12,15 +12,15 @@ $term_id = (int) $habit->term_id;
 $date    = isset( $_GET['log_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['log_date'] ) ) ? sanitize_text_field( wp_unslash( $_GET['log_date'] ) ) : current_time( 'Y-m-d' );
 // phpcs:enable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
-$students = SMS_Habits::students( $habit_id );
+$students = Nizamiye_Habits::students( $habit_id );
 // Öğretmen (oluşturan değilse) yalnızca kendi öğrencilerini doldurur.
-if ( sms_is_teacher() && (int) $habit->created_by !== get_current_user_id() ) {
-	$my_ids   = sms_teacher_student_ids( 0, $term_id );
+if ( nizamiye_is_teacher() && (int) $habit->created_by !== get_current_user_id() ) {
+	$my_ids   = nizamiye_teacher_student_ids( 0, $term_id );
 	$students = array_values( array_filter( $students, function ( $s ) use ( $my_ids ) {
 		return in_array( (int) $s->id, $my_ids, true );
 	} ) );
 }
-$logs      = SMS_Habits::logs_for_date( $habit_id, $date );
+$logs      = Nizamiye_Habits::logs_for_date( $habit_id, $date );
 $is_scale  = 'scale' === $habit->track_type;
 $is_reading = 'reading' === $habit->track_type;
 $max       = $is_scale ? (int) $habit->scale_max : 1;
@@ -33,9 +33,9 @@ if ( $is_scale ) {
 }
 ?>
 <div class="wrap sms-wrap">
-	<?php sms_view_header( 'Takip: ' . $habit->name, $subtitle ); ?>
+	<?php nizamiye_view_header( 'Takip: ' . $habit->name, $subtitle ); ?>
 
-	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-habits&sms_term=' . $term_id ) ); ?>">← Alışkanlık listesine dön</a></p>
+	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-habits&nizamiye_term=' . $term_id ) ); ?>">← Alışkanlık listesine dön</a></p>
 
 	<div class="sms-card">
 		<div class="sms-pad">
@@ -43,7 +43,7 @@ if ( $is_scale ) {
 				<input type="hidden" name="page" value="sms-habits">
 				<input type="hidden" name="view" value="track">
 				<input type="hidden" name="habit_id" value="<?php echo (int) $habit_id; ?>">
-				<input type="hidden" name="sms_term" value="<?php echo (int) $term_id; ?>">
+				<input type="hidden" name="nizamiye_term" value="<?php echo (int) $term_id; ?>">
 				<label class="sms-muted">Tarih</label>
 				<input type="date" name="log_date" value="<?php echo esc_attr( $date ); ?>" onchange="this.form.submit()">
 				<button type="submit" class="sms-btn sms-btn-ghost">Getir</button>
@@ -53,13 +53,13 @@ if ( $is_scale ) {
 
 	<div class="sms-card sms-mt">
 		<div class="sms-card-head">
-			<h2><?php echo esc_html( sms_format_date( $date ) ); ?></h2>
+			<h2><?php echo esc_html( nizamiye_format_date( $date ) ); ?></h2>
 			<?php if ( ! $is_scale && ! $is_reading ) : ?>
 				<button type="button" class="sms-btn sms-btn-ghost sms-btn-sm" data-sms-all-done>Tümünü "Yaptı" işaretle</button>
 			<?php endif; ?>
 		</div>
 		<?php if ( $students ) : ?>
-			<?php sms_form_open( 'sms_save_habit_logs' ); sms_back_url_field(); ?>
+			<?php nizamiye_form_open( 'nizamiye_save_habit_logs' ); nizamiye_back_url_field(); ?>
 				<input type="hidden" name="habit_id" value="<?php echo (int) $habit_id; ?>">
 				<input type="hidden" name="log_date" value="<?php echo esc_attr( $date ); ?>">
 				<table class="sms-table">
@@ -77,9 +77,9 @@ if ( $is_scale ) {
 						$log = $logs[ (int) $s->id ] ?? null;
 						?>
 						<tr>
-							<td class="sms-name-cell"><?php echo sms_avatar( sms_student_name( $s ) ); // phpcs:ignore ?><strong><?php echo esc_html( sms_student_name( $s ) ); ?></strong></td>
+							<td class="sms-name-cell"><?php echo nizamiye_avatar( nizamiye_student_name( $s ) ); // phpcs:ignore ?><strong><?php echo esc_html( nizamiye_student_name( $s ) ); ?></strong></td>
 							<?php if ( $is_reading ) :
-								$book_options = SMS_Habits::book_titles_for_student( $habit_id, (int) $s->id );
+								$book_options = Nizamiye_Habits::book_titles_for_student( $habit_id, (int) $s->id );
 								?>
 								<td>
 									<input type="text" class="sms-input-sm" name="log_note[<?php echo (int) $s->id; ?>]" value="<?php echo esc_attr( $log->note ?? '' ); ?>" placeholder="Kitap adı…" list="sms-books-<?php echo (int) $s->id; ?>" autocomplete="off">

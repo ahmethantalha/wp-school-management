@@ -1,30 +1,30 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-if ( ! sms_is_manager() ) {
+if ( ! nizamiye_is_manager() ) {
 	wp_die( 'Öğrenci düzenleme yetkiniz yok.' );
 }
 
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok; yetki üstte sms_is_manager() ile kontrol edilir.
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok; yetki üstte nizamiye_is_manager() ile kontrol edilir.
 $student_id = isset( $_GET['student'] ) ? (int) $_GET['student'] : 0;
-$student    = $student_id ? SMS_Students::get( $student_id ) : null;
-$term_id    = sms_current_term_id();
-$enrollment = $student ? SMS_Students::enrollment( $student_id, $term_id ) : null;
-$settings   = sms_get_settings();
-$parents    = sms_users_by_role( 'sms_parent' );
-$classes    = $student ? SMS_Classes::for_student( $student_id, $term_id ) : array();
+$student    = $student_id ? Nizamiye_Students::get( $student_id ) : null;
+$term_id    = nizamiye_current_term_id();
+$enrollment = $student ? Nizamiye_Students::enrollment( $student_id, $term_id ) : null;
+$settings   = nizamiye_get_settings();
+$parents    = nizamiye_users_by_role( 'nizamiye_parent' );
+$classes    = $student ? Nizamiye_Classes::for_student( $student_id, $term_id ) : array();
 $linked_user = $student && $student->user_id ? get_userdata( (int) $student->user_id ) : null;
 ?>
 <div class="wrap sms-wrap">
-	<?php sms_view_header( $student ? 'Öğrenciyi Düzenle' : 'Yeni Öğrenci', $student ? sms_student_name( $student ) : 'Yeni öğrenci kaydı oluşturun' ); ?>
+	<?php nizamiye_view_header( $student ? 'Öğrenciyi Düzenle' : 'Yeni Öğrenci', $student ? nizamiye_student_name( $student ) : 'Yeni öğrenci kaydı oluşturun' ); ?>
 
-	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-students&sms_term=' . $term_id ) ); ?>">← Öğrenci listesine dön</a></p>
+	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-students&nizamiye_term=' . $term_id ) ); ?>">← Öğrenci listesine dön</a></p>
 
 	<div class="sms-grid-2 sms-grid-uneven">
 		<div class="sms-card">
 			<div class="sms-card-head"><h2>Öğrenci Bilgileri</h2></div>
 			<div class="sms-pad">
-				<?php sms_form_open( 'sms_save_student' ); sms_back_url_field(); ?>
+				<?php nizamiye_form_open( 'nizamiye_save_student' ); nizamiye_back_url_field(); ?>
 					<input type="hidden" name="student_id" value="<?php echo (int) $student_id; ?>">
 					<input type="hidden" name="term_id" value="<?php echo (int) $term_id; ?>">
 
@@ -43,7 +43,7 @@ $linked_user = $student && $student->user_id ? get_userdata( (int) $student->use
 							<select name="grade_level">
 								<option value="0">— Seçin —</option>
 								<?php for ( $g = (int) $settings['min_grade']; $g <= (int) $settings['max_grade']; $g++ ) : ?>
-									<option value="<?php echo (int) $g; ?>" <?php selected( $enrollment ? (int) $enrollment->grade_level : 0, $g ); ?>><?php echo esc_html( sms_grade_label( $g ) ); ?></option>
+									<option value="<?php echo (int) $g; ?>" <?php selected( $enrollment ? (int) $enrollment->grade_level : 0, $g ); ?>><?php echo esc_html( nizamiye_grade_label( $g ) ); ?></option>
 								<?php endfor; ?>
 							</select>
 						</div>
@@ -95,11 +95,11 @@ $linked_user = $student && $student->user_id ? get_userdata( (int) $student->use
 						<?php if ( $classes ) : ?>
 							<ul class="sms-mini-list">
 								<?php foreach ( $classes as $c ) : ?>
-									<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-classes&view=edit&class_id=' . (int) $c->id . '&sms_term=' . $term_id ) ); ?>"><?php echo esc_html( $c->name ); ?></a></li>
+									<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-classes&view=edit&class_id=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>"><?php echo esc_html( $c->name ); ?></a></li>
 								<?php endforeach; ?>
 							</ul>
 						<?php else : ?>
-							<p class="sms-muted">Henüz bir dersliğe eklenmemiş. Atama <a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-classes&sms_term=' . $term_id ) ); ?>">Derslikler</a> sayfasındaki kadro yönetiminden yapılır.</p>
+							<p class="sms-muted">Henüz bir dersliğe eklenmemiş. Atama <a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-classes&nizamiye_term=' . $term_id ) ); ?>">Derslikler</a> sayfasındaki kadro yönetiminden yapılır.</p>
 						<?php endif; ?>
 					</div>
 				</div>
@@ -108,8 +108,8 @@ $linked_user = $student && $student->user_id ? get_userdata( (int) $student->use
 					<div class="sms-card-head"><h2>Dönem Geçmişi</h2></div>
 					<div class="sms-pad">
 						<ul class="sms-mini-list">
-							<?php foreach ( SMS_Students::enrollment_history( $student_id ) as $h ) : ?>
-								<li><?php echo esc_html( $h->term_name . ' — ' . sms_grade_label( $h->grade_level ) ); ?> <?php echo 'graduated' === $h->status ? '🎓' : ''; ?></li>
+							<?php foreach ( Nizamiye_Students::enrollment_history( $student_id ) as $h ) : ?>
+								<li><?php echo esc_html( $h->term_name . ' — ' . nizamiye_grade_label( $h->grade_level ) ); ?> <?php echo 'graduated' === $h->status ? '🎓' : ''; ?></li>
 							<?php endforeach; ?>
 						</ul>
 					</div>
@@ -117,7 +117,7 @@ $linked_user = $student && $student->user_id ? get_userdata( (int) $student->use
 
 				<div class="sms-card sms-mt sms-danger-zone">
 					<div class="sms-pad">
-						<?php sms_form_open( 'sms_delete_student', 'sms-confirm' ); ?>
+						<?php nizamiye_form_open( 'nizamiye_delete_student', 'sms-confirm' ); ?>
 							<input type="hidden" name="student_id" value="<?php echo (int) $student_id; ?>">
 							<button type="submit" class="sms-btn sms-btn-danger-ghost" data-confirm="Öğrenci ve TÜM kayıtları (yoklama, not, alışkanlık) kalıcı olarak silinecek. Emin misiniz?">Öğrenciyi Kalıcı Olarak Sil</button>
 						</form>

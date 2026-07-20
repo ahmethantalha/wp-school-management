@@ -1,17 +1,17 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-$parents = sms_users_by_role( 'sms_parent' );
-$term_id = sms_current_term_id();
+$parents = nizamiye_users_by_role( 'nizamiye_parent' );
+$term_id = nizamiye_current_term_id();
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok.
 $edit_id = isset( $_GET['user'] ) ? (int) $_GET['user'] : 0;
 $edit    = $edit_id ? get_userdata( $edit_id ) : null;
-if ( $edit && ! in_array( 'sms_parent', (array) $edit->roles, true ) ) {
+if ( $edit && ! in_array( 'nizamiye_parent', (array) $edit->roles, true ) ) {
 	$edit = null;
 }
 ?>
 <div class="wrap sms-wrap">
-	<?php sms_view_header( 'Veliler', 'Veli hesaplarını yönetin; öğrenci-veli eşleştirmesi öğrenci kartından yapılır. Bir velinin birden çok öğrencisi olabilir.' ); ?>
+	<?php nizamiye_view_header( 'Veliler', 'Veli hesaplarını yönetin; öğrenci-veli eşleştirmesi öğrenci kartından yapılır. Bir velinin birden çok öğrencisi olabilir.' ); ?>
 
 	<div class="sms-grid-2 sms-grid-uneven">
 		<div class="sms-card">
@@ -20,14 +20,14 @@ if ( $edit && ! in_array( 'sms_parent', (array) $edit->roles, true ) ) {
 				<table class="sms-table">
 					<thead><tr><th>Veli</th><th>E-posta</th><th>Öğrencileri</th><th></th></tr></thead>
 					<tbody>
-					<?php foreach ( $parents as $p ) : $children = SMS_Students::children_of( (int) $p->ID ); ?>
+					<?php foreach ( $parents as $p ) : $children = Nizamiye_Students::children_of( (int) $p->ID ); ?>
 						<tr>
-							<td class="sms-name-cell"><?php echo sms_avatar( $p->display_name ); // phpcs:ignore ?><strong><?php echo esc_html( $p->display_name ); ?></strong></td>
+							<td class="sms-name-cell"><?php echo nizamiye_avatar( $p->display_name ); // phpcs:ignore ?><strong><?php echo esc_html( $p->display_name ); ?></strong></td>
 							<td class="sms-muted"><?php echo esc_html( $p->user_email ); ?></td>
 							<td>
 								<?php if ( $children ) : ?>
 									<?php foreach ( $children as $c ) : ?>
-										<a class="sms-badge sms-badge-indigo" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $c->id . '&sms_term=' . $term_id ) ); ?>"><?php echo esc_html( sms_student_name( $c ) ); ?></a>
+										<a class="sms-badge sms-badge-indigo" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>"><?php echo esc_html( nizamiye_student_name( $c ) ); ?></a>
 									<?php endforeach; ?>
 								<?php else : ?>
 									<span class="sms-muted">—</span>
@@ -35,7 +35,7 @@ if ( $edit && ! in_array( 'sms_parent', (array) $edit->roles, true ) ) {
 							</td>
 							<td class="sms-actions-cell">
 								<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-parents&user=' . (int) $p->ID ) ); ?>">Düzenle</a>
-								<?php sms_form_open( 'sms_delete_user', 'sms-inline sms-confirm' ); sms_back_url_field( admin_url( 'admin.php?page=sms-parents' ) ); ?>
+								<?php nizamiye_form_open( 'nizamiye_delete_user', 'sms-inline sms-confirm' ); nizamiye_back_url_field( admin_url( 'admin.php?page=sms-parents' ) ); ?>
 									<input type="hidden" name="user_id" value="<?php echo (int) $p->ID; ?>">
 									<button type="submit" class="sms-btn sms-btn-danger-ghost sms-btn-sm" data-confirm="Veli hesabı silinecek; öğrencilerin veli bağı kaldırılır. Emin misiniz?">Sil</button>
 								</form>
@@ -52,8 +52,8 @@ if ( $edit && ! in_array( 'sms_parent', (array) $edit->roles, true ) ) {
 		<div class="sms-card">
 			<div class="sms-card-head"><h2><?php echo $edit ? 'Veliyi Düzenle' : 'Yeni Veli'; ?></h2></div>
 			<div class="sms-pad">
-				<?php sms_form_open( 'sms_save_user' ); sms_back_url_field( admin_url( 'admin.php?page=sms-parents' ) ); ?>
-					<input type="hidden" name="sms_role" value="sms_parent">
+				<?php nizamiye_form_open( 'nizamiye_save_user' ); nizamiye_back_url_field( admin_url( 'admin.php?page=sms-parents' ) ); ?>
+					<input type="hidden" name="nizamiye_role" value="nizamiye_parent">
 					<input type="hidden" name="user_id" value="<?php echo $edit ? (int) $edit->ID : 0; ?>">
 					<div class="sms-field"><label>Ad Soyad *</label><input type="text" name="display_name" value="<?php echo esc_attr( $edit->display_name ?? '' ); ?>" required></div>
 					<?php if ( ! $edit ) : ?>

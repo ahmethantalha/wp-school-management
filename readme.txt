@@ -1,4 +1,4 @@
-=== Okul Yönetim Sistemi ===
+=== Nizamiye ===
 Contributors: ahmethantalha
 Tags: education, attendance, gradebook, student management, reports
 Requires at least: 6.0
@@ -12,10 +12,10 @@ Term-based student tracking for schools and boarding schools: attendance, grades
 
 == Description ==
 
-**Okul Yönetim Sistemi** (School Management System) is a comprehensive, term-based student
-tracking plugin built for boarding schools, schools and educational institutions. From student,
-teacher and parent management to attendance, grade entry, habit tracking and visual reports, it
-brings together the essential tracking tools an institution needs in a single panel.
+**Nizamiye** is a comprehensive, term-based student tracking plugin built for boarding schools,
+schools and educational institutions. From student, teacher and parent management to attendance,
+grade entry, habit tracking and visual reports, it brings together the essential tracking tools
+an institution needs in a single panel.
 
 = Key Features =
 
@@ -46,9 +46,9 @@ send any data to external services.
 
 == Installation ==
 
-1. Upload the plugin files to the `wp-content/plugins/okul-yonetim-sistemi` folder (or upload the
+1. Upload the plugin files to the `wp-content/plugins/nizamiye` folder (or upload the
    zip file via **Plugins → Add New → Upload Plugin**).
-2. Activate *Okul Yönetim Sistemi* from the **Plugins** page.
+2. Activate *Nizamiye* from the **Plugins** page.
 3. Open the **Okul Yönetimi** menu that appears in the left sidebar, go to **Settings**, and set
    your institution's name and the graduation grade level.
 4. Create your first term from the **Terms** page, then add or bulk-import your teacher/parent/
@@ -59,11 +59,11 @@ send any data to external services.
 = Is student data deleted when the plugin is uninstalled? =
 
 No, data is preserved by default. If you also want the data to be removed, add the line
-`define( 'SMS_REMOVE_DATA_ON_UNINSTALL', true );` to your `wp-config.php` file.
+`define( 'NIZAMIYE_REMOVE_DATA_ON_UNINSTALL', true );` to your `wp-config.php` file.
 
 = Does the plugin send data to any external service? =
 
-No. All data is stored in custom tables prefixed `wp_sms_*` in your own database; no requests
+No. All data is stored in custom tables prefixed `wp_nizamiye_*` in your own database; no requests
 are sent to any remote server. PDF generation is also done entirely server-side with the bundled
 Dompdf library.
 

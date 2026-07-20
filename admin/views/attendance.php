@@ -1,7 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-$term_id = sms_current_term_id();
+$term_id = nizamiye_current_term_id();
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme filtreleri (GET), durum değişikliği yok.
 $cat_id  = isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
 $sess_id = isset( $_GET['session'] ) ? (int) $_GET['session'] : 0;
@@ -10,26 +10,26 @@ $class_id = isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
 
 // Eski bağlantı uyumu: class_id var ama kategori yoksa Ders kategorisini varsay.
 if ( $class_id && ! $cat_id ) {
-	$cat_id = sms_ders_category_id();
+	$cat_id = nizamiye_ders_category_id();
 }
 
-$category = $cat_id ? SMS_Attendance_Types::get_category( $cat_id ) : null;
+$category = $cat_id ? Nizamiye_Attendance_Types::get_category( $cat_id ) : null;
 
 /* ============================ 1) KATEGORİ SEÇİMİ ============================ */
 if ( ! $category ) {
-	$cats = $term_id ? SMS_Attendance_Types::accessible_categories( $term_id ) : array();
+	$cats = $term_id ? Nizamiye_Attendance_Types::accessible_categories( $term_id ) : array();
 	?>
 	<div class="wrap sms-wrap">
-		<?php sms_view_header( 'Yoklama Al', 'Almak istediğiniz yoklama türünü seçin.' ); ?>
+		<?php nizamiye_view_header( 'Yoklama Al', 'Almak istediğiniz yoklama türünü seçin.' ); ?>
 
 		<?php if ( ! $term_id ) : ?>
 			<div class="sms-card sms-empty"><span class="dashicons dashicons-calendar-alt"></span><h2>Aktif dönem yok</h2><p>Önce bir dönem oluşturun.</p></div>
 		<?php elseif ( $cats ) : ?>
 			<div class="sms-cat-grid">
 				<?php foreach ( $cats as $cat ) :
-					$scount = SMS_Attendance_Types::session_count( (int) $cat->id );
+					$scount = Nizamiye_Attendance_Types::session_count( (int) $cat->id );
 					?>
-					<a class="sms-cat-card sms-scope-<?php echo esc_attr( $cat->scope ); ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&cat=' . (int) $cat->id . '&sms_term=' . $term_id ) ); ?>">
+					<a class="sms-cat-card sms-scope-<?php echo esc_attr( $cat->scope ); ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&cat=' . (int) $cat->id . '&nizamiye_term=' . $term_id ) ); ?>">
 						<span class="sms-cat-icon"><span class="dashicons <?php echo esc_attr( $cat->icon ?: 'dashicons-clipboard' ); ?>"></span></span>
 						<span class="sms-cat-name"><?php echo esc_html( $cat->name ); ?></span>
 						<span class="sms-cat-meta">
@@ -49,16 +49,16 @@ if ( ! $category ) {
 
 /* ============================ 2) DERS: DERSLİK SEÇİMİ ============================ */
 if ( 'class' === $category->scope && ! $class_id ) {
-	$classes = SMS_Classes::for_term( $term_id, sms_is_manager() ? 0 : get_current_user_id() );
+	$classes = Nizamiye_Classes::for_term( $term_id, nizamiye_is_manager() ? 0 : get_current_user_id() );
 	?>
 	<div class="wrap sms-wrap">
-		<?php sms_view_header( $category->name . ' Yoklaması', 'Yoklama alacağınız dersliği seçin.' ); ?>
-		<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&sms_term=' . $term_id ) ); ?>">← Yoklama türlerine dön</a></p>
+		<?php nizamiye_view_header( $category->name . ' Yoklaması', 'Yoklama alacağınız dersliği seçin.' ); ?>
+		<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&nizamiye_term=' . $term_id ) ); ?>">← Yoklama türlerine dön</a></p>
 		<?php if ( $classes ) : ?>
 			<div class="sms-cat-grid">
-				<?php $sess = SMS_Attendance_Types::sessions( (int) $category->id ); $sid = $sess ? (int) $sess[0]->id : 0; ?>
+				<?php $sess = Nizamiye_Attendance_Types::sessions( (int) $category->id ); $sid = $sess ? (int) $sess[0]->id : 0; ?>
 				<?php foreach ( $classes as $c ) : ?>
-					<a class="sms-cat-card" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&cat=' . (int) $category->id . '&session=' . $sid . '&class_id=' . (int) $c->id . '&sms_term=' . $term_id ) ); ?>">
+					<a class="sms-cat-card" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&cat=' . (int) $category->id . '&session=' . $sid . '&class_id=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>">
 						<span class="sms-cat-icon"><span class="dashicons dashicons-book-alt"></span></span>
 						<span class="sms-cat-name"><?php echo esc_html( $c->name ); ?></span>
 						<span class="sms-cat-meta"><?php echo (int) $c->student_count; ?> öğrenci</span>
@@ -74,15 +74,15 @@ if ( 'class' === $category->scope && ! $class_id ) {
 }
 
 /* ============================ 3) GENEL: OTURUM SEÇİMİ ============================ */
-$sessions = SMS_Attendance_Types::sessions( (int) $category->id );
+$sessions = Nizamiye_Attendance_Types::sessions( (int) $category->id );
 if ( 'general' === $category->scope && count( $sessions ) > 1 && ! $sess_id ) {
 	?>
 	<div class="wrap sms-wrap">
-		<?php sms_view_header( $category->name . ' Yoklaması', 'Hangi oturumun yoklamasını alacaksınız?' ); ?>
-		<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&sms_term=' . $term_id ) ); ?>">← Yoklama türlerine dön</a></p>
+		<?php nizamiye_view_header( $category->name . ' Yoklaması', 'Hangi oturumun yoklamasını alacaksınız?' ); ?>
+		<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&nizamiye_term=' . $term_id ) ); ?>">← Yoklama türlerine dön</a></p>
 		<div class="sms-cat-grid">
 			<?php foreach ( $sessions as $s ) : ?>
-				<a class="sms-cat-card sms-session-card" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&cat=' . (int) $category->id . '&session=' . (int) $s->id . '&sms_term=' . $term_id ) ); ?>">
+				<a class="sms-cat-card sms-session-card" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&cat=' . (int) $category->id . '&session=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>">
 					<span class="sms-cat-icon"><span class="dashicons <?php echo esc_attr( $category->icon ?: 'dashicons-clock' ); ?>"></span></span>
 					<span class="sms-cat-name"><?php echo esc_html( $s->name ); ?></span>
 				</a>
@@ -97,7 +97,7 @@ if ( 'general' === $category->scope && count( $sessions ) > 1 && ! $sess_id ) {
 if ( ! $sess_id && $sessions ) {
 	$sess_id = (int) $sessions[0]->id;
 }
-$session = $sess_id ? SMS_Attendance_Types::get_session( $sess_id ) : null;
+$session = $sess_id ? Nizamiye_Attendance_Types::get_session( $sess_id ) : null;
 if ( ! $session || (int) $session->category_id !== (int) $category->id ) {
 	echo '<div class="wrap sms-wrap"><div class="sms-card sms-empty"><h2>Oturum bulunamadı</h2></div></div>';
 	return;
@@ -108,33 +108,33 @@ if ( ! $session || (int) $session->category_id !== (int) $category->id ) {
 $date = isset( $_GET['att_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['att_date'] ) ) ? sanitize_text_field( wp_unslash( $_GET['att_date'] ) ) : current_time( 'Y-m-d' );
 
 if ( 'class' === $category->scope ) {
-	if ( ! sms_can_manage_class( $class_id ) ) {
+	if ( ! nizamiye_can_manage_class( $class_id ) ) {
 		wp_die( 'Bu dersliğin yoklamasına erişim yetkiniz yok.' );
 	}
-	$class     = SMS_Classes::get( $class_id );
-	$students  = SMS_Classes::students( $class_id );
+	$class     = Nizamiye_Classes::get( $class_id );
+	$students  = Nizamiye_Classes::students( $class_id );
 	$scope_lbl = $class ? $class->name : '';
 } else {
-	if ( ! sms_can_take_general_attendance() ) {
+	if ( ! nizamiye_can_take_general_attendance() ) {
 		wp_die( 'Genel yoklama alma yetkiniz yok.' );
 	}
 	$class_id  = 0;
-	$ids       = sms_general_attendance_student_ids( $term_id, 0, (int) $category->id );
-	$students  = $ids ? SMS_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'ids' => $ids ) ) : array();
+	$ids       = nizamiye_general_attendance_student_ids( $term_id, 0, (int) $category->id );
+	$students  = $ids ? Nizamiye_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'ids' => $ids ) ) : array();
 	$scope_lbl = 'Genel';
 }
 
-$sheet    = SMS_Attendance::sheet( (int) $category->id, (int) $session->id, (int) $class_id, $date );
-$statuses = sms_attendance_statuses();
-$grades   = 'general' === $category->scope ? SMS_Students::grades_in_term( $term_id ) : array();
+$sheet    = Nizamiye_Attendance::sheet( (int) $category->id, (int) $session->id, (int) $class_id, $date );
+$statuses = nizamiye_attendance_statuses();
+$grades   = 'general' === $category->scope ? Nizamiye_Students::grades_in_term( $term_id ) : array();
 $multi_session = count( $sessions ) > 1;
 $title    = $category->name . ( $multi_session ? ' — ' . $session->name : '' ) . ' Yoklaması';
 $back_url = $multi_session
-	? admin_url( 'admin.php?page=sms-attendance&cat=' . (int) $category->id . '&sms_term=' . $term_id )
-	: admin_url( 'admin.php?page=sms-attendance&sms_term=' . $term_id );
+	? admin_url( 'admin.php?page=sms-attendance&cat=' . (int) $category->id . '&nizamiye_term=' . $term_id )
+	: admin_url( 'admin.php?page=sms-attendance&nizamiye_term=' . $term_id );
 ?>
 <div class="wrap sms-wrap">
-	<?php sms_view_header( $title, $scope_lbl ); ?>
+	<?php nizamiye_view_header( $title, $scope_lbl ); ?>
 	<p><a class="sms-back-link" href="<?php echo esc_url( $back_url ); ?>">← Geri</a></p>
 
 	<div class="sms-card">
@@ -144,14 +144,14 @@ $back_url = $multi_session
 				<input type="hidden" name="cat" value="<?php echo (int) $category->id; ?>">
 				<input type="hidden" name="session" value="<?php echo (int) $session->id; ?>">
 				<?php if ( $class_id ) : ?><input type="hidden" name="class_id" value="<?php echo (int) $class_id; ?>"><?php endif; ?>
-				<input type="hidden" name="sms_term" value="<?php echo (int) $term_id; ?>">
+				<input type="hidden" name="nizamiye_term" value="<?php echo (int) $term_id; ?>">
 				<label class="sms-muted">Tarih</label>
 				<input type="date" name="att_date" value="<?php echo esc_attr( $date ); ?>" onchange="this.form.submit()">
 				<?php if ( $grades ) : ?>
 					<select data-sms-filter-grade>
 						<option value="">Tüm sınıflar</option>
 						<?php foreach ( $grades as $g ) : ?>
-							<option value="<?php echo (int) $g; ?>"><?php echo esc_html( sms_grade_label( $g ) ); ?></option>
+							<option value="<?php echo (int) $g; ?>"><?php echo esc_html( nizamiye_grade_label( $g ) ); ?></option>
 						<?php endforeach; ?>
 					</select>
 				<?php endif; ?>
@@ -162,25 +162,25 @@ $back_url = $multi_session
 
 	<div class="sms-card sms-mt">
 		<div class="sms-card-head">
-			<h2><?php echo esc_html( sms_format_date( $date ) ); ?><?php echo $multi_session ? ' — ' . esc_html( $session->name ) : ''; ?></h2>
+			<h2><?php echo esc_html( nizamiye_format_date( $date ) ); ?><?php echo $multi_session ? ' — ' . esc_html( $session->name ) : ''; ?></h2>
 			<button type="button" class="sms-btn sms-btn-ghost sms-btn-sm" data-sms-all-present>Tümünü "Var" işaretle</button>
 		</div>
 		<?php if ( $students ) : ?>
-			<?php sms_form_open( 'sms_save_attendance' ); sms_back_url_field(); ?>
+			<?php nizamiye_form_open( 'nizamiye_save_attendance' ); nizamiye_back_url_field(); ?>
 				<input type="hidden" name="category_id" value="<?php echo (int) $category->id; ?>">
 				<input type="hidden" name="session_id" value="<?php echo (int) $session->id; ?>">
 				<input type="hidden" name="class_id" value="<?php echo (int) $class_id; ?>">
 				<input type="hidden" name="att_date" value="<?php echo esc_attr( $date ); ?>">
 				<div class="sms-att-list" data-sms-roster>
 					<?php
-					$short = sms_attendance_status_short();
+					$short = nizamiye_attendance_status_short();
 					foreach ( $students as $s ) :
 						$row      = $sheet[ (int) $s->id ] ?? null;
 						$current  = $row ? $row->status : 'present';
 						$note_val = $row->note ?? '';
 						?>
 						<div class="sms-att-row sms-roster-row" data-grade="<?php echo (int) ( $s->grade_level ?? 0 ); ?>">
-							<span class="sms-att-row-name"><?php echo esc_html( sms_student_name( $s ) ); ?></span>
+							<span class="sms-att-row-name"><?php echo esc_html( nizamiye_student_name( $s ) ); ?></span>
 							<div class="sms-att-row-status">
 								<div class="sms-seg" role="radiogroup">
 									<?php foreach ( $statuses as $key => $label ) : ?>

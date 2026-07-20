@@ -2,7 +2,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
-// Bu dosyadaki tüm $wpdb sorguları eklentiye özel tablolar (wp_sms_*) üzerinde çalışır;
+// Bu dosyadaki tüm $wpdb sorguları eklentiye özel tablolar (wp_nizamiye_*) üzerinde çalışır;
 // tüm parametreler $wpdb->prepare() ile bağlanır ya da intval()/whitelist ile temizlenir.
 // WordPress çekirdeğinde özel tablolar için bir soyutlama/önbellekleme API'si olmadığından
 // doğrudan $wpdb kullanımı kaçınılmazdır; bkz. güvenlik incelemesinde doğrulanan analiz.
@@ -10,11 +10,11 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Derslikler / şubeler ve kadro yönetimi.
  */
-class SMS_Classes {
+class Nizamiye_Classes {
 
 	private static function table() {
 		global $wpdb;
-		return $wpdb->prefix . 'sms_classes';
+		return $wpdb->prefix . 'nizamiye_classes';
 	}
 
 	public static function get( $id ) {
@@ -25,7 +25,7 @@ class SMS_Classes {
 	/** Dönemin derslikleri; $teacher_id verilirse yalnızca o öğretmeninkiler. */
 	public static function for_term( $term_id, $teacher_id = 0 ) {
 		global $wpdb;
-		$sql    = 'SELECT c.*, (SELECT COUNT(*) FROM ' . $wpdb->prefix . 'sms_class_students cs WHERE cs.class_id = c.id) AS student_count FROM ' . self::table() . ' c WHERE c.term_id = %d';
+		$sql    = 'SELECT c.*, (SELECT COUNT(*) FROM ' . $wpdb->prefix . 'nizamiye_class_students cs WHERE cs.class_id = c.id) AS student_count FROM ' . self::table() . ' c WHERE c.term_id = %d';
 		$params = array( (int) $term_id );
 		if ( $teacher_id ) {
 			$sql     .= ' AND c.teacher_id = %d';
@@ -56,9 +56,9 @@ class SMS_Classes {
 	public static function delete( $id ) {
 		global $wpdb;
 		$id = (int) $id;
-		$wpdb->delete( $wpdb->prefix . 'sms_class_students', array( 'class_id' => $id ) );
-		$wpdb->delete( $wpdb->prefix . 'sms_attendance', array( 'class_id' => $id ) );
-		$wpdb->delete( $wpdb->prefix . 'sms_grades', array( 'class_id' => $id ) );
+		$wpdb->delete( $wpdb->prefix . 'nizamiye_class_students', array( 'class_id' => $id ) );
+		$wpdb->delete( $wpdb->prefix . 'nizamiye_attendance', array( 'class_id' => $id ) );
+		$wpdb->delete( $wpdb->prefix . 'nizamiye_grades', array( 'class_id' => $id ) );
 		$wpdb->delete( self::table(), array( 'id' => $id ) );
 	}
 
@@ -66,7 +66,7 @@ class SMS_Classes {
 	public static function student_ids( $class_id ) {
 		global $wpdb;
 		return array_map( 'intval', $wpdb->get_col( $wpdb->prepare(
-			"SELECT student_id FROM {$wpdb->prefix}sms_class_students WHERE class_id = %d",
+			"SELECT student_id FROM {$wpdb->prefix}nizamiye_class_students WHERE class_id = %d",
 			$class_id
 		) ) );
 	}
@@ -75,8 +75,8 @@ class SMS_Classes {
 	public static function students( $class_id ) {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare(
-			"SELECT s.* FROM {$wpdb->prefix}sms_class_students cs
-			 INNER JOIN {$wpdb->prefix}sms_students s ON s.id = cs.student_id
+			"SELECT s.* FROM {$wpdb->prefix}nizamiye_class_students cs
+			 INNER JOIN {$wpdb->prefix}nizamiye_students s ON s.id = cs.student_id
 			 WHERE cs.class_id = %d ORDER BY s.first_name",
 			$class_id
 		) );
@@ -90,10 +90,10 @@ class SMS_Classes {
 		$current     = self::student_ids( $class_id );
 
 		foreach ( array_diff( $current, $student_ids ) as $remove ) {
-			$wpdb->delete( $wpdb->prefix . 'sms_class_students', array( 'class_id' => $class_id, 'student_id' => $remove ) );
+			$wpdb->delete( $wpdb->prefix . 'nizamiye_class_students', array( 'class_id' => $class_id, 'student_id' => $remove ) );
 		}
 		foreach ( array_diff( $student_ids, $current ) as $add ) {
-			$wpdb->insert( $wpdb->prefix . 'sms_class_students', array( 'class_id' => $class_id, 'student_id' => $add ) );
+			$wpdb->insert( $wpdb->prefix . 'nizamiye_class_students', array( 'class_id' => $class_id, 'student_id' => $add ) );
 		}
 	}
 
@@ -101,7 +101,7 @@ class SMS_Classes {
 	public static function for_student( $student_id, $term_id ) {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare(
-			"SELECT c.* FROM {$wpdb->prefix}sms_class_students cs
+			"SELECT c.* FROM {$wpdb->prefix}nizamiye_class_students cs
 			 INNER JOIN " . self::table() . " c ON c.id = cs.class_id
 			 WHERE cs.student_id = %d AND c.term_id = %d ORDER BY c.name",
 			$student_id, $term_id

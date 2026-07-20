@@ -2,7 +2,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
-// Bu dosyadaki tüm $wpdb sorguları eklentiye özel tablolar (wp_sms_*) üzerinde çalışır;
+// Bu dosyadaki tüm $wpdb sorguları eklentiye özel tablolar (wp_nizamiye_*) üzerinde çalışır;
 // tüm parametreler $wpdb->prepare() ile bağlanır ya da intval()/whitelist ile temizlenir.
 // WordPress çekirdeğinde özel tablolar için bir soyutlama/önbellekleme API'si olmadığından
 // doğrudan $wpdb kullanımı kaçınılmazdır; bkz. güvenlik incelemesinde doğrulanan analiz.
@@ -10,29 +10,29 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Dashboard ve karne istatistikleri.
  */
-class SMS_Reports {
+class Nizamiye_Reports {
 
 	/** Dashboard sayaçları. */
 	public static function counts( $term_id ) {
 		global $wpdb;
-		$teacher_id = sms_is_teacher() ? get_current_user_id() : 0;
+		$teacher_id = nizamiye_is_teacher() ? get_current_user_id() : 0;
 
 		if ( $teacher_id ) {
-			$student_ids = sms_teacher_student_ids( $teacher_id, $term_id );
+			$student_ids = nizamiye_teacher_student_ids( $teacher_id, $term_id );
 			$students    = count( $student_ids );
-			$classes     = SMS_Classes::count_for_term( $term_id, $teacher_id );
-			$habits      = count( SMS_Habits::for_term( $term_id, $teacher_id ) );
+			$classes     = Nizamiye_Classes::count_for_term( $term_id, $teacher_id );
+			$habits      = count( Nizamiye_Habits::for_term( $term_id, $teacher_id ) );
 		} else {
-			$students = SMS_Students::count_for_term( $term_id );
-			$classes  = SMS_Classes::count_for_term( $term_id );
+			$students = Nizamiye_Students::count_for_term( $term_id );
+			$classes  = Nizamiye_Classes::count_for_term( $term_id );
 			$habits   = (int) $wpdb->get_var( $wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->prefix}sms_habits WHERE term_id = %d", $term_id
+				"SELECT COUNT(*) FROM {$wpdb->prefix}nizamiye_habits WHERE term_id = %d", $term_id
 			) );
 		}
 
 		return array(
 			'students' => $students,
-			'teachers' => count( get_users( array( 'role' => 'sms_teacher', 'fields' => 'ID' ) ) ),
+			'teachers' => count( get_users( array( 'role' => 'nizamiye_teacher', 'fields' => 'ID' ) ) ),
 			'classes'  => $classes,
 			'habits'   => $habits,
 		);
@@ -45,11 +45,11 @@ class SMS_Reports {
 	 * @return array [ ['student' => satır, 'score' =>, 'attendance' =>, 'habit' =>, 'grade' =>], ... ] skora göre azalan.
 	 */
 	public static function student_scores( $term_id, array $limit_student_ids = null ) {
-		$att    = SMS_Attendance::rates_by_student( $term_id );
-		$habit  = SMS_Habits::rates_by_student( $term_id );
-		$grade  = SMS_Grades::rates_by_student( $term_id );
+		$att    = Nizamiye_Attendance::rates_by_student( $term_id );
+		$habit  = Nizamiye_Habits::rates_by_student( $term_id );
+		$grade  = Nizamiye_Grades::rates_by_student( $term_id );
 
-		$students = SMS_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'ids' => $limit_student_ids ) );
+		$students = Nizamiye_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'ids' => $limit_student_ids ) );
 
 		$scores = array();
 		foreach ( $students as $s ) {
@@ -101,20 +101,20 @@ class SMS_Reports {
 	public static function attendance_matrix( $term_id, $category_id, $date_from, $date_to, $grade = 0, array $student_ids = null ) {
 		global $wpdb;
 
-		$students = SMS_Students::query( array(
+		$students = Nizamiye_Students::query( array(
 			'term_id' => $term_id,
 			'status'  => 'active',
 			'grade'   => $grade,
 			'ids'     => $student_ids,
 		) );
 		if ( ! $students ) {
-			return array( 'sessions' => SMS_Attendance_Types::sessions( $category_id ), 'rows' => array(), 'totals' => array() );
+			return array( 'sessions' => Nizamiye_Attendance_Types::sessions( $category_id ), 'rows' => array(), 'totals' => array() );
 		}
 
 		$ids = implode( ',', array_map( function ( $s ) { return (int) $s->id; }, $students ) );
 		$raw = $wpdb->get_results( $wpdb->prepare(
 			"SELECT student_id, session_id, status, COUNT(*) AS cnt
-			 FROM {$wpdb->prefix}sms_attendance
+			 FROM {$wpdb->prefix}nizamiye_attendance
 			 WHERE term_id = %d AND category_id = %d AND att_date >= %s AND att_date <= %s
 			   AND student_id IN ($ids)
 			 GROUP BY student_id, session_id, status",
@@ -140,7 +140,7 @@ class SMS_Reports {
 			$cells[ $sid ][ $ses ]['total']      += (int) $r->cnt;
 		}
 
-		$sessions = SMS_Attendance_Types::sessions( $category_id );
+		$sessions = Nizamiye_Attendance_Types::sessions( $category_id );
 		$rows     = array();
 		$totals   = array( 'overall' => $empty );
 		foreach ( $sessions as $s ) {
@@ -179,9 +179,9 @@ class SMS_Reports {
 	public static function habit_matrix( $term_id, $grade = 0, array $student_ids = null ) {
 		global $wpdb;
 
-		$students = SMS_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'grade' => $grade, 'ids' => $student_ids ) );
+		$students = Nizamiye_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'grade' => $grade, 'ids' => $student_ids ) );
 		$habits   = $wpdb->get_results( $wpdb->prepare(
-			"SELECT id, name, track_type, scale_max FROM {$wpdb->prefix}sms_habits WHERE term_id = %d ORDER BY name", $term_id
+			"SELECT id, name, track_type, scale_max FROM {$wpdb->prefix}nizamiye_habits WHERE term_id = %d ORDER BY name", $term_id
 		) );
 		if ( ! $students || ! $habits ) {
 			return array( 'habits' => $habits, 'rows' => array(), 'totals' => array() );
@@ -191,8 +191,8 @@ class SMS_Reports {
 		$raw = $wpdb->get_results( $wpdb->prepare(
 			"SELECT l.student_id, l.habit_id, COUNT(*) AS logs,
 				ROUND(AVG(CASE WHEN h.track_type IN ('binary','reading') THEN LEAST(l.value,1) * 100 ELSE l.value / h.scale_max * 100 END)) AS rate
-			 FROM {$wpdb->prefix}sms_habit_logs l
-			 INNER JOIN {$wpdb->prefix}sms_habits h ON h.id = l.habit_id
+			 FROM {$wpdb->prefix}nizamiye_habit_logs l
+			 INNER JOIN {$wpdb->prefix}nizamiye_habits h ON h.id = l.habit_id
 			 WHERE h.term_id = %d AND l.student_id IN ($ids)
 			 GROUP BY l.student_id, l.habit_id",
 			$term_id
@@ -242,10 +242,10 @@ class SMS_Reports {
 	public static function grade_matrix( $term_id, $grade = 0, array $student_ids = null ) {
 		global $wpdb;
 
-		$students = SMS_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'grade' => $grade, 'ids' => $student_ids ) );
+		$students = Nizamiye_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'grade' => $grade, 'ids' => $student_ids ) );
 		$classes  = $wpdb->get_results( $wpdb->prepare(
-			"SELECT DISTINCT c.id, c.name FROM {$wpdb->prefix}sms_classes c
-			 INNER JOIN {$wpdb->prefix}sms_grades g ON g.class_id = c.id
+			"SELECT DISTINCT c.id, c.name FROM {$wpdb->prefix}nizamiye_classes c
+			 INNER JOIN {$wpdb->prefix}nizamiye_grades g ON g.class_id = c.id
 			 WHERE c.term_id = %d ORDER BY c.name",
 			$term_id
 		) );
@@ -257,8 +257,8 @@ class SMS_Reports {
 		$raw = $wpdb->get_results( $wpdb->prepare(
 			"SELECT g.student_id, g.class_id, COUNT(*) AS exams,
 				ROUND(AVG(g.score / g.max_score * 100)) AS rate
-			 FROM {$wpdb->prefix}sms_grades g
-			 INNER JOIN {$wpdb->prefix}sms_classes c ON c.id = g.class_id
+			 FROM {$wpdb->prefix}nizamiye_grades g
+			 INNER JOIN {$wpdb->prefix}nizamiye_classes c ON c.id = g.class_id
 			 WHERE c.term_id = %d AND g.max_score > 0 AND g.student_id IN ($ids)
 			 GROUP BY g.student_id, g.class_id",
 			$term_id
@@ -306,14 +306,14 @@ class SMS_Reports {
 
 	/** Sınıf seviyesi bazında özet: öğrenci sayısı, devam, alışkanlık, not ortalamaları. */
 	public static function grade_level_summary( $term_id, array $student_ids = null ) {
-		$students = SMS_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'ids' => $student_ids ) );
+		$students = Nizamiye_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'ids' => $student_ids ) );
 		if ( ! $students ) {
 			return array();
 		}
 
-		$att   = SMS_Attendance::rates_by_student( $term_id );
-		$habit = SMS_Habits::rates_by_student( $term_id );
-		$grade = SMS_Grades::rates_by_student( $term_id );
+		$att   = Nizamiye_Attendance::rates_by_student( $term_id );
+		$habit = Nizamiye_Habits::rates_by_student( $term_id );
+		$grade = Nizamiye_Grades::rates_by_student( $term_id );
 
 		$groups = array();
 		foreach ( $students as $s ) {
@@ -354,7 +354,7 @@ class SMS_Reports {
 	/** Yoklama türü (kategori) bazında dönem özeti. */
 	public static function category_summary( $term_id, array $student_ids = null ) {
 		global $wpdb;
-		$sql = "SELECT category_id, status, COUNT(*) AS cnt FROM {$wpdb->prefix}sms_attendance WHERE term_id = %d";
+		$sql = "SELECT category_id, status, COUNT(*) AS cnt FROM {$wpdb->prefix}nizamiye_attendance WHERE term_id = %d";
 		if ( null !== $student_ids ) {
 			if ( ! $student_ids ) {
 				return array();
@@ -375,7 +375,7 @@ class SMS_Reports {
 		}
 
 		$out = array();
-		foreach ( SMS_Attendance_Types::categories( false ) as $cat ) {
+		foreach ( Nizamiye_Attendance_Types::categories( false ) as $cat ) {
 			$cid = (int) $cat->id;
 			if ( empty( $by_cat[ $cid ] ) ) {
 				continue;
@@ -390,18 +390,18 @@ class SMS_Reports {
 	/** Öğrencinin tam karne verisi. */
 	public static function student_report( $student_id, $term_id ) {
 		return array(
-			'student'    => SMS_Students::get( $student_id ),
-			'enrollment' => SMS_Students::enrollment( $student_id, $term_id ),
-			'history'    => SMS_Students::enrollment_history( $student_id ),
-			'classes'    => SMS_Classes::for_student( $student_id, $term_id ),
-			'attendance' => SMS_Attendance::student_summary( $student_id, $term_id, sms_ders_category_id() ),
-			'att_all'    => SMS_Attendance::student_summary( $student_id, $term_id ),
-			'att_cats'   => SMS_Attendance::student_category_breakdown( $student_id, $term_id ),
-			'recent_att' => SMS_Attendance::recent_for_student( $student_id, $term_id, 3 ),
-			'habits'     => SMS_Habits::student_habit_summary( $student_id, $term_id ),
-			'reading'    => SMS_Habits::reading_summary( $student_id, $term_id ),
-			'grades'     => SMS_Grades::for_student( $student_id, $term_id ),
-			'grade_avgs' => SMS_Grades::student_class_averages( $student_id, $term_id ),
+			'student'    => Nizamiye_Students::get( $student_id ),
+			'enrollment' => Nizamiye_Students::enrollment( $student_id, $term_id ),
+			'history'    => Nizamiye_Students::enrollment_history( $student_id ),
+			'classes'    => Nizamiye_Classes::for_student( $student_id, $term_id ),
+			'attendance' => Nizamiye_Attendance::student_summary( $student_id, $term_id, nizamiye_ders_category_id() ),
+			'att_all'    => Nizamiye_Attendance::student_summary( $student_id, $term_id ),
+			'att_cats'   => Nizamiye_Attendance::student_category_breakdown( $student_id, $term_id ),
+			'recent_att' => Nizamiye_Attendance::recent_for_student( $student_id, $term_id, 3 ),
+			'habits'     => Nizamiye_Habits::student_habit_summary( $student_id, $term_id ),
+			'reading'    => Nizamiye_Habits::reading_summary( $student_id, $term_id ),
+			'grades'     => Nizamiye_Grades::for_student( $student_id, $term_id ),
+			'grade_avgs' => Nizamiye_Grades::student_class_averages( $student_id, $term_id ),
 		);
 	}
 }

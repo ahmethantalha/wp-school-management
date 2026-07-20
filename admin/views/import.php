@@ -3,7 +3,7 @@ defined( 'ABSPATH' ) || exit;
 
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET) sekmesi, durum değişikliği yok.
 $tab     = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'students';
-$term_id = sms_current_term_id();
+$term_id = nizamiye_current_term_id();
 $tabs    = array(
 	'students' => array( 'Öğrenciler', 'dashicons-groups' ),
 	'teachers' => array( 'Öğretmenler', 'dashicons-businessperson' ),
@@ -13,9 +13,9 @@ if ( ! isset( $tabs[ $tab ] ) ) {
 	$tab = 'students';
 }
 
-$errors = get_transient( 'sms_import_errors_' . get_current_user_id() );
+$errors = get_transient( 'nizamiye_import_errors_' . get_current_user_id() );
 if ( $errors ) {
-	delete_transient( 'sms_import_errors_' . get_current_user_id() );
+	delete_transient( 'nizamiye_import_errors_' . get_current_user_id() );
 }
 
 $columns = array(
@@ -30,7 +30,7 @@ $hints = array(
 );
 ?>
 <div class="wrap sms-wrap">
-	<?php sms_view_header( 'Toplu İçe Aktarma', 'Excel (.xlsx) veya CSV dosyasıyla öğrenci, öğretmen ve velileri topluca ekleyin.' ); ?>
+	<?php nizamiye_view_header( 'Toplu İçe Aktarma', 'Excel (.xlsx) veya CSV dosyasıyla öğrenci, öğretmen ve velileri topluca ekleyin.' ); ?>
 
 	<div class="sms-tabs">
 		<?php foreach ( $tabs as $key => $t ) : ?>
@@ -62,11 +62,11 @@ $hints = array(
 					<div class="sms-notice sms-notice-error"><span class="dashicons dashicons-warning"></span>Öğrenci aktarımı için önce aktif bir dönem oluşturun.</div>
 				<?php else : ?>
 					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data" class="sms-form">
-						<input type="hidden" name="action" value="sms_import">
-						<?php wp_nonce_field( 'sms_import', '_sms_nonce' ); ?>
+						<input type="hidden" name="action" value="nizamiye_import">
+						<?php wp_nonce_field( 'nizamiye_import', '_nizamiye_nonce' ); ?>
 						<input type="hidden" name="import_type" value="<?php echo esc_attr( $tab ); ?>">
 						<input type="hidden" name="term_id" value="<?php echo (int) $term_id; ?>">
-						<input type="hidden" name="_sms_back" value="<?php echo esc_attr( admin_url( 'admin.php?page=sms-import&tab=' . $tab ) ); ?>">
+						<input type="hidden" name="_nizamiye_back" value="<?php echo esc_attr( admin_url( 'admin.php?page=sms-import&tab=' . $tab ) ); ?>">
 
 						<div class="sms-dropzone">
 							<span class="dashicons dashicons-upload"></span>
@@ -86,7 +86,7 @@ $hints = array(
 				<p class="sms-muted">İlk satır <strong>başlık</strong> satırı olmalıdır. Beklenen sütunlar:</p>
 				<code class="sms-code"><?php echo esc_html( $columns[ $tab ] ); ?></code>
 				<p class="sms-muted sms-mt"><?php echo esc_html( $hints[ $tab ] ); ?></p>
-				<a class="sms-btn sms-btn-ghost sms-mt" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=sms_import_template&type=' . $tab ), 'sms_template' ) ); ?>">
+				<a class="sms-btn sms-btn-ghost sms-mt" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=nizamiye_import_template&type=' . $tab ), 'nizamiye_template' ) ); ?>">
 					<span class="dashicons dashicons-download"></span> Örnek CSV Şablonu İndir
 				</a>
 				<p class="sms-muted sms-mt-sm"><span class="dashicons dashicons-info"></span> Excel kullanıyorsanız şablonu doldurup <em>Farklı Kaydet → CSV</em> ile kaydedebilir ya da doğrudan .xlsx yükleyebilirsiniz.</p>

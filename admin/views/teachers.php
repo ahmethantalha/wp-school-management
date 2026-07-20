@@ -1,20 +1,20 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-$teachers = sms_users_by_role( 'sms_teacher' );
-$term_id  = sms_current_term_id();
+$teachers = nizamiye_users_by_role( 'nizamiye_teacher' );
+$term_id  = nizamiye_current_term_id();
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok.
 $edit_id  = isset( $_GET['user'] ) ? (int) $_GET['user'] : 0;
 $edit     = $edit_id ? get_userdata( $edit_id ) : null;
-if ( $edit && ! in_array( 'sms_teacher', (array) $edit->roles, true ) ) {
+if ( $edit && ! in_array( 'nizamiye_teacher', (array) $edit->roles, true ) ) {
 	$edit = null;
 }
-$edit_ct       = $edit ? sms_is_class_teacher( (int) $edit->ID ) : false;
-$edit_ct_grade = $edit ? sms_class_teacher_grades( (int) $edit->ID ) : array();
-$settings      = sms_get_settings();
+$edit_ct       = $edit ? nizamiye_is_class_teacher( (int) $edit->ID ) : false;
+$edit_ct_grade = $edit ? nizamiye_class_teacher_grades( (int) $edit->ID ) : array();
+$settings      = nizamiye_get_settings();
 ?>
 <div class="wrap sms-wrap">
-	<?php sms_view_header( 'Öğretmenler', 'Öğretmen hesaplarını yönetin; derslik atamaları Derslikler sayfasından yapılır.' ); ?>
+	<?php nizamiye_view_header( 'Öğretmenler', 'Öğretmen hesaplarını yönetin; derslik atamaları Derslikler sayfasından yapılır.' ); ?>
 
 	<div class="sms-grid-2 sms-grid-uneven">
 		<div class="sms-card">
@@ -25,12 +25,12 @@ $settings      = sms_get_settings();
 					<tbody>
 					<?php foreach ( $teachers as $t ) : ?>
 						<tr>
-							<td class="sms-name-cell"><?php echo sms_avatar( $t->display_name ); // phpcs:ignore ?><strong><?php echo esc_html( $t->display_name ); ?></strong><?php echo sms_is_class_teacher( (int) $t->ID ) ? ' <span class="sms-badge sms-badge-green">Sınıf Öğretmeni</span>' : ''; ?></td>
+							<td class="sms-name-cell"><?php echo nizamiye_avatar( $t->display_name ); // phpcs:ignore ?><strong><?php echo esc_html( $t->display_name ); ?></strong><?php echo nizamiye_is_class_teacher( (int) $t->ID ) ? ' <span class="sms-badge sms-badge-green">Sınıf Öğretmeni</span>' : ''; ?></td>
 							<td class="sms-muted"><?php echo esc_html( $t->user_email ); ?></td>
-							<td><?php echo (int) SMS_Classes::count_for_term( $term_id, (int) $t->ID ); ?></td>
+							<td><?php echo (int) Nizamiye_Classes::count_for_term( $term_id, (int) $t->ID ); ?></td>
 							<td class="sms-actions-cell">
 								<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-teachers&user=' . (int) $t->ID ) ); ?>">Düzenle</a>
-								<?php sms_form_open( 'sms_delete_user', 'sms-inline sms-confirm' ); sms_back_url_field( admin_url( 'admin.php?page=sms-teachers' ) ); ?>
+								<?php nizamiye_form_open( 'nizamiye_delete_user', 'sms-inline sms-confirm' ); nizamiye_back_url_field( admin_url( 'admin.php?page=sms-teachers' ) ); ?>
 									<input type="hidden" name="user_id" value="<?php echo (int) $t->ID; ?>">
 									<button type="submit" class="sms-btn sms-btn-danger-ghost sms-btn-sm" data-confirm="Öğretmen hesabı silinecek; derslikleri öğretmensiz kalır. Emin misiniz?">Sil</button>
 								</form>
@@ -47,8 +47,8 @@ $settings      = sms_get_settings();
 		<div class="sms-card">
 			<div class="sms-card-head"><h2><?php echo $edit ? 'Öğretmeni Düzenle' : 'Yeni Öğretmen'; ?></h2></div>
 			<div class="sms-pad">
-				<?php sms_form_open( 'sms_save_user' ); sms_back_url_field( admin_url( 'admin.php?page=sms-teachers' ) ); ?>
-					<input type="hidden" name="sms_role" value="sms_teacher">
+				<?php nizamiye_form_open( 'nizamiye_save_user' ); nizamiye_back_url_field( admin_url( 'admin.php?page=sms-teachers' ) ); ?>
+					<input type="hidden" name="nizamiye_role" value="nizamiye_teacher">
 					<input type="hidden" name="user_id" value="<?php echo $edit ? (int) $edit->ID : 0; ?>">
 					<div class="sms-field"><label>Ad Soyad *</label><input type="text" name="display_name" value="<?php echo esc_attr( $edit->display_name ?? '' ); ?>" required></div>
 					<?php if ( ! $edit ) : ?>

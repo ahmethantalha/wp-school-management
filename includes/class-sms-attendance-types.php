@@ -2,7 +2,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
-// Bu dosyadaki tüm $wpdb sorguları eklentiye özel tablolar (wp_sms_*) üzerinde çalışır;
+// Bu dosyadaki tüm $wpdb sorguları eklentiye özel tablolar (wp_nizamiye_*) üzerinde çalışır;
 // tüm parametreler $wpdb->prepare() ile bağlanır ya da intval()/whitelist ile temizlenir.
 // WordPress çekirdeğinde özel tablolar için bir soyutlama/önbellekleme API'si olmadığından
 // doğrudan $wpdb kullanımı kaçınılmazdır; bkz. güvenlik incelemesinde doğrulanan analiz.
@@ -14,16 +14,16 @@ defined( 'ABSPATH' ) || exit;
  *   'class'   → derslik bazlı (Ders). Branş öğretmeni + yönetici alır.
  *   'general' → genel (Namaz, Temizlik, Telefon). Sınıf öğretmeni + yönetici alır.
  */
-class SMS_Attendance_Types {
+class Nizamiye_Attendance_Types {
 
 	private static function ct() {
 		global $wpdb;
-		return $wpdb->prefix . 'sms_att_categories';
+		return $wpdb->prefix . 'nizamiye_att_categories';
 	}
 
 	private static function st() {
 		global $wpdb;
-		return $wpdb->prefix . 'sms_att_sessions';
+		return $wpdb->prefix . 'nizamiye_att_sessions';
 	}
 
 	/** Tüm kategoriler. */
@@ -133,13 +133,13 @@ class SMS_Attendance_Types {
 		global $wpdb;
 		$cat = self::get_category( $id );
 		if ( ! $cat ) {
-			return new WP_Error( 'sms_no_cat', 'Kategori bulunamadı.' );
+			return new WP_Error( 'nizamiye_no_cat', 'Kategori bulunamadı.' );
 		}
 		if ( $cat->is_system ) {
-			return new WP_Error( 'sms_system_cat', 'Sistem kategorileri silinemez (oturumlarını düzenleyebilirsiniz).' );
+			return new WP_Error( 'nizamiye_system_cat', 'Sistem kategorileri silinemez (oturumlarını düzenleyebilirsiniz).' );
 		}
 		$wpdb->delete( self::st(), array( 'category_id' => (int) $id ) );
-		$wpdb->delete( $wpdb->prefix . 'sms_attendance', array( 'category_id' => (int) $id ) );
+		$wpdb->delete( $wpdb->prefix . 'nizamiye_attendance', array( 'category_id' => (int) $id ) );
 		$wpdb->delete( self::ct(), array( 'id' => (int) $id ) );
 		return true;
 	}
@@ -179,12 +179,12 @@ class SMS_Attendance_Types {
 		global $wpdb;
 		$sess = self::get_session( $id );
 		if ( ! $sess ) {
-			return new WP_Error( 'sms_no_sess', 'Oturum bulunamadı.' );
+			return new WP_Error( 'nizamiye_no_sess', 'Oturum bulunamadı.' );
 		}
 		if ( self::session_count( $sess->category_id ) <= 1 ) {
-			return new WP_Error( 'sms_last_sess', 'Kategoride en az bir oturum bulunmalıdır.' );
+			return new WP_Error( 'nizamiye_last_sess', 'Kategoride en az bir oturum bulunmalıdır.' );
 		}
-		$wpdb->delete( $wpdb->prefix . 'sms_attendance', array( 'session_id' => (int) $id ) );
+		$wpdb->delete( $wpdb->prefix . 'nizamiye_attendance', array( 'session_id' => (int) $id ) );
 		$wpdb->delete( self::st(), array( 'id' => (int) $id ) );
 		return true;
 	}
@@ -196,9 +196,9 @@ class SMS_Attendance_Types {
 	 */
 	public static function accessible_categories( $term_id ) {
 		$out         = array();
-		$is_manager  = sms_is_manager();
-		$has_classes = $is_manager || (bool) sms_teacher_class_ids( 0, $term_id );
-		$is_class_t  = sms_can_take_general_attendance();
+		$is_manager  = nizamiye_is_manager();
+		$has_classes = $is_manager || (bool) nizamiye_teacher_class_ids( 0, $term_id );
+		$is_class_t  = nizamiye_can_take_general_attendance();
 
 		foreach ( self::categories( true ) as $cat ) {
 			if ( 'class' === $cat->scope ) {

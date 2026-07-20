@@ -4,7 +4,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Yönetim menüsü, sayfa yönlendirme ve varlık (CSS/JS) yükleme.
  */
-class SMS_Menu {
+class Nizamiye_Menu {
 
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
@@ -13,46 +13,46 @@ class SMS_Menu {
 
 	public static function register_menu() {
 		add_menu_page(
-			'Okul Yönetimi', 'Okul Yönetimi', 'sms_access', 'sms-dashboard',
-			array( __CLASS__, 'render_dashboard' ), 'dashicons-welcome-learn-more', 3
+			'Okul Yönetimi', 'Okul Yönetimi', 'nizamiye_access', 'sms-dashboard',
+			array( __CLASS__, 'render_dashboard' ), 'dashicons-welcome-learn-more', 56
 		);
 
-		add_submenu_page( 'sms-dashboard', 'Anasayfa', 'Anasayfa', 'sms_access', 'sms-dashboard', array( __CLASS__, 'render_dashboard' ) );
-		add_submenu_page( 'sms-dashboard', 'Dönemler', 'Dönemler', 'sms_manage', 'sms-terms', array( __CLASS__, 'render' ) );
-		add_submenu_page( 'sms-dashboard', 'Öğrenciler', 'Öğrenciler', 'sms_teach', 'sms-students', array( __CLASS__, 'render' ) );
-		add_submenu_page( 'sms-dashboard', 'Öğretmenler', 'Öğretmenler', 'sms_manage', 'sms-teachers', array( __CLASS__, 'render' ) );
-		add_submenu_page( 'sms-dashboard', 'Veliler', 'Veliler', 'sms_manage', 'sms-parents', array( __CLASS__, 'render' ) );
-		add_submenu_page( 'sms-dashboard', 'Derslikler', 'Derslikler', 'sms_teach', 'sms-classes', array( __CLASS__, 'render' ) );
-		add_submenu_page( 'sms-dashboard', 'Yoklama', 'Yoklama', 'sms_teach', 'sms-attendance', array( __CLASS__, 'render' ) );
-		add_submenu_page( 'sms-dashboard', 'Alışkanlıklar', 'Alışkanlıklar', 'sms_teach', 'sms-habits', array( __CLASS__, 'render' ) );
-		add_submenu_page( 'sms-dashboard', 'Notlar', 'Notlar', 'sms_teach', 'sms-grades', array( __CLASS__, 'render' ) );
-		add_submenu_page( 'sms-dashboard', 'Raporlar', 'Raporlar', 'sms_access', 'sms-reports', array( __CLASS__, 'render' ) );
-		add_submenu_page( 'sms-dashboard', 'Karneler', 'Karneler', 'sms_teach', 'sms-cards', array( __CLASS__, 'render' ) );
-		add_submenu_page( 'sms-dashboard', 'İçe Aktar', 'İçe Aktar', 'sms_manage', 'sms-import', array( __CLASS__, 'render' ) );
-		add_submenu_page( 'sms-dashboard', 'Yoklama Türleri', 'Yoklama Türleri', 'sms_manage', 'sms-att-types', array( __CLASS__, 'render' ) );
+		add_submenu_page( 'sms-dashboard', 'Anasayfa', 'Anasayfa', 'nizamiye_access', 'sms-dashboard', array( __CLASS__, 'render_dashboard' ) );
+		add_submenu_page( 'sms-dashboard', 'Dönemler', 'Dönemler', 'nizamiye_manage', 'sms-terms', array( __CLASS__, 'render' ) );
+		add_submenu_page( 'sms-dashboard', 'Öğrenciler', 'Öğrenciler', 'nizamiye_teach', 'sms-students', array( __CLASS__, 'render' ) );
+		add_submenu_page( 'sms-dashboard', 'Öğretmenler', 'Öğretmenler', 'nizamiye_manage', 'sms-teachers', array( __CLASS__, 'render' ) );
+		add_submenu_page( 'sms-dashboard', 'Veliler', 'Veliler', 'nizamiye_manage', 'sms-parents', array( __CLASS__, 'render' ) );
+		add_submenu_page( 'sms-dashboard', 'Derslikler', 'Derslikler', 'nizamiye_teach', 'sms-classes', array( __CLASS__, 'render' ) );
+		add_submenu_page( 'sms-dashboard', 'Yoklama', 'Yoklama', 'nizamiye_teach', 'sms-attendance', array( __CLASS__, 'render' ) );
+		add_submenu_page( 'sms-dashboard', 'Alışkanlıklar', 'Alışkanlıklar', 'nizamiye_teach', 'sms-habits', array( __CLASS__, 'render' ) );
+		add_submenu_page( 'sms-dashboard', 'Notlar', 'Notlar', 'nizamiye_teach', 'sms-grades', array( __CLASS__, 'render' ) );
+		add_submenu_page( 'sms-dashboard', 'Raporlar', 'Raporlar', 'nizamiye_access', 'sms-reports', array( __CLASS__, 'render' ) );
+		add_submenu_page( 'sms-dashboard', 'Karneler', 'Karneler', 'nizamiye_teach', 'sms-cards', array( __CLASS__, 'render' ) );
+		add_submenu_page( 'sms-dashboard', 'İçe Aktar', 'İçe Aktar', 'nizamiye_manage', 'sms-import', array( __CLASS__, 'render' ) );
+		add_submenu_page( 'sms-dashboard', 'Yoklama Türleri', 'Yoklama Türleri', 'nizamiye_manage', 'sms-att-types', array( __CLASS__, 'render' ) );
 
 		// Veli menüsü: yalnızca veli hesabı (yönetici/öğretmen değilse) için görünür.
-		if ( ! current_user_can( 'sms_teach' ) && current_user_can( 'sms_access' ) && SMS_Students::children_of( get_current_user_id() ) ) {
-			add_submenu_page( 'sms-dashboard', 'Öğrencilerim', 'Öğrencilerim', 'sms_access', 'sms-my-children', array( __CLASS__, 'render' ) );
+		if ( ! current_user_can( 'nizamiye_teach' ) && current_user_can( 'nizamiye_access' ) && Nizamiye_Students::children_of( get_current_user_id() ) ) {
+			add_submenu_page( 'sms-dashboard', 'Öğrencilerim', 'Öğrencilerim', 'nizamiye_access', 'sms-my-children', array( __CLASS__, 'render' ) );
 		}
 
-		add_submenu_page( 'sms-dashboard', 'Ayarlar', 'Ayarlar', 'sms_manage', 'sms-settings', array( __CLASS__, 'render' ) );
+		add_submenu_page( 'sms-dashboard', 'Ayarlar', 'Ayarlar', 'nizamiye_manage', 'sms-settings', array( __CLASS__, 'render' ) );
 	}
 
 	/** Anasayfa: rolüne göre yönlendirir. */
 	public static function render_dashboard() {
-		if ( current_user_can( 'sms_teach' ) ) {
+		if ( current_user_can( 'nizamiye_teach' ) ) {
 			self::load_view( 'dashboard' );
 			return;
 		}
 		// Veli → çocukları, öğrenci → kendi karnesi.
 		$uid      = get_current_user_id();
-		$children = SMS_Students::children_of( $uid );
+		$children = Nizamiye_Students::children_of( $uid );
 		if ( $children ) {
 			self::load_view( 'my-children' );
 			return;
 		}
-		$me = SMS_Students::by_user( $uid );
+		$me = Nizamiye_Students::by_user( $uid );
 		if ( $me ) {
 			$_GET['student'] = (int) $me->id;
 			self::load_view( 'student-report' );
@@ -121,7 +121,7 @@ class SMS_Menu {
 	}
 
 	private static function load_view( $view ) {
-		$file = SMS_DIR . 'admin/views/' . $view . '.php';
+		$file = NIZAMIYE_DIR . 'admin/views/' . $view . '.php';
 		if ( file_exists( $file ) ) {
 			include $file;
 		}
@@ -132,8 +132,8 @@ class SMS_Menu {
 		if ( ! isset( $_GET['page'] ) || 0 !== strpos( sanitize_key( $_GET['page'] ), 'sms-' ) ) {
 			return;
 		}
-		wp_enqueue_style( 'sms-admin', SMS_URL . 'assets/css/admin.css', array(), SMS_VERSION );
-		wp_enqueue_script( 'sms-charts', SMS_URL . 'assets/js/sms-charts.js', array(), SMS_VERSION, true );
-		wp_enqueue_script( 'sms-admin', SMS_URL . 'assets/js/admin.js', array( 'sms-charts' ), SMS_VERSION, true );
+		wp_enqueue_style( 'sms-admin', NIZAMIYE_URL . 'assets/css/admin.css', array(), NIZAMIYE_VERSION );
+		wp_enqueue_script( 'sms-charts', NIZAMIYE_URL . 'assets/js/sms-charts.js', array(), NIZAMIYE_VERSION, true );
+		wp_enqueue_script( 'sms-admin', NIZAMIYE_URL . 'assets/js/admin.js', array( 'sms-charts' ), NIZAMIYE_VERSION, true );
 	}
 }

@@ -2,7 +2,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
-// Bu dosyadaki tüm $wpdb sorguları eklentiye özel tablolar (wp_sms_*) üzerinde çalışır;
+// Bu dosyadaki tüm $wpdb sorguları eklentiye özel tablolar (wp_nizamiye_*) üzerinde çalışır;
 // tüm parametreler $wpdb->prepare() ile bağlanır ya da intval()/whitelist ile temizlenir.
 // WordPress çekirdeğinde özel tablolar için bir soyutlama/önbellekleme API'si olmadığından
 // doğrudan $wpdb kullanımı kaçınılmazdır; bkz. güvenlik incelemesinde doğrulanan analiz.
@@ -10,11 +10,11 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Not / sınav kayıtları.
  */
-class SMS_Grades {
+class Nizamiye_Grades {
 
 	private static function table() {
 		global $wpdb;
-		return $wpdb->prefix . 'sms_grades';
+		return $wpdb->prefix . 'nizamiye_grades';
 	}
 
 	/** Dönemdeki branşlar (derslik ve not sayılarıyla). Boş branş 'Diğer' olarak döner. */
@@ -24,7 +24,7 @@ class SMS_Grades {
 			"SELECT COALESCE(NULLIF(TRIM(c.subject), ''), 'Diğer') AS subject,
 				COUNT(DISTINCT c.id) AS class_count,
 				COUNT(g.id) AS grade_count
-			 FROM {$wpdb->prefix}sms_classes c
+			 FROM {$wpdb->prefix}nizamiye_classes c
 			 LEFT JOIN " . self::table() . " g ON g.class_id = c.id
 			 WHERE c.term_id = %d
 			 GROUP BY COALESCE(NULLIF(TRIM(c.subject), ''), 'Diğer')
@@ -38,9 +38,9 @@ class SMS_Grades {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare(
 			"SELECT c.*,
-				(SELECT COUNT(*) FROM {$wpdb->prefix}sms_class_students cs WHERE cs.class_id = c.id) AS student_count,
+				(SELECT COUNT(*) FROM {$wpdb->prefix}nizamiye_class_students cs WHERE cs.class_id = c.id) AS student_count,
 				(SELECT COUNT(DISTINCT CONCAT(g.title,'|',COALESCE(g.exam_date,''),'|',COALESCE(g.exam_type,''))) FROM " . self::table() . " g WHERE g.class_id = c.id) AS exam_count
-			 FROM {$wpdb->prefix}sms_classes c
+			 FROM {$wpdb->prefix}nizamiye_classes c
 			 WHERE c.term_id = %d AND COALESCE(NULLIF(TRIM(c.subject), ''), 'Diğer') = %s
 			 ORDER BY c.grade_level, c.name",
 			$term_id, $subject
@@ -68,7 +68,7 @@ class SMS_Grades {
 	public static function exam_scores( $class_id, $title, $exam_date, $exam_type ) {
 		global $wpdb;
 		$sql    = 'SELECT g.*, s.first_name, s.last_name FROM ' . self::table() . " g
-			 INNER JOIN {$wpdb->prefix}sms_students s ON s.id = g.student_id
+			 INNER JOIN {$wpdb->prefix}nizamiye_students s ON s.id = g.student_id
 			 WHERE g.class_id = %d AND g.title = %s AND COALESCE(g.exam_type,'') = %s";
 		$params = array( (int) $class_id, $title, (string) $exam_type );
 		if ( '' === (string) $exam_date ) {
@@ -86,7 +86,7 @@ class SMS_Grades {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare(
 			'SELECT g.*, s.first_name, s.last_name FROM ' . self::table() . " g
-			 INNER JOIN {$wpdb->prefix}sms_students s ON s.id = g.student_id
+			 INNER JOIN {$wpdb->prefix}nizamiye_students s ON s.id = g.student_id
 			 WHERE g.class_id = %d ORDER BY g.exam_date DESC, g.title, s.first_name",
 			$class_id
 		) );
@@ -97,7 +97,7 @@ class SMS_Grades {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare(
 			'SELECT g.*, c.name AS class_name, c.subject FROM ' . self::table() . " g
-			 INNER JOIN {$wpdb->prefix}sms_classes c ON c.id = g.class_id
+			 INNER JOIN {$wpdb->prefix}nizamiye_classes c ON c.id = g.class_id
 			 WHERE g.student_id = %d AND c.term_id = %d
 			 ORDER BY g.exam_date DESC, g.id DESC",
 			$student_id, $term_id
@@ -149,7 +149,7 @@ class SMS_Grades {
 		$rows = $wpdb->get_results( $wpdb->prepare(
 			'SELECT g.student_id, ROUND(AVG(g.score / g.max_score * 100)) AS rate
 			 FROM ' . self::table() . " g
-			 INNER JOIN {$wpdb->prefix}sms_classes c ON c.id = g.class_id
+			 INNER JOIN {$wpdb->prefix}nizamiye_classes c ON c.id = g.class_id
 			 WHERE c.term_id = %d AND g.max_score > 0 GROUP BY g.student_id",
 			$term_id
 		) );
@@ -168,7 +168,7 @@ class SMS_Grades {
 			'SELECT c.name AS class_name, c.subject, COUNT(g.id) AS exam_count,
 				ROUND(AVG(g.score / g.max_score * 100)) AS avg_rate
 			 FROM ' . self::table() . " g
-			 INNER JOIN {$wpdb->prefix}sms_classes c ON c.id = g.class_id
+			 INNER JOIN {$wpdb->prefix}nizamiye_classes c ON c.id = g.class_id
 			 WHERE g.student_id = %d AND c.term_id = %d AND g.max_score > 0
 			 GROUP BY c.id, c.name, c.subject ORDER BY c.name",
 			$student_id, $term_id

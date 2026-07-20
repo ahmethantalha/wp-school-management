@@ -2,14 +2,14 @@
 defined( 'ABSPATH' ) || exit;
 
 // Veli/öğrenci bu sayfayı açarsa kendi görünümüne yönlendirilir.
-if ( ! current_user_can( 'sms_teach' ) ) {
+if ( ! current_user_can( 'nizamiye_teach' ) ) {
 	include __DIR__ . '/my-children.php';
 	return;
 }
 
-$term_id = sms_current_term_id();
-$teacher = sms_is_teacher();
-$term    = $term_id ? SMS_Terms::get( $term_id ) : null;
+$term_id = nizamiye_current_term_id();
+$teacher = nizamiye_is_teacher();
+$term    = $term_id ? Nizamiye_Terms::get( $term_id ) : null;
 
 /* ---------- Filtre parametreleri ---------- */
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme filtreleri (GET), durum değişikliği yok; her değer sanitize/whitelist edilir.
@@ -24,11 +24,11 @@ if ( ! in_array( $metric, array( 'rate', 'present', 'absent', 'late', 'excused' 
 	$metric = 'rate';
 }
 
-$namaz  = SMS_Attendance_Types::get_category_by_slug( 'namaz' );
+$namaz  = Nizamiye_Attendance_Types::get_category_by_slug( 'namaz' );
 $cat_id = isset( $_GET['cat'] ) ? (int) $_GET['cat'] : ( $namaz ? (int) $namaz->id : 0 );
 
 // Oturum (vakit) odağı: 0 = tüm oturumlar (matris), aksi halde tek vakte kırılım.
-$cat_sessions   = $cat_id ? SMS_Attendance_Types::sessions( $cat_id ) : array();
+$cat_sessions   = $cat_id ? Nizamiye_Attendance_Types::sessions( $cat_id ) : array();
 $valid_sess_ids = array_map( function ( $s ) { return (int) $s->id; }, $cat_sessions );
 $sess_id        = isset( $_GET['rsession'] ) ? (int) $_GET['rsession'] : 0;
 if ( $sess_id && ! in_array( $sess_id, $valid_sess_ids, true ) ) {
@@ -46,21 +46,21 @@ foreach ( $cat_sessions as $s ) {
 $default_from = $term && $term->start_date && '0000-00-00' !== $term->start_date
 	? $term->start_date
 	: gmdate( 'Y-m-d', strtotime( '-29 days', current_time( 'timestamp' ) ) );
-$dates      = sms_resolve_report_dates( $default_from );
+$dates      = nizamiye_resolve_report_dates( $default_from );
 $date_mode  = $dates['mode'];
 $sel_month  = $dates['month'];
 $sel_year   = $dates['year'];
 $from       = $dates['from'];
 $to         = $dates['to'];
 $year_options = range( (int) current_time( 'Y' ) - 3, (int) current_time( 'Y' ) + 1 );
-$month_names  = sms_month_names();
+$month_names  = nizamiye_month_names();
 
 // Öğretmenler yalnızca sorumlu oldukları öğrencileri analiz edebilir (kayıt düzeyi erişim).
-$student_ids = $teacher ? sms_teacher_student_ids() : null;
-$grades_list = $term_id ? SMS_Students::grades_in_term( $term_id ) : array();
-$categories  = SMS_Attendance_Types::categories( true );
+$student_ids = $teacher ? nizamiye_teacher_student_ids() : null;
+$grades_list = $term_id ? Nizamiye_Students::grades_in_term( $term_id ) : array();
+$categories  = Nizamiye_Attendance_Types::categories( true );
 
-$statuses      = sms_attendance_statuses();
+$statuses      = nizamiye_attendance_statuses();
 $metric_labels = array( 'rate' => 'Katılım Oranı' ) + $statuses;
 
 /**
@@ -80,7 +80,7 @@ $cell_class = function ( $v ) use ( $metric ) {
 	if ( null === $v ) {
 		return '';
 	}
-	return in_array( $metric, array( 'absent', 'late' ), true ) ? sms_rate_class( 100 - $v ) : sms_rate_class( $v );
+	return in_array( $metric, array( 'absent', 'late' ), true ) ? nizamiye_rate_class( 100 - $v ) : nizamiye_rate_class( $v );
 };
 
 $tabs = array(
@@ -92,7 +92,7 @@ $tabs = array(
 
 // Geçerli filtrelerle CSV dışa aktarma bağlantısı (nonce'lu; kişisel veri içerir).
 $export_url = wp_nonce_url( add_query_arg( array(
-	'action'   => 'sms_export_report',
+	'action'   => 'nizamiye_export_report',
 	'rtype'    => $rtype,
 	'group'    => $group,
 	'grade'    => $grade,
@@ -104,16 +104,16 @@ $export_url = wp_nonce_url( add_query_arg( array(
 	'to'       => $to,
 	'rmonth'   => $sel_month,
 	'ryear'    => $sel_year,
-	'sms_term' => $term_id,
-), admin_url( 'admin-post.php' ) ), 'sms_export_report' );
+	'nizamiye_term' => $term_id,
+), admin_url( 'admin-post.php' ) ), 'nizamiye_export_report' );
 $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $export_url ) . '"><span class="dashicons dashicons-download"></span> CSV İndir</a>';
 ?>
 <div class="wrap sms-wrap">
-	<?php sms_view_header( 'Raporlar', 'Yoklama, alışkanlık ve not verilerini öğrenci ya da sınıf bazında analiz edin. Bireysel karneler için Karneler sayfasını kullanın.' ); ?>
+	<?php nizamiye_view_header( 'Raporlar', 'Yoklama, alışkanlık ve not verilerini öğrenci ya da sınıf bazında analiz edin. Bireysel karneler için Karneler sayfasını kullanın.' ); ?>
 
 	<div class="sms-tabs">
 		<?php foreach ( $tabs as $key => $t ) : ?>
-			<a class="sms-tab <?php echo $rtype === $key ? 'is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&rtype=' . $key . '&sms_term=' . $term_id ) ); ?>">
+			<a class="sms-tab <?php echo $rtype === $key ? 'is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&rtype=' . $key . '&nizamiye_term=' . $term_id ) ); ?>">
 				<span class="dashicons <?php echo esc_attr( $t[1] ); ?>"></span> <?php echo esc_html( $t[0] ); ?>
 			</a>
 		<?php endforeach; ?>
@@ -124,7 +124,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 			<form method="get" class="sms-filters">
 				<input type="hidden" name="page" value="sms-reports">
 				<input type="hidden" name="rtype" value="<?php echo esc_attr( $rtype ); ?>">
-				<?php if ( $term_id ) : ?><input type="hidden" name="sms_term" value="<?php echo (int) $term_id; ?>"><?php endif; ?>
+				<?php if ( $term_id ) : ?><input type="hidden" name="nizamiye_term" value="<?php echo (int) $term_id; ?>"><?php endif; ?>
 
 				<label class="sms-muted">Gruplama</label>
 				<select name="group">
@@ -136,7 +136,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 					<select name="grade">
 						<option value="0">Tüm sınıflar</option>
 						<?php foreach ( $grades_list as $g ) : ?>
-							<option value="<?php echo (int) $g; ?>" <?php selected( $grade, $g ); ?>><?php echo esc_html( sms_grade_label( $g ) ); ?></option>
+							<option value="<?php echo (int) $g; ?>" <?php selected( $grade, $g ); ?>><?php echo esc_html( nizamiye_grade_label( $g ) ); ?></option>
 						<?php endforeach; ?>
 					</select>
 				<?php endif; ?>
@@ -201,8 +201,8 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 	<?php
 	/* ================= YOKLAMA ANALİZİ ================= */
 	if ( 'yoklama' === $rtype ) :
-		$category = $cat_id ? SMS_Attendance_Types::get_category( $cat_id ) : null;
-		$matrix   = $category ? SMS_Reports::attendance_matrix( $term_id, $cat_id, $from, $to, 'sinif' === $group ? 0 : $grade, $student_ids ) : array( 'sessions' => array(), 'rows' => array(), 'totals' => array() );
+		$category = $cat_id ? Nizamiye_Attendance_Types::get_category( $cat_id ) : null;
+		$matrix   = $category ? Nizamiye_Reports::attendance_matrix( $term_id, $cat_id, $from, $to, 'sinif' === $group ? 0 : $grade, $student_ids ) : array( 'sessions' => array(), 'rows' => array(), 'totals' => array() );
 		$sessions = $matrix['sessions'];
 
 		// Sınıf bazında gruplama: satırları sınıf seviyesine göre topla.
@@ -246,7 +246,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 				$out .= '<td class="sms-center">' . ( $c['total'] > 0 ? (int) $c[ $k ] : '—' ) . '</td>';
 			}
 			$rate = $c['total'] > 0 ? (int) $c['rate'] : null;
-			$out .= '<td class="sms-center"><span class="sms-score sms-score-big ' . esc_attr( sms_rate_class( $rate ) ) . '">'
+			$out .= '<td class="sms-center"><span class="sms-score sms-score-big ' . esc_attr( nizamiye_rate_class( $rate ) ) . '">'
 				. ( null !== $rate ? $rate . '%' : '—' ) . '</span>'
 				. ( $c['total'] > 0 ? '<span class="sms-cell-sub">' . (int) $c['total'] . ' kayıt</span>' : '' ) . '</td>';
 			return $out;
@@ -255,7 +255,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 		<div class="sms-card sms-mt">
 			<div class="sms-card-head">
 				<h2><?php echo esc_html( ( $category ? $category->name : '' ) . ( $focus_session ? ' — ' . $focus_session->name . ' vakti' : ' — ' . $metric_labels[ $metric ] ) ); ?></h2>
-				<div class="sms-head-tools"><span class="sms-muted"><?php echo esc_html( sms_format_date( $from ) . ' – ' . sms_format_date( $to ) ); ?></span><?php echo $matrix['rows'] ? $export_btn : ''; // phpcs:ignore ?></div>
+				<div class="sms-head-tools"><span class="sms-muted"><?php echo esc_html( nizamiye_format_date( $from ) . ' – ' . nizamiye_format_date( $to ) ); ?></span><?php echo $matrix['rows'] ? $export_btn : ''; // phpcs:ignore ?></div>
 			</div>
 			<?php if ( $matrix['rows'] && $focus_session ) : ?>
 				<?php // ---- ODAK: tek vakit için tam durum kırılımı ---- ?>
@@ -275,7 +275,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 					<?php if ( 'sinif' === $group ) : ?>
 						<?php foreach ( $grade_rows as $g => $gr ) : ?>
 							<tr>
-								<td><strong><?php echo esc_html( sms_grade_label( $g ) ); ?></strong> <span class="sms-muted">(<?php echo (int) $gr['count']; ?> öğrenci)</span></td>
+								<td><strong><?php echo esc_html( nizamiye_grade_label( $g ) ); ?></strong> <span class="sms-muted">(<?php echo (int) $gr['count']; ?> öğrenci)</span></td>
 								<?php echo $focus_cells( $gr['cells'][ $sess_id ] ); // phpcs:ignore ?>
 							</tr>
 						<?php endforeach; ?>
@@ -283,9 +283,9 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 						<?php foreach ( $matrix['rows'] as $row ) : $st = $row['student']; ?>
 							<tr>
 								<td class="sms-name-cell">
-									<?php echo sms_avatar( sms_student_name( $st ) ); // phpcs:ignore ?>
-									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $st->id . '&sms_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( sms_student_name( $st ) ); ?></strong></a>
-									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( sms_grade_label( $st->grade_level ) ) : ''; ?></span></div>
+									<?php echo nizamiye_avatar( nizamiye_student_name( $st ) ); // phpcs:ignore ?>
+									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
+									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( nizamiye_grade_label( $st->grade_level ) ) : ''; ?></span></div>
 								</td>
 								<?php echo $focus_cells( $row['cells'][ $sess_id ] ); // phpcs:ignore ?>
 							</tr>
@@ -312,7 +312,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 					<?php if ( 'sinif' === $group ) : ?>
 						<?php foreach ( $grade_rows as $g => $gr ) : ?>
 							<tr>
-								<td><strong><?php echo esc_html( sms_grade_label( $g ) ); ?></strong> <span class="sms-muted">(<?php echo (int) $gr['count']; ?> öğrenci)</span></td>
+								<td><strong><?php echo esc_html( nizamiye_grade_label( $g ) ); ?></strong> <span class="sms-muted">(<?php echo (int) $gr['count']; ?> öğrenci)</span></td>
 								<?php foreach ( $sessions as $s ) : $v = $cell_value( $gr['cells'][ (int) $s->id ] ); ?>
 									<td class="sms-center"><span class="sms-score <?php echo esc_attr( $cell_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span>
 									<?php if ( null !== $v ) : ?><span class="sms-cell-sub"><?php echo (int) $gr['cells'][ (int) $s->id ][ 'rate' === $metric ? 'present' : $metric ]; ?>/<?php echo (int) $gr['cells'][ (int) $s->id ]['total']; ?></span><?php endif; ?></td>
@@ -325,9 +325,9 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 						<?php foreach ( $matrix['rows'] as $row ) : $st = $row['student']; ?>
 							<tr>
 								<td class="sms-name-cell">
-									<?php echo sms_avatar( sms_student_name( $st ) ); // phpcs:ignore ?>
-									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $st->id . '&sms_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( sms_student_name( $st ) ); ?></strong></a>
-									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( sms_grade_label( $st->grade_level ) ) : ''; ?></span></div>
+									<?php echo nizamiye_avatar( nizamiye_student_name( $st ) ); // phpcs:ignore ?>
+									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
+									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( nizamiye_grade_label( $st->grade_level ) ) : ''; ?></span></div>
 								</td>
 								<?php foreach ( $sessions as $s ) : $cell = $row['cells'][ (int) $s->id ]; $v = $cell_value( $cell ); ?>
 									<td class="sms-center">
@@ -359,7 +359,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 	<?php
 	/* ================= ALIŞKANLIK ANALİZİ ================= */
 	elseif ( 'aliskanlik' === $rtype ) :
-		$matrix = SMS_Reports::habit_matrix( $term_id, 'sinif' === $group ? 0 : $grade, $student_ids );
+		$matrix = Nizamiye_Reports::habit_matrix( $term_id, 'sinif' === $group ? 0 : $grade, $student_ids );
 		$habits = $matrix['habits'];
 
 		$grade_rows = array();
@@ -397,7 +397,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 					<?php if ( 'sinif' === $group ) : ?>
 						<?php foreach ( $grade_rows as $g => $gr ) : ?>
 							<tr>
-								<td><strong><?php echo esc_html( sms_grade_label( $g ) ); ?></strong> <span class="sms-muted">(<?php echo (int) $gr['count']; ?> öğrenci)</span></td>
+								<td><strong><?php echo esc_html( nizamiye_grade_label( $g ) ); ?></strong> <span class="sms-muted">(<?php echo (int) $gr['count']; ?> öğrenci)</span></td>
 								<?php
 								$g_sum = 0;
 								$g_cnt = 0;
@@ -409,35 +409,35 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 										$g_cnt++;
 									}
 									?>
-									<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
+									<td class="sms-center"><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
 								<?php endforeach; ?>
 								<?php $v = $g_cnt ? (int) round( $g_sum / $g_cnt ) : null; ?>
-								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( nizamiye_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
 							</tr>
 						<?php endforeach; ?>
 					<?php else : ?>
 						<?php foreach ( $matrix['rows'] as $row ) : $st = $row['student']; ?>
 							<tr>
 								<td class="sms-name-cell">
-									<?php echo sms_avatar( sms_student_name( $st ) ); // phpcs:ignore ?>
-									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $st->id . '&sms_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( sms_student_name( $st ) ); ?></strong></a>
-									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( sms_grade_label( $st->grade_level ) ) : ''; ?></span></div>
+									<?php echo nizamiye_avatar( nizamiye_student_name( $st ) ); // phpcs:ignore ?>
+									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
+									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( nizamiye_grade_label( $st->grade_level ) ) : ''; ?></span></div>
 								</td>
 								<?php foreach ( $habits as $h ) : $cell = $row['cells'][ (int) $h->id ]; ?>
 									<td class="sms-center">
 										<?php if ( $cell ) : ?>
-											<span class="sms-score <?php echo esc_attr( sms_rate_class( $cell['rate'] ) ); ?>"><?php echo (int) $cell['rate']; ?>%</span>
+											<span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $cell['rate'] ) ); ?>"><?php echo (int) $cell['rate']; ?>%</span>
 											<span class="sms-cell-sub"><?php echo (int) $cell['logs']; ?> kayıt</span>
 										<?php else : ?>—<?php endif; ?>
 									</td>
 								<?php endforeach; ?>
-								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $row['overall'] ) ); ?>"><?php echo null !== $row['overall'] ? esc_html( $row['overall'] . '%' ) : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( nizamiye_rate_class( $row['overall'] ) ); ?>"><?php echo null !== $row['overall'] ? esc_html( $row['overall'] . '%' ) : '—'; ?></span></td>
 							</tr>
 						<?php endforeach; ?>
 						<tr class="sms-total-row">
 							<td><strong>Toplu (tüm liste)</strong></td>
 							<?php foreach ( $habits as $h ) : $v = $matrix['totals'][ (int) $h->id ]; ?>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
 							<?php endforeach; ?>
 							<td></td>
 						</tr>
@@ -453,7 +453,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 	<?php
 	/* ================= NOT ANALİZİ ================= */
 	elseif ( 'not' === $rtype ) :
-		$matrix  = SMS_Reports::grade_matrix( $term_id, 'sinif' === $group ? 0 : $grade, $student_ids );
+		$matrix  = Nizamiye_Reports::grade_matrix( $term_id, 'sinif' === $group ? 0 : $grade, $student_ids );
 		$classes = $matrix['classes'];
 
 		$grade_rows = array();
@@ -491,7 +491,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 					<?php if ( 'sinif' === $group ) : ?>
 						<?php foreach ( $grade_rows as $g => $gr ) : ?>
 							<tr>
-								<td><strong><?php echo esc_html( sms_grade_label( $g ) ); ?></strong> <span class="sms-muted">(<?php echo (int) $gr['count']; ?> öğrenci)</span></td>
+								<td><strong><?php echo esc_html( nizamiye_grade_label( $g ) ); ?></strong> <span class="sms-muted">(<?php echo (int) $gr['count']; ?> öğrenci)</span></td>
 								<?php
 								$g_sum = 0;
 								$g_cnt = 0;
@@ -503,35 +503,35 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 										$g_cnt++;
 									}
 									?>
-									<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
+									<td class="sms-center"><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
 								<?php endforeach; ?>
 								<?php $v = $g_cnt ? (int) round( $g_sum / $g_cnt ) : null; ?>
-								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( nizamiye_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
 							</tr>
 						<?php endforeach; ?>
 					<?php else : ?>
 						<?php foreach ( $matrix['rows'] as $row ) : if ( ! $row['has_any'] ) { continue; } $st = $row['student']; ?>
 							<tr>
 								<td class="sms-name-cell">
-									<?php echo sms_avatar( sms_student_name( $st ) ); // phpcs:ignore ?>
-									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $st->id . '&sms_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( sms_student_name( $st ) ); ?></strong></a>
-									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( sms_grade_label( $st->grade_level ) ) : ''; ?></span></div>
+									<?php echo nizamiye_avatar( nizamiye_student_name( $st ) ); // phpcs:ignore ?>
+									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
+									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( nizamiye_grade_label( $st->grade_level ) ) : ''; ?></span></div>
 								</td>
 								<?php foreach ( $classes as $c ) : $cell = $row['cells'][ (int) $c->id ]; ?>
 									<td class="sms-center">
 										<?php if ( $cell ) : ?>
-											<span class="sms-score <?php echo esc_attr( sms_rate_class( $cell['rate'] ) ); ?>"><?php echo (int) $cell['rate']; ?>%</span>
+											<span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $cell['rate'] ) ); ?>"><?php echo (int) $cell['rate']; ?>%</span>
 											<span class="sms-cell-sub"><?php echo (int) $cell['exams']; ?> sınav</span>
 										<?php else : ?>—<?php endif; ?>
 									</td>
 								<?php endforeach; ?>
-								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $row['overall'] ) ); ?>"><?php echo null !== $row['overall'] ? esc_html( $row['overall'] . '%' ) : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( nizamiye_rate_class( $row['overall'] ) ); ?>"><?php echo null !== $row['overall'] ? esc_html( $row['overall'] . '%' ) : '—'; ?></span></td>
 							</tr>
 						<?php endforeach; ?>
 						<tr class="sms-total-row">
 							<td><strong>Toplu (tüm liste)</strong></td>
 							<?php foreach ( $classes as $c ) : $v = $matrix['totals'][ (int) $c->id ]; ?>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $v ) ); ?>"><?php echo null !== $v ? esc_html( $v . '%' ) : '—'; ?></span></td>
 							<?php endforeach; ?>
 							<td></td>
 						</tr>
@@ -548,7 +548,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 	/* ================= GENEL BAŞARI ================= */
 	else :
 		if ( 'sinif' === $group ) :
-			$summary = SMS_Reports::grade_level_summary( $term_id, $student_ids );
+			$summary = Nizamiye_Reports::grade_level_summary( $term_id, $student_ids );
 			?>
 			<div class="sms-card sms-mt">
 				<div class="sms-card-head"><h2>Sınıf Bazında Genel Özet</h2><?php echo $summary ? $export_btn : ''; // phpcs:ignore ?></div>
@@ -559,11 +559,11 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 						<tbody>
 						<?php foreach ( $summary as $row ) : ?>
 							<tr>
-								<td><strong><?php echo esc_html( sms_grade_label( $row['grade'] ) ); ?></strong></td>
+								<td><strong><?php echo esc_html( nizamiye_grade_label( $row['grade'] ) ); ?></strong></td>
 								<td><?php echo (int) $row['count']; ?></td>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['att'] ) ); ?>"><?php echo null !== $row['att'] ? esc_html( $row['att'] . '%' ) : '—'; ?></span></td>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? esc_html( $row['habit'] . '%' ) : '—'; ?></span></td>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['grade_avg'] ) ); ?>"><?php echo null !== $row['grade_avg'] ? esc_html( $row['grade_avg'] . '%' ) : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['att'] ) ); ?>"><?php echo null !== $row['att'] ? esc_html( $row['att'] . '%' ) : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? esc_html( $row['habit'] . '%' ) : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['grade_avg'] ) ); ?>"><?php echo null !== $row['grade_avg'] ? esc_html( $row['grade_avg'] . '%' ) : '—'; ?></span></td>
 							</tr>
 						<?php endforeach; ?>
 						</tbody>
@@ -574,7 +574,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 				<?php endif; ?>
 			</div>
 		<?php else :
-			$scores = SMS_Reports::student_scores( $term_id, $student_ids );
+			$scores = Nizamiye_Reports::student_scores( $term_id, $student_ids );
 			if ( $grade ) {
 				$scores = array_values( array_filter( $scores, function ( $r ) use ( $grade ) {
 					return (int) ( $r['student']->grade_level ?? 0 ) === $grade;
@@ -591,12 +591,12 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 						<?php foreach ( $scores as $i => $row ) : $s = $row['student']; ?>
 							<tr>
 								<td class="sms-muted">#<?php echo (int) $i + 1; ?></td>
-								<td class="sms-name-cell"><?php echo sms_avatar( sms_student_name( $s ) ); // phpcs:ignore ?><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $s->id . '&sms_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( sms_student_name( $s ) ); ?></strong></a></td>
-								<td><?php echo isset( $s->grade_level ) ? esc_html( sms_grade_label( $s->grade_level ) ) : '—'; ?></td>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['attendance'] ) ); ?>"><?php echo null !== $row['attendance'] ? esc_html( $row['attendance'] . '%' ) : '—'; ?></span></td>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? esc_html( $row['habit'] . '%' ) : '—'; ?></span></td>
-								<td class="sms-center"><span class="sms-score <?php echo esc_attr( sms_rate_class( $row['grade'] ) ); ?>"><?php echo null !== $row['grade'] ? esc_html( $row['grade'] . '%' ) : '—'; ?></span></td>
-								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( sms_rate_class( $row['score'] ) ); ?>"><?php echo (int) $row['score']; ?></span></td>
+								<td class="sms-name-cell"><?php echo nizamiye_avatar( nizamiye_student_name( $s ) ); // phpcs:ignore ?><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $s ) ); ?></strong></a></td>
+								<td><?php echo isset( $s->grade_level ) ? esc_html( nizamiye_grade_label( $s->grade_level ) ) : '—'; ?></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['attendance'] ) ); ?>"><?php echo null !== $row['attendance'] ? esc_html( $row['attendance'] . '%' ) : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? esc_html( $row['habit'] . '%' ) : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['grade'] ) ); ?>"><?php echo null !== $row['grade'] ? esc_html( $row['grade'] . '%' ) : '—'; ?></span></td>
+								<td class="sms-center"><span class="sms-score sms-score-big <?php echo esc_attr( nizamiye_rate_class( $row['score'] ) ); ?>"><?php echo (int) $row['score']; ?></span></td>
 							</tr>
 						<?php endforeach; ?>
 						</tbody>

@@ -2,7 +2,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
-// Bu dosyadaki tüm $wpdb sorguları eklentiye özel tablolar (wp_sms_*) üzerinde çalışır;
+// Bu dosyadaki tüm $wpdb sorguları eklentiye özel tablolar (wp_nizamiye_*) üzerinde çalışır;
 // tüm parametreler $wpdb->prepare() ile bağlanır ya da intval()/whitelist ile temizlenir.
 // WordPress çekirdeğinde özel tablolar için bir soyutlama/önbellekleme API'si olmadığından
 // doğrudan $wpdb kullanımı kaçınılmazdır; bkz. güvenlik incelemesinde doğrulanan analiz.
@@ -11,14 +11,14 @@ defined( 'ABSPATH' ) || exit;
  * Veritabanı tablolarını kurar, varsayılan yoklama kategorilerini tohumlar ve
  * eski sürümlerden gelen yoklama tablosunu yeni şemaya taşır.
  */
-class SMS_Install {
+class Nizamiye_Install {
 
 	public static function activate() {
 		self::create_tables();
-		SMS_Roles::add_roles();
+		Nizamiye_Roles::add_roles();
 
-		if ( ! get_option( 'sms_settings' ) ) {
-			add_option( 'sms_settings', array(
+		if ( ! get_option( 'nizamiye_settings' ) ) {
+			add_option( 'nizamiye_settings', array(
 				'school_name' => get_bloginfo( 'name' ),
 				'final_grade' => 8,
 				'min_grade'   => 1,
@@ -29,7 +29,7 @@ class SMS_Install {
 		self::seed_attendance_types();
 		self::migrate_attendance();
 
-		update_option( 'sms_db_version', SMS_VERSION );
+		update_option( 'nizamiye_db_version', NIZAMIYE_VERSION );
 	}
 
 	private static function create_tables() {
@@ -37,7 +37,7 @@ class SMS_Install {
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
 		$charset = $wpdb->get_charset_collate();
-		$p       = $wpdb->prefix . 'sms_';
+		$p       = $wpdb->prefix . 'nizamiye_';
 
 		$sql = array();
 
@@ -254,8 +254,8 @@ class SMS_Install {
 		);
 
 		global $wpdb;
-		$ct = $wpdb->prefix . 'sms_att_categories';
-		$st = $wpdb->prefix . 'sms_att_sessions';
+		$ct = $wpdb->prefix . 'nizamiye_att_categories';
+		$st = $wpdb->prefix . 'nizamiye_att_sessions';
 		$order = 0;
 
 		foreach ( $defaults as $cat ) {
@@ -299,20 +299,20 @@ class SMS_Install {
 	 */
 	private static function migrate_attendance() {
 		global $wpdb;
-		$att = $wpdb->prefix . 'sms_attendance';
+		$att = $wpdb->prefix . 'nizamiye_attendance';
 
 		// term_id boş olan (eski) satırları derslik üzerinden doldur.
 		$wpdb->query(
 			"UPDATE $att a
-			 INNER JOIN {$wpdb->prefix}sms_classes c ON c.id = a.class_id
+			 INNER JOIN {$wpdb->prefix}nizamiye_classes c ON c.id = a.class_id
 			 SET a.term_id = c.term_id
 			 WHERE a.term_id = 0 AND a.class_id > 0"
 		);
 
 		// Kategorisi olmayan eski satırları Ders kategorisine bağla.
-		$ders_cat = (int) $wpdb->get_var( "SELECT id FROM {$wpdb->prefix}sms_att_categories WHERE slug = 'ders'" );
+		$ders_cat = (int) $wpdb->get_var( "SELECT id FROM {$wpdb->prefix}nizamiye_att_categories WHERE slug = 'ders'" );
 		$ders_sess = (int) $wpdb->get_var( $wpdb->prepare(
-			"SELECT id FROM {$wpdb->prefix}sms_att_sessions WHERE category_id = %d ORDER BY id LIMIT 1", $ders_cat
+			"SELECT id FROM {$wpdb->prefix}nizamiye_att_sessions WHERE category_id = %d ORDER BY id LIMIT 1", $ders_cat
 		) );
 		if ( $ders_cat && $ders_sess ) {
 			$wpdb->query( $wpdb->prepare(

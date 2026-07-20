@@ -2,7 +2,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
-// Bu dosyadaki tüm $wpdb sorguları eklentiye özel tablolar (wp_sms_*) üzerinde çalışır;
+// Bu dosyadaki tüm $wpdb sorguları eklentiye özel tablolar (wp_nizamiye_*) üzerinde çalışır;
 // tüm parametreler $wpdb->prepare() ile bağlanır ya da intval()/whitelist ile temizlenir.
 // WordPress çekirdeğinde özel tablolar için bir soyutlama/önbellekleme API'si olmadığından
 // doğrudan $wpdb kullanımı kaçınılmazdır; bkz. güvenlik incelemesinde doğrulanan analiz.
@@ -10,11 +10,11 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Öğrenciler ve dönem kayıtları (enrollment).
  */
-class SMS_Students {
+class Nizamiye_Students {
 
 	private static function table() {
 		global $wpdb;
-		return $wpdb->prefix . 'sms_students';
+		return $wpdb->prefix . 'nizamiye_students';
 	}
 
 	public static function get( $id ) {
@@ -58,7 +58,7 @@ class SMS_Students {
 		}
 
 		if ( $args['term_id'] ) {
-			$join     = "INNER JOIN {$wpdb->prefix}sms_enrollments e ON e.student_id = s.id AND e.term_id = %d";
+			$join     = "INNER JOIN {$wpdb->prefix}nizamiye_enrollments e ON e.student_id = s.id AND e.term_id = %d";
 			$params_j = array( (int) $args['term_id'] );
 			if ( $args['grade'] ) {
 				$where[]  = 'e.grade_level = %d';
@@ -77,7 +77,7 @@ class SMS_Students {
 	public static function enrollment( $student_id, $term_id ) {
 		global $wpdb;
 		return $wpdb->get_row( $wpdb->prepare(
-			"SELECT * FROM {$wpdb->prefix}sms_enrollments WHERE student_id = %d AND term_id = %d",
+			"SELECT * FROM {$wpdb->prefix}nizamiye_enrollments WHERE student_id = %d AND term_id = %d",
 			$student_id, $term_id
 		) );
 	}
@@ -87,8 +87,8 @@ class SMS_Students {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare(
 			"SELECT e.*, t.name AS term_name, t.is_active
-			 FROM {$wpdb->prefix}sms_enrollments e
-			 INNER JOIN {$wpdb->prefix}sms_terms t ON t.id = e.term_id
+			 FROM {$wpdb->prefix}nizamiye_enrollments e
+			 INNER JOIN {$wpdb->prefix}nizamiye_terms t ON t.id = e.term_id
 			 WHERE e.student_id = %d ORDER BY e.term_id DESC",
 			$student_id
 		) );
@@ -131,12 +131,12 @@ class SMS_Students {
 		$existing = self::enrollment( $student_id, $term_id );
 		if ( $existing ) {
 			$wpdb->update(
-				$wpdb->prefix . 'sms_enrollments',
+				$wpdb->prefix . 'nizamiye_enrollments',
 				array( 'grade_level' => (int) $grade ),
 				array( 'id' => (int) $existing->id )
 			);
 		} else {
-			$wpdb->insert( $wpdb->prefix . 'sms_enrollments', array(
+			$wpdb->insert( $wpdb->prefix . 'nizamiye_enrollments', array(
 				'student_id'  => (int) $student_id,
 				'term_id'     => (int) $term_id,
 				'grade_level' => (int) $grade,
@@ -151,7 +151,7 @@ class SMS_Students {
 		global $wpdb;
 		$id = (int) $id;
 		foreach ( array( 'enrollments', 'class_students', 'attendance', 'habit_students', 'habit_logs', 'grades' ) as $t ) {
-			$wpdb->delete( $wpdb->prefix . 'sms_' . $t, array( 'student_id' => $id ) );
+			$wpdb->delete( $wpdb->prefix . 'nizamiye_' . $t, array( 'student_id' => $id ) );
 		}
 		$wpdb->delete( self::table(), array( 'id' => $id ) );
 	}
@@ -177,7 +177,7 @@ class SMS_Students {
 	public static function count_for_term( $term_id ) {
 		global $wpdb;
 		return (int) $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$wpdb->prefix}sms_enrollments e
+			"SELECT COUNT(*) FROM {$wpdb->prefix}nizamiye_enrollments e
 			 INNER JOIN " . self::table() . " s ON s.id = e.student_id
 			 WHERE e.term_id = %d AND e.status = 'active' AND s.status = 'active'",
 			$term_id
@@ -188,7 +188,7 @@ class SMS_Students {
 	public static function grades_in_term( $term_id ) {
 		global $wpdb;
 		return array_map( 'intval', $wpdb->get_col( $wpdb->prepare(
-			"SELECT DISTINCT grade_level FROM {$wpdb->prefix}sms_enrollments WHERE term_id = %d ORDER BY grade_level",
+			"SELECT DISTINCT grade_level FROM {$wpdb->prefix}nizamiye_enrollments WHERE term_id = %d ORDER BY grade_level",
 			$term_id
 		) ) );
 	}

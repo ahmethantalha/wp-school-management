@@ -1,11 +1,11 @@
 {
-    "name": "ahmethantalha/okul-yonetim-sistemi",
-    "description": "Okul Yönetim Sistemi eklentisi için sunucu taraflı bağımlılıklar (PDF üretimi).",
+    "name": "ahmethantalha/nizamiye",
+    "description": "Nizamiye eklentisi için sunucu taraflı bağımlılıklar (PDF üretimi).",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
     "require": {
         "php": ">=7.4",
-        "dompdf/dompdf": "^2.0"
+        "dompdf/dompdf": "^3.1"
     },
     "config": {
         "optimize-autoloader": true,

@@ -7,7 +7,7 @@ defined( 'ABSPATH' ) || exit;
  * XLSX için harici kütüphane gerekmez; ZipArchive + SimpleXML ile okunur.
  * ZipArchive yoksa CSV kullanılması istenir.
  */
-class SMS_Import {
+class Nizamiye_Import {
 
 	/** Yüklenen dosyayı satır dizisine çevirir (ilk satır başlık). */
 	public static function read_file( $path, $ext ) {
@@ -18,7 +18,7 @@ class SMS_Import {
 		if ( 'xlsx' === $ext ) {
 			return self::read_xlsx( $path );
 		}
-		return new WP_Error( 'sms_bad_ext', 'Desteklenmeyen dosya türü. Lütfen .xlsx veya .csv yükleyin.' );
+		return new WP_Error( 'nizamiye_bad_ext', 'Desteklenmeyen dosya türü. Lütfen .xlsx veya .csv yükleyin.' );
 	}
 
 	private static function read_csv( $path ) {
@@ -26,7 +26,7 @@ class SMS_Import {
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- fgetcsv() satır satır ayrıştırma için yerel bir PHP akışı gerektirir; WP_Filesystem'de karşılığı yoktur. $path, PHP'nin ürettiği geçici yükleme dosyasıdır.
 		$handle = fopen( $path, 'r' );
 		if ( ! $handle ) {
-			return new WP_Error( 'sms_read', 'Dosya okunamadı.' );
+			return new WP_Error( 'nizamiye_read', 'Dosya okunamadı.' );
 		}
 		$delim = self::detect_delimiter( $path );
 		while ( false !== ( $data = fgetcsv( $handle, 0, $delim ) ) ) {
@@ -56,11 +56,11 @@ class SMS_Import {
 
 	private static function read_xlsx( $path ) {
 		if ( ! class_exists( 'ZipArchive' ) ) {
-			return new WP_Error( 'sms_no_zip', 'Sunucuda ZipArchive yok; lütfen dosyayı CSV olarak kaydedip yükleyin.' );
+			return new WP_Error( 'nizamiye_no_zip', 'Sunucuda ZipArchive yok; lütfen dosyayı CSV olarak kaydedip yükleyin.' );
 		}
 		$zip = new ZipArchive();
 		if ( true !== $zip->open( $path ) ) {
-			return new WP_Error( 'sms_zip', 'Excel dosyası açılamadı.' );
+			return new WP_Error( 'nizamiye_zip', 'Excel dosyası açılamadı.' );
 		}
 
 		// Paylaşılan dizeler.
@@ -79,11 +79,11 @@ class SMS_Import {
 		$sheet = $zip->getFromName( 'xl/worksheets/sheet1.xml' );
 		$zip->close();
 		if ( false === $sheet ) {
-			return new WP_Error( 'sms_sheet', 'Çalışma sayfası bulunamadı.' );
+			return new WP_Error( 'nizamiye_sheet', 'Çalışma sayfası bulunamadı.' );
 		}
 		$xml = simplexml_load_string( $sheet );
 		if ( ! $xml ) {
-			return new WP_Error( 'sms_sheet', 'Çalışma sayfası okunamadı.' );
+			return new WP_Error( 'nizamiye_sheet', 'Çalışma sayfası okunamadı.' );
 		}
 
 		$rows = array();
@@ -143,7 +143,7 @@ class SMS_Import {
 	/** İlk satırı başlık kabul ederek anahtarlı satırlar üretir. */
 	private static function rows_to_assoc( $rows ) {
 		if ( count( $rows ) < 2 ) {
-			return new WP_Error( 'sms_empty', 'Dosyada başlık satırı ve en az bir veri satırı bulunmalı.' );
+			return new WP_Error( 'nizamiye_empty', 'Dosyada başlık satırı ve en az bir veri satırı bulunmalı.' );
 		}
 		$header = array_map( function ( $h ) {
 			return self::normalize_key( $h );
@@ -248,7 +248,7 @@ class SMS_Import {
 		$created = 0;
 		$errors  = array();
 		$parents = array();
-		foreach ( get_users( array( 'role' => 'sms_parent', 'fields' => array( 'ID', 'user_email' ) ) ) as $p ) {
+		foreach ( get_users( array( 'role' => 'nizamiye_parent', 'fields' => array( 'ID', 'user_email' ) ) ) as $p ) {
 			$parents[ strtolower( $p->user_email ) ] = (int) $p->ID;
 		}
 
@@ -281,10 +281,10 @@ class SMS_Import {
 			);
 			$grade = (int) ( $row['grade_level'] ?? 0 );
 			if ( $grade <= 0 ) {
-				$grade    = (int) sms_get_settings()['min_grade'];
+				$grade    = (int) nizamiye_get_settings()['min_grade'];
 				$errors[] = "Satır $line: sınıf belirtilmedi, {$grade}. sınıfa atandı.";
 			}
-			SMS_Students::save( $data, $term_id, $grade, 0 );
+			Nizamiye_Students::save( $data, $term_id, $grade, 0 );
 			$created++;
 		}
 
@@ -325,8 +325,8 @@ class SMS_Import {
 				$errors[] = "Satır $line: " . $user_id->get_error_message();
 				continue;
 			}
-			if ( 'sms_teacher' === $role && ! empty( $row['is_class_teacher'] ) && in_array( strtolower( (string) $row['is_class_teacher'] ), array( '1', 'evet', 'yes', 'true', 'x' ), true ) ) {
-				update_user_meta( $user_id, 'sms_is_class_teacher', 1 );
+			if ( 'nizamiye_teacher' === $role && ! empty( $row['is_class_teacher'] ) && in_array( strtolower( (string) $row['is_class_teacher'] ), array( '1', 'evet', 'yes', 'true', 'x' ), true ) ) {
+				update_user_meta( $user_id, 'nizamiye_is_class_teacher', 1 );
 			}
 			$created++;
 		}
@@ -374,14 +374,14 @@ class SMS_Import {
 	 */
 	public static function grade_template( $class_id, $title, $exam_type, $exam_date, $max_score ) {
 		$sep      = ';';
-		$students = SMS_Classes::students( (int) $class_id );
+		$students = Nizamiye_Classes::students( (int) $class_id );
 		$out      = "derslik_id{$sep}ogrenci_id{$sep}ogrenci_no{$sep}ad_soyad{$sep}sinav_adi{$sep}tur{$sep}tarih{$sep}tam_puan{$sep}puan\n";
 		foreach ( $students as $s ) {
 			$out .= implode( $sep, array(
 				(int) $class_id,
 				(int) $s->id,
 				str_replace( $sep, ' ', (string) $s->student_no ),
-				str_replace( $sep, ' ', sms_student_name( $s ) ),
+				str_replace( $sep, ' ', nizamiye_student_name( $s ) ),
 				str_replace( $sep, ' ', (string) $title ),
 				str_replace( $sep, ' ', (string) $exam_type ),
 				(string) $exam_date,
@@ -423,8 +423,8 @@ class SMS_Import {
 				$perm[ $class_id ] = (bool) call_user_func( $can_manage_class, $class_id );
 				if ( $perm[ $class_id ] ) {
 					$roster[ $class_id ] = array();
-					foreach ( SMS_Classes::students( $class_id ) as $s ) {
-						$roster[ $class_id ][ (int) $s->id ] = self::normalize_name( sms_student_name( $s ) );
+					foreach ( Nizamiye_Classes::students( $class_id ) as $s ) {
+						$roster[ $class_id ][ (int) $s->id ] = self::normalize_name( nizamiye_student_name( $s ) );
 					}
 				}
 			}
@@ -456,7 +456,7 @@ class SMS_Import {
 
 			global $wpdb;
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- özel eklenti tablosu, $wpdb->insert() kendi kaçış işlemini yapar.
-			$wpdb->insert( $wpdb->prefix . 'sms_grades', array(
+			$wpdb->insert( $wpdb->prefix . 'nizamiye_grades', array(
 				'class_id'    => $class_id,
 				'student_id'  => $student_id,
 				'title'       => sanitize_text_field( $row['title'] ?? 'Sınav' ),

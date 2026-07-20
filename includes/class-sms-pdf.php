@@ -5,14 +5,14 @@ defined( 'ABSPATH' ) || exit;
  * Dompdf (vendor/dompdf/dompdf) üzerinden ince bir sarmalayıcı.
  * HTML'den gerçek PDF baytları üretir; öğrenci karneleri bunu kullanır.
  */
-class SMS_Pdf {
+class Nizamiye_Pdf {
 
 	/** Dompdf sınıfını (varsa başka bir eklentiden) çakışmaya girmeden yükler. */
 	private static function ensure_loaded() {
 		if ( class_exists( 'Dompdf\\Dompdf' ) ) {
 			return true;
 		}
-		$autoload = SMS_DIR . 'vendor/autoload.php';
+		$autoload = NIZAMIYE_DIR . 'vendor/autoload.php';
 		if ( ! file_exists( $autoload ) ) {
 			return false;
 		}
@@ -27,7 +27,7 @@ class SMS_Pdf {
 	 */
 	public static function render( $html ) {
 		if ( ! self::ensure_loaded() ) {
-			return new WP_Error( 'sms_pdf_missing', 'PDF motoru (Dompdf) bulunamadı. Eklenti dosyalarının eksiksiz yüklendiğinden emin olun.' );
+			return new WP_Error( 'nizamiye_pdf_missing', 'PDF motoru (Dompdf) bulunamadı. Eklenti dosyalarının eksiksiz yüklendiğinden emin olun.' );
 		}
 
 		try {
@@ -43,7 +43,7 @@ class SMS_Pdf {
 			$dompdf->render();
 			return $dompdf->output();
 		} catch ( \Throwable $e ) {
-			return new WP_Error( 'sms_pdf_render', 'PDF oluşturulamadı: ' . $e->getMessage() );
+			return new WP_Error( 'nizamiye_pdf_render', 'PDF oluşturulamadı: ' . $e->getMessage() );
 		}
 	}
 

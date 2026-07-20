@@ -1,4 +1,4 @@
-# Okul Yönetim Sistemi (WordPress Eklentisi)
+# Nizamiye (WordPress Eklentisi)
 
 Öğrenci yurtları, okullar ve eğitim kurumları için **dönem bazlı öğrenci takip sistemi**.
 Öğrenci/öğretmen/veli yönetimi, derslik (şube) yönetimi, yoklama, not girişi,
@@ -6,9 +6,9 @@ alışkanlık takibi ve görsel raporlar sunar.
 
 ## Kurulum
 
-1. Bu depoyu `wp-content/plugins/okul-yonetim-sistemi` klasörüne kopyalayın
+1. Bu depoyu `wp-content/plugins/nizamiye` klasörüne kopyalayın
    (veya depoyu zip olarak indirip WordPress **Eklentiler → Yeni Ekle → Eklenti Yükle** ile yükleyin).
-2. **Eklentiler** sayfasından *Okul Yönetim Sistemi*'ni etkinleştirin.
+2. **Eklentiler** sayfasından *Nizamiye*'yi etkinleştirin.
 3. Sol menüde **Okul Yönetimi** menüsü belirir.
 
 ## Hızlı Başlangıç
@@ -30,9 +30,9 @@ alışkanlık takibi ve görsel raporlar sunar.
 | Rol | Yetki |
 |---|---|
 | Yönetici (administrator) | Tam yetki: tüm sayfalar ve kayıtlar |
-| Öğretmen (`sms_teacher`) | Kendi derslikleri: yoklama, not, alışkanlık oluşturma/doldurma; kendi öğrencilerini görüntüleme |
-| Veli (`sms_parent`) | Yalnızca kendi çocuklarının karnesi: notlar, yoklama, alışkanlık takipleri |
-| Öğrenci (`sms_student`) | Yalnızca kendi karnesi |
+| Öğretmen (`nizamiye_teacher`) | Kendi derslikleri: yoklama, not, alışkanlık oluşturma/doldurma; kendi öğrencilerini görüntüleme |
+| Veli (`nizamiye_parent`) | Yalnızca kendi çocuklarının karnesi: notlar, yoklama, alışkanlık takipleri |
+| Öğrenci (`nizamiye_student`) | Yalnızca kendi karnesi |
 
 Veli ve öğrenci hesapları giriş yaptığında doğrudan panele yönlendirilir.
 
@@ -107,13 +107,13 @@ anahtarı için korunur ama sadeleştirilir; sağ üstteki profil menüsünden �
 
 ## Teknik Notlar
 
-- Veriler `wp_sms_*` önekli özel tablolarda tutulur; tüm operasyonel kayıtlar **dönem bazlıdır**.
+- Veriler `wp_nizamiye_*` önekli özel tablolarda tutulur; tüm operasyonel kayıtlar **dönem bazlıdır**.
 - Grafikler harici kütüphane olmadan hafif bir SVG motoruyla çizilir (CDN bağımlılığı yok).
 - PDF karne üretimi için [Dompdf](https://github.com/dompdf/dompdf) (LGPL) kütüphanesi `vendor/`
   altında paket içinde gelir; hiçbir uzak sunucuya istek atmaz (`isRemoteEnabled` kapalı).
 - Tüm formlar nonce + yetenek (capability) kontrollüdür; kayıt düzeyinde erişim denetimi yapılır.
 - Eklenti kaldırıldığında veriler varsayılan olarak **korunur**
-  (silmek için `SMS_REMOVE_DATA_ON_UNINSTALL` sabitine bakın: `uninstall.php`).
+  (silmek için `NIZAMIYE_REMOVE_DATA_ON_UNINSTALL` sabitine bakın: `uninstall.php`).
 
 ## Gereksinimler
 

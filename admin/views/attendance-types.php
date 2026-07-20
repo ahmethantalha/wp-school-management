@@ -1,10 +1,10 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-$categories = SMS_Attendance_Types::categories( false );
+$categories = Nizamiye_Attendance_Types::categories( false );
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok.
 $edit_id    = isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
-$edit       = $edit_id ? SMS_Attendance_Types::get_category( $edit_id ) : null;
+$edit       = $edit_id ? Nizamiye_Attendance_Types::get_category( $edit_id ) : null;
 
 // Kullanılabilir dashicon seçenekleri.
 $icons = array(
@@ -12,15 +12,15 @@ $icons = array(
 	'dashicons-welcome-learn-more', 'dashicons-clipboard', 'dashicons-yes-alt', 'dashicons-heart',
 	'dashicons-book', 'dashicons-coffee', 'dashicons-buddicons-activity', 'dashicons-groups',
 );
-$settings     = sms_get_settings();
-$edit_grades  = $edit ? SMS_Attendance_Types::get_grade_levels( (int) $edit->id ) : array();
+$settings     = nizamiye_get_settings();
+$edit_grades  = $edit ? Nizamiye_Attendance_Types::get_grade_levels( (int) $edit->id ) : array();
 ?>
 <div class="wrap sms-wrap">
-	<?php sms_view_header( 'Yoklama Türleri', 'Yoklama kategorilerini ve oturumlarını yönetin. Namaz gibi bir kategori altında birden çok oturum (vakit) olabilir.', false ); ?>
+	<?php nizamiye_view_header( 'Yoklama Türleri', 'Yoklama kategorilerini ve oturumlarını yönetin. Namaz gibi bir kategori altında birden çok oturum (vakit) olabilir.', false ); ?>
 
 	<div class="sms-grid-2 sms-grid-uneven">
 		<div>
-			<?php foreach ( $categories as $cat ) : $sessions = SMS_Attendance_Types::sessions( (int) $cat->id ); $cat_grades = 'general' === $cat->scope ? SMS_Attendance_Types::get_grade_levels( (int) $cat->id ) : array(); ?>
+			<?php foreach ( $categories as $cat ) : $sessions = Nizamiye_Attendance_Types::sessions( (int) $cat->id ); $cat_grades = 'general' === $cat->scope ? Nizamiye_Attendance_Types::get_grade_levels( (int) $cat->id ) : array(); ?>
 				<div class="sms-card sms-mb">
 					<div class="sms-card-head">
 						<h2>
@@ -35,7 +35,7 @@ $edit_grades  = $edit ? SMS_Attendance_Types::get_grade_levels( (int) $edit->id 
 						<div class="sms-actions-cell">
 							<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-att-types&cat=' . (int) $cat->id ) ); ?>">Adı Düzenle</a>
 							<?php if ( ! $cat->is_system ) : ?>
-								<?php sms_form_open( 'sms_delete_category', 'sms-inline sms-confirm' ); sms_back_url_field( admin_url( 'admin.php?page=sms-att-types' ) ); ?>
+								<?php nizamiye_form_open( 'nizamiye_delete_category', 'sms-inline sms-confirm' ); nizamiye_back_url_field( admin_url( 'admin.php?page=sms-att-types' ) ); ?>
 									<input type="hidden" name="category_id" value="<?php echo (int) $cat->id; ?>">
 									<button type="submit" class="sms-btn sms-btn-danger-ghost sms-btn-sm" data-confirm="Bu kategori ve TÜM ilgili yoklama kayıtları silinecek. Emin misiniz?">Sil</button>
 								</form>
@@ -47,14 +47,14 @@ $edit_grades  = $edit ? SMS_Attendance_Types::get_grade_levels( (int) $edit->id 
 							<?php foreach ( $sessions as $s ) : ?>
 								<span class="sms-session-chip">
 									<?php echo esc_html( $s->name ); ?>
-									<?php sms_form_open( 'sms_delete_session', 'sms-inline sms-confirm' ); sms_back_url_field( admin_url( 'admin.php?page=sms-att-types' ) ); ?>
+									<?php nizamiye_form_open( 'nizamiye_delete_session', 'sms-inline sms-confirm' ); nizamiye_back_url_field( admin_url( 'admin.php?page=sms-att-types' ) ); ?>
 										<input type="hidden" name="session_id" value="<?php echo (int) $s->id; ?>">
 										<button type="submit" class="sms-chip-x" data-confirm="'<?php echo esc_attr( $s->name ); ?>' oturumu ve kayıtları silinsin mi?" title="Sil">×</button>
 									</form>
 								</span>
 							<?php endforeach; ?>
 						</div>
-						<?php sms_form_open( 'sms_add_session', 'sms-inline-form' ); sms_back_url_field( admin_url( 'admin.php?page=sms-att-types' ) ); ?>
+						<?php nizamiye_form_open( 'nizamiye_add_session', 'sms-inline-form' ); nizamiye_back_url_field( admin_url( 'admin.php?page=sms-att-types' ) ); ?>
 							<input type="hidden" name="category_id" value="<?php echo (int) $cat->id; ?>">
 							<input type="text" name="name" placeholder="Yeni oturum adı (örn. Sabah)" required>
 							<button type="submit" class="sms-btn sms-btn-ghost sms-btn-sm">+ Oturum Ekle</button>
@@ -67,7 +67,7 @@ $edit_grades  = $edit ? SMS_Attendance_Types::get_grade_levels( (int) $edit->id 
 		<div class="sms-card">
 			<div class="sms-card-head"><h2><?php echo $edit ? 'Kategoriyi Düzenle' : 'Yeni Kategori'; ?></h2></div>
 			<div class="sms-pad">
-				<?php sms_form_open( 'sms_save_category' ); sms_back_url_field( admin_url( 'admin.php?page=sms-att-types' ) ); ?>
+				<?php nizamiye_form_open( 'nizamiye_save_category' ); nizamiye_back_url_field( admin_url( 'admin.php?page=sms-att-types' ) ); ?>
 					<input type="hidden" name="category_id" value="<?php echo $edit ? (int) $edit->id : 0; ?>">
 					<div class="sms-field"><label>Kategori Adı *</label><input type="text" name="name" value="<?php echo esc_attr( $edit->name ?? '' ); ?>" placeholder="Örn. Etüt" required></div>
 

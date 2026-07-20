@@ -5,34 +5,34 @@ defined( 'ABSPATH' ) || exit;
  * Tüm form gönderimlerinin işleyicileri (admin-post.php).
  * Her işlem: nonce doğrulaması + yetki kontrolü + geri yönlendirme.
  */
-class SMS_Actions {
+class Nizamiye_Actions {
 
 	public static function init() {
 		$actions = array(
-			'sms_save_term'       => 'sms_manage',
-			'sms_activate_term'   => 'sms_manage',
-			'sms_delete_term'     => 'sms_manage',
-			'sms_open_term'       => 'sms_manage',
-			'sms_save_student'    => 'sms_manage',
-			'sms_delete_student'  => 'sms_manage',
-			'sms_save_user'       => 'sms_manage',
-			'sms_delete_user'     => 'sms_manage',
-			'sms_save_class'      => 'sms_manage',
-			'sms_delete_class'    => 'sms_manage',
-			'sms_class_roster'    => 'sms_teach',
-			'sms_save_attendance' => 'sms_teach',
-			'sms_save_habit'      => 'sms_teach',
-			'sms_delete_habit'    => 'sms_teach',
-			'sms_save_habit_logs' => 'sms_teach',
-			'sms_save_grades'     => 'sms_teach',
-			'sms_delete_grade'    => 'sms_teach',
-			'sms_save_settings'   => 'sms_manage',
-			'sms_save_category'   => 'sms_manage',
-			'sms_delete_category' => 'sms_manage',
-			'sms_add_session'     => 'sms_manage',
-			'sms_delete_session'  => 'sms_manage',
-			'sms_import'          => 'sms_manage',
-			'sms_grade_import'    => 'sms_teach',
+			'nizamiye_save_term'       => 'nizamiye_manage',
+			'nizamiye_activate_term'   => 'nizamiye_manage',
+			'nizamiye_delete_term'     => 'nizamiye_manage',
+			'nizamiye_open_term'       => 'nizamiye_manage',
+			'nizamiye_save_student'    => 'nizamiye_manage',
+			'nizamiye_delete_student'  => 'nizamiye_manage',
+			'nizamiye_save_user'       => 'nizamiye_manage',
+			'nizamiye_delete_user'     => 'nizamiye_manage',
+			'nizamiye_save_class'      => 'nizamiye_manage',
+			'nizamiye_delete_class'    => 'nizamiye_manage',
+			'nizamiye_class_roster'    => 'nizamiye_teach',
+			'nizamiye_save_attendance' => 'nizamiye_teach',
+			'nizamiye_save_habit'      => 'nizamiye_teach',
+			'nizamiye_delete_habit'    => 'nizamiye_teach',
+			'nizamiye_save_habit_logs' => 'nizamiye_teach',
+			'nizamiye_save_grades'     => 'nizamiye_teach',
+			'nizamiye_delete_grade'    => 'nizamiye_teach',
+			'nizamiye_save_settings'   => 'nizamiye_manage',
+			'nizamiye_save_category'   => 'nizamiye_manage',
+			'nizamiye_delete_category' => 'nizamiye_manage',
+			'nizamiye_add_session'     => 'nizamiye_manage',
+			'nizamiye_delete_session'  => 'nizamiye_manage',
+			'nizamiye_import'          => 'nizamiye_manage',
+			'nizamiye_grade_import'    => 'nizamiye_teach',
 		);
 		foreach ( $actions as $action => $cap ) {
 			add_action( 'admin_post_' . $action, function () use ( $action, $cap ) {
@@ -43,11 +43,11 @@ class SMS_Actions {
 		}
 
 		// CSV şablon indirme (GET, nonce URL ile).
-		add_action( 'admin_post_sms_import_template', array( __CLASS__, 'handle_import_template' ) );
-		add_action( 'admin_post_sms_grade_template', array( __CLASS__, 'handle_grade_template' ) );
-		add_action( 'admin_post_sms_export_report', array( __CLASS__, 'handle_export_report' ) );
-		add_action( 'admin_post_sms_print_report', array( __CLASS__, 'handle_print_report' ) );
-		add_action( 'admin_post_sms_print_report_bulk', array( __CLASS__, 'handle_print_report_bulk' ) );
+		add_action( 'admin_post_nizamiye_import_template', array( __CLASS__, 'handle_import_template' ) );
+		add_action( 'admin_post_nizamiye_grade_template', array( __CLASS__, 'handle_grade_template' ) );
+		add_action( 'admin_post_nizamiye_export_report', array( __CLASS__, 'handle_export_report' ) );
+		add_action( 'admin_post_nizamiye_print_report', array( __CLASS__, 'handle_print_report' ) );
+		add_action( 'admin_post_nizamiye_print_report_bulk', array( __CLASS__, 'handle_print_report_bulk' ) );
 	}
 
 	/**
@@ -57,13 +57,13 @@ class SMS_Actions {
 	/** Bir öğrencinin karne HTML'ini (dompdf'e verilecek) üretir. */
 	private static function render_report_html( $student_id, $term_id ) {
 		ob_start();
-		include SMS_DIR . 'admin/views/print/student-report-print.php';
+		include NIZAMIYE_DIR . 'admin/views/print/student-report-print.php';
 		return ob_get_clean();
 	}
 
 	/** Dosya adı için güvenli, öğrenciye özgü bir isim üretir (çakışmaya karşı id son ek). */
 	private static function report_filename( $student, $suffix = '' ) {
-		$name = sms_student_name( $student );
+		$name = nizamiye_student_name( $student );
 		$name = remove_accents( $name );
 		$name = preg_replace( '/[^A-Za-z0-9]+/', '_', $name );
 		$name = trim( $name, '_' ) ?: 'Ogrenci';
@@ -72,23 +72,23 @@ class SMS_Actions {
 
 	public static function handle_print_report() {
 		$student_id = isset( $_GET['student'] ) ? (int) $_GET['student'] : 0;
-		if ( ! $student_id || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'sms_print_report_' . $student_id ) ) {
+		if ( ! $student_id || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'nizamiye_print_report_' . $student_id ) ) {
 			wp_die( 'Geçersiz istek.' );
 		}
-		if ( ! sms_can_access_student( $student_id ) ) {
+		if ( ! nizamiye_can_access_student( $student_id ) ) {
 			wp_die( 'Bu öğrencinin karnesine erişim yetkiniz yok.' );
 		}
-		$term_id = isset( $_GET['sms_term'] ) ? (int) $_GET['sms_term'] : sms_current_term_id();
+		$term_id = isset( $_GET['nizamiye_term'] ) ? (int) $_GET['nizamiye_term'] : nizamiye_current_term_id();
 		if ( ! $term_id ) {
 			wp_die( 'Dönem bulunamadı.' );
 		}
-		$student = SMS_Students::get( $student_id );
+		$student = Nizamiye_Students::get( $student_id );
 		if ( ! $student ) {
 			wp_die( 'Öğrenci bulunamadı.' );
 		}
 
 		$html = self::render_report_html( $student_id, $term_id );
-		SMS_Pdf::stream( $html, self::report_filename( $student ) );
+		Nizamiye_Pdf::stream( $html, self::report_filename( $student ) );
 	}
 
 	/**
@@ -97,16 +97,16 @@ class SMS_Actions {
 	 * POST edilir; erişimi olmayan öğrenci id'leri sessizce elenir.
 	 */
 	public static function handle_print_report_bulk() {
-		if ( ! current_user_can( 'sms_teach' ) || ! wp_verify_nonce( sanitize_key( $_POST['_sms_nonce'] ?? '' ), 'sms_print_report_bulk' ) ) {
+		if ( ! current_user_can( 'nizamiye_teach' ) || ! wp_verify_nonce( sanitize_key( $_POST['_nizamiye_nonce'] ?? '' ), 'nizamiye_print_report_bulk' ) ) {
 			wp_die( 'Geçersiz istek.' );
 		}
-		$term_id = isset( $_POST['sms_term'] ) ? (int) $_POST['sms_term'] : sms_current_term_id();
+		$term_id = isset( $_POST['nizamiye_term'] ) ? (int) $_POST['nizamiye_term'] : nizamiye_current_term_id();
 		if ( ! $term_id ) {
 			wp_die( 'Dönem bulunamadı.' );
 		}
 
 		$requested   = isset( $_POST['student_ids'] ) ? array_map( 'intval', (array) $_POST['student_ids'] ) : array();
-		$student_ids = array_values( array_filter( array_unique( $requested ), 'sms_can_access_student' ) );
+		$student_ids = array_values( array_filter( array_unique( $requested ), 'nizamiye_can_access_student' ) );
 		if ( ! $student_ids ) {
 			wp_die( 'Seçili öğrenci bulunamadı ya da erişim yetkiniz yok.' );
 		}
@@ -125,12 +125,12 @@ class SMS_Actions {
 
 		$used_names = array();
 		foreach ( $student_ids as $student_id ) {
-			$student = SMS_Students::get( $student_id );
+			$student = Nizamiye_Students::get( $student_id );
 			if ( ! $student ) {
 				continue;
 			}
 			$html = self::render_report_html( $student_id, $term_id );
-			$pdf  = SMS_Pdf::render( $html );
+			$pdf  = Nizamiye_Pdf::render( $html );
 			if ( is_wp_error( $pdf ) ) {
 				continue; // tek bir öğrencide sorun olsa da toplu indirme devam eder.
 			}
@@ -148,7 +148,7 @@ class SMS_Actions {
 			wp_die( 'Hiçbir karne oluşturulamadı.' );
 		}
 
-		$term        = SMS_Terms::get( $term_id );
+		$term        = Nizamiye_Terms::get( $term_id );
 		$zip_name    = 'Karneler-' . sanitize_file_name( $term ? $term->name : current_time( 'Y-m-d' ) ) . '.zip';
 
 		nocache_headers();
@@ -185,11 +185,11 @@ class SMS_Actions {
 
 	/** Raporlar sayfasındaki analiz tablolarını CSV olarak dışa aktarır. */
 	public static function handle_export_report() {
-		if ( ! current_user_can( 'sms_teach' ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'sms_export_report' ) ) {
+		if ( ! current_user_can( 'nizamiye_teach' ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'nizamiye_export_report' ) ) {
 			wp_die( 'Yetkisiz istek.' );
 		}
 
-		$term_id = sms_current_term_id();
+		$term_id = nizamiye_current_term_id();
 		if ( ! $term_id ) {
 			wp_die( 'Aktif dönem yok.' );
 		}
@@ -202,15 +202,15 @@ class SMS_Actions {
 			$metric = 'rate';
 		}
 		$cat_id  = isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
-		$dates   = sms_resolve_report_dates();
+		$dates   = nizamiye_resolve_report_dates();
 		$from    = $dates['from'];
 		$to      = $dates['to'];
 
 		// Öğretmenler yalnızca sorumlu oldukları öğrencilerin verisini dışa aktarabilir.
-		$student_ids = sms_is_teacher() ? sms_teacher_student_ids() : null;
+		$student_ids = nizamiye_is_teacher() ? nizamiye_teacher_student_ids() : null;
 
-		$term          = SMS_Terms::get( $term_id );
-		$metric_labels = array( 'rate' => 'Katılım Oranı' ) + sms_attendance_statuses();
+		$term          = Nizamiye_Terms::get( $term_id );
+		$metric_labels = array( 'rate' => 'Katılım Oranı' ) + nizamiye_attendance_statuses();
 		$row_label     = 'sinif' === $group ? 'Sınıf' : 'Öğrenci';
 		$lines         = array();
 
@@ -231,11 +231,11 @@ class SMS_Actions {
 		};
 
 		if ( 'yoklama' === $rtype ) {
-			$category = SMS_Attendance_Types::get_category( $cat_id );
+			$category = Nizamiye_Attendance_Types::get_category( $cat_id );
 			if ( ! $category ) {
 				wp_die( 'Geçersiz kategori.' );
 			}
-			$matrix   = SMS_Reports::attendance_matrix( $term_id, $cat_id, $from, $to, 'sinif' === $group ? 0 : $grade, $student_ids );
+			$matrix   = Nizamiye_Reports::attendance_matrix( $term_id, $cat_id, $from, $to, 'sinif' === $group ? 0 : $grade, $student_ids );
 			$sessions = $matrix['sessions'];
 
 			// Oturum odağı: geçerli tek bir vakit seçildiyse tam durum kırılımı dışa aktarılır.
@@ -278,7 +278,7 @@ class SMS_Actions {
 					ksort( $agg );
 					foreach ( $agg as $g => $gr ) {
 						$lines[] = array_merge(
-							array( sms_grade_label( $g ) . ' (' . $gr['count'] . ' öğrenci)' ),
+							array( nizamiye_grade_label( $g ) . ' (' . $gr['count'] . ' öğrenci)' ),
 							$fmt_focus( $calc_c( $gr['cell'] ) )
 						);
 					}
@@ -286,7 +286,7 @@ class SMS_Actions {
 					foreach ( $matrix['rows'] as $row ) {
 						$st      = $row['student'];
 						$lines[] = array_merge(
-							array( sms_student_name( $st ), isset( $st->grade_level ) ? sms_grade_label( $st->grade_level ) : '' ),
+							array( nizamiye_student_name( $st ), isset( $st->grade_level ) ? nizamiye_grade_label( $st->grade_level ) : '' ),
 							$fmt_focus( $row['cells'][ $sess_id ] )
 						);
 					}
@@ -325,7 +325,7 @@ class SMS_Actions {
 					}
 					ksort( $agg );
 					foreach ( $agg as $g => $gr ) {
-						$line = array( sms_grade_label( $g ) . ' (' . $gr['count'] . ' öğrenci)' );
+						$line = array( nizamiye_grade_label( $g ) . ' (' . $gr['count'] . ' öğrenci)' );
 						foreach ( $sessions as $s ) {
 							$line[] = $fmt_att( $calc_c( $gr['cells'][ (int) $s->id ] ) );
 						}
@@ -335,7 +335,7 @@ class SMS_Actions {
 				} else {
 					foreach ( $matrix['rows'] as $row ) {
 						$st   = $row['student'];
-						$line = array( sms_student_name( $st ), isset( $st->grade_level ) ? sms_grade_label( $st->grade_level ) : '' );
+						$line = array( nizamiye_student_name( $st ), isset( $st->grade_level ) ? nizamiye_grade_label( $st->grade_level ) : '' );
 						foreach ( $sessions as $s ) {
 							$line[] = $fmt_att( $row['cells'][ (int) $s->id ] );
 						}
@@ -353,8 +353,8 @@ class SMS_Actions {
 		} elseif ( 'aliskanlik' === $rtype || 'not' === $rtype ) {
 			$is_habit = 'aliskanlik' === $rtype;
 			$matrix   = $is_habit
-				? SMS_Reports::habit_matrix( $term_id, 'sinif' === $group ? 0 : $grade, $student_ids )
-				: SMS_Reports::grade_matrix( $term_id, 'sinif' === $group ? 0 : $grade, $student_ids );
+				? Nizamiye_Reports::habit_matrix( $term_id, 'sinif' === $group ? 0 : $grade, $student_ids )
+				: Nizamiye_Reports::grade_matrix( $term_id, 'sinif' === $group ? 0 : $grade, $student_ids );
 			$cols = $is_habit ? $matrix['habits'] : $matrix['classes'];
 
 			$lines[] = array( ( $is_habit ? 'Alışkanlık Tamamlama' : 'Not Ortalamaları' ) . ' — ' . ( $term ? $term->name : '' ) );
@@ -393,7 +393,7 @@ class SMS_Actions {
 				}
 				ksort( $agg );
 				foreach ( $agg as $g => $gr ) {
-					$line  = array( sms_grade_label( $g ) . ' (' . $gr['count'] . ' öğrenci)' );
+					$line  = array( nizamiye_grade_label( $g ) . ' (' . $gr['count'] . ' öğrenci)' );
 					$g_sum = 0;
 					$g_cnt = 0;
 					foreach ( $cols as $c ) {
@@ -413,7 +413,7 @@ class SMS_Actions {
 			} else {
 				foreach ( $matrix['rows'] as $row ) {
 					$st   = $row['student'];
-					$line = array( sms_student_name( $st ), isset( $st->grade_level ) ? sms_grade_label( $st->grade_level ) : '' );
+					$line = array( nizamiye_student_name( $st ), isset( $st->grade_level ) ? nizamiye_grade_label( $st->grade_level ) : '' );
 					foreach ( $cols as $c ) {
 						$line[] = $fmt( $row['cells'][ (int) $c->id ] );
 					}
@@ -432,9 +432,9 @@ class SMS_Actions {
 			if ( 'sinif' === $group ) {
 				$lines[] = array( 'Sınıf Bazında Genel Özet — ' . ( $term ? $term->name : '' ) );
 				$lines[] = array( 'Sınıf', 'Öğrenci Sayısı', 'Devam %', 'Alışkanlık %', 'Not Ort. %' );
-				foreach ( SMS_Reports::grade_level_summary( $term_id, $student_ids ) as $row ) {
+				foreach ( Nizamiye_Reports::grade_level_summary( $term_id, $student_ids ) as $row ) {
 					$lines[] = array(
-						sms_grade_label( $row['grade'] ),
+						nizamiye_grade_label( $row['grade'] ),
 						$row['count'],
 						null !== $row['att'] ? $row['att'] : '',
 						null !== $row['habit'] ? $row['habit'] : '',
@@ -442,7 +442,7 @@ class SMS_Actions {
 					);
 				}
 			} else {
-				$scores = SMS_Reports::student_scores( $term_id, $student_ids );
+				$scores = Nizamiye_Reports::student_scores( $term_id, $student_ids );
 				if ( $grade ) {
 					$scores = array_values( array_filter( $scores, function ( $r ) use ( $grade ) {
 						return (int) ( $r['student']->grade_level ?? 0 ) === $grade;
@@ -454,8 +454,8 @@ class SMS_Actions {
 					$s       = $row['student'];
 					$lines[] = array(
 						$i + 1,
-						sms_student_name( $s ),
-						isset( $s->grade_level ) ? sms_grade_label( $s->grade_level ) : '',
+						nizamiye_student_name( $s ),
+						isset( $s->grade_level ) ? nizamiye_grade_label( $s->grade_level ) : '',
 						null !== $row['attendance'] ? $row['attendance'] : '',
 						null !== $row['habit'] ? $row['habit'] : '',
 						null !== $row['grade'] ? $row['grade'] : '',
@@ -469,7 +469,7 @@ class SMS_Actions {
 	}
 
 	private static function guard( $action, $cap ) {
-		if ( ! isset( $_POST['_sms_nonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['_sms_nonce'] ), $action ) ) {
+		if ( ! isset( $_POST['_nizamiye_nonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['_nizamiye_nonce'] ), $action ) ) {
 			wp_die( 'Güvenlik doğrulaması başarısız. Lütfen sayfayı yenileyip tekrar deneyin.' );
 		}
 		if ( ! current_user_can( $cap ) ) {
@@ -484,18 +484,18 @@ class SMS_Actions {
 
 	private static function back( $msg = '', $err = '', $override_url = '' ) {
 		$url = $override_url;
-		if ( ! $url && isset( $_POST['_sms_back'] ) ) {
-			$url = esc_url_raw( wp_unslash( $_POST['_sms_back'] ) );
+		if ( ! $url && isset( $_POST['_nizamiye_back'] ) ) {
+			$url = esc_url_raw( wp_unslash( $_POST['_nizamiye_back'] ) );
 		}
 		if ( ! $url ) {
 			$url = admin_url( 'admin.php?page=sms-dashboard' );
 		}
-		$url = remove_query_arg( array( 'sms_msg', 'sms_err' ), $url );
+		$url = remove_query_arg( array( 'nizamiye_msg', 'nizamiye_err' ), $url );
 		if ( $msg ) {
-			$url = add_query_arg( 'sms_msg', rawurlencode( $msg ), $url );
+			$url = add_query_arg( 'nizamiye_msg', rawurlencode( $msg ), $url );
 		}
 		if ( $err ) {
-			$url = add_query_arg( 'sms_err', rawurlencode( $err ), $url );
+			$url = add_query_arg( 'nizamiye_err', rawurlencode( $err ), $url );
 		}
 		wp_safe_redirect( $url );
 		exit;
@@ -512,17 +512,17 @@ class SMS_Actions {
 		if ( ! $name ) {
 			self::back( '', 'Dönem adı gerekli.' );
 		}
-		SMS_Terms::create( $name, self::post( 'start_date' ), self::post( 'end_date' ), ! empty( $_POST['activate'] ) );
+		Nizamiye_Terms::create( $name, self::post( 'start_date' ), self::post( 'end_date' ), ! empty( $_POST['activate'] ) );
 		self::back( 'Dönem oluşturuldu.' );
 	}
 
 	private static function handle_activate_term() {
-		SMS_Terms::set_active( (int) self::post( 'term_id' ) );
+		Nizamiye_Terms::set_active( (int) self::post( 'term_id' ) );
 		self::back( 'Aktif dönem değiştirildi.' );
 	}
 
 	private static function handle_delete_term() {
-		$result = SMS_Terms::delete( (int) self::post( 'term_id' ) );
+		$result = Nizamiye_Terms::delete( (int) self::post( 'term_id' ) );
 		if ( is_wp_error( $result ) ) {
 			self::back( '', $result->get_error_message() );
 		}
@@ -535,7 +535,7 @@ class SMS_Actions {
 		if ( ! $name ) {
 			self::back( '', 'Dönem adı gerekli.' );
 		}
-		$stats = SMS_Terms::open_new_term(
+		$stats = Nizamiye_Terms::open_new_term(
 			$name,
 			self::post( 'start_date' ),
 			self::post( 'end_date' ),
@@ -572,7 +572,7 @@ class SMS_Actions {
 
 		// Mevcut kullanıcı bağını koru.
 		if ( $id ) {
-			$existing        = SMS_Students::get( $id );
+			$existing        = Nizamiye_Students::get( $id );
 			$data['user_id'] = $existing ? (int) $existing->user_id : 0;
 		}
 
@@ -592,7 +592,7 @@ class SMS_Actions {
 				'display_name' => $data['first_name'] . ' ' . $data['last_name'],
 				'first_name'   => $data['first_name'],
 				'last_name'    => $data['last_name'],
-				'role'         => 'sms_student',
+				'role'         => 'nizamiye_student',
 			) );
 			if ( is_wp_error( $user_id ) ) {
 				self::back( '', 'Öğrenci kaydedilemedi: ' . $user_id->get_error_message() );
@@ -600,20 +600,20 @@ class SMS_Actions {
 			$data['user_id'] = (int) $user_id;
 		}
 
-		$id = SMS_Students::save( $data, $term_id, $grade, $id );
+		$id = Nizamiye_Students::save( $data, $term_id, $grade, $id );
 		self::back( 'Öğrenci kaydedildi.', '', admin_url( 'admin.php?page=sms-students&view=edit&student=' . $id ) );
 	}
 
 	private static function handle_delete_student() {
-		SMS_Students::delete( (int) self::post( 'student_id' ) );
+		Nizamiye_Students::delete( (int) self::post( 'student_id' ) );
 		self::back( 'Öğrenci ve bağlı tüm kayıtları silindi.', '', admin_url( 'admin.php?page=sms-students' ) );
 	}
 
 	/* ---------- Kullanıcılar (öğretmen/veli) ---------- */
 
 	private static function handle_save_user() {
-		$role = self::post( 'sms_role' );
-		if ( ! in_array( $role, array( 'sms_teacher', 'sms_parent' ), true ) ) {
+		$role = self::post( 'nizamiye_role' );
+		if ( ! in_array( $role, array( 'nizamiye_teacher', 'nizamiye_parent' ), true ) ) {
 			self::back( '', 'Geçersiz rol.' );
 		}
 		$user_id = (int) self::post( 'user_id' );
@@ -655,19 +655,19 @@ class SMS_Actions {
 		}
 
 		// Öğretmen için sınıf öğretmeni bayrağı + sorumlu sınıf seviyeleri.
-		if ( 'sms_teacher' === $role ) {
+		if ( 'nizamiye_teacher' === $role ) {
 			$target = $user_id ?: (int) $result;
 			if ( ! empty( $_POST['is_class_teacher'] ) ) {
-				update_user_meta( $target, 'sms_is_class_teacher', 1 );
+				update_user_meta( $target, 'nizamiye_is_class_teacher', 1 );
 				$grades = isset( $_POST['ct_grades'] ) ? array_map( 'intval', (array) $_POST['ct_grades'] ) : array();
-				update_user_meta( $target, 'sms_class_teacher_grades', array_values( array_filter( $grades ) ) );
+				update_user_meta( $target, 'nizamiye_class_teacher_grades', array_values( array_filter( $grades ) ) );
 			} else {
-				delete_user_meta( $target, 'sms_is_class_teacher' );
-				delete_user_meta( $target, 'sms_class_teacher_grades' );
+				delete_user_meta( $target, 'nizamiye_is_class_teacher' );
+				delete_user_meta( $target, 'nizamiye_class_teacher_grades' );
 			}
 		}
 
-		self::back( 'sms_teacher' === $role ? 'Öğretmen kaydedildi.' : 'Veli kaydedildi.' );
+		self::back( 'nizamiye_teacher' === $role ? 'Öğretmen kaydedildi.' : 'Veli kaydedildi.' );
 	}
 
 	private static function handle_delete_user() {
@@ -680,9 +680,9 @@ class SMS_Actions {
 		global $wpdb;
 		// Bağları temizle: velisi olduğu öğrenciler ve öğretmeni olduğu derslikler.
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- özel eklenti tablosu, $wpdb->update() kendi kaçış işlemini yapar.
-		$wpdb->update( $wpdb->prefix . 'sms_students', array( 'parent_user_id' => null ), array( 'parent_user_id' => $user_id ) );
-		$wpdb->update( $wpdb->prefix . 'sms_students', array( 'user_id' => null ), array( 'user_id' => $user_id ) );
-		$wpdb->update( $wpdb->prefix . 'sms_classes', array( 'teacher_id' => null ), array( 'teacher_id' => $user_id ) );
+		$wpdb->update( $wpdb->prefix . 'nizamiye_students', array( 'parent_user_id' => null ), array( 'parent_user_id' => $user_id ) );
+		$wpdb->update( $wpdb->prefix . 'nizamiye_students', array( 'user_id' => null ), array( 'user_id' => $user_id ) );
+		$wpdb->update( $wpdb->prefix . 'nizamiye_classes', array( 'teacher_id' => null ), array( 'teacher_id' => $user_id ) );
 		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		wp_delete_user( $user_id );
 		self::back( 'Hesap silindi.' );
@@ -696,7 +696,7 @@ class SMS_Actions {
 		if ( ! $name ) {
 			self::back( '', 'Derslik adı gerekli.' );
 		}
-		$id = SMS_Classes::save( array(
+		$id = Nizamiye_Classes::save( array(
 			'term_id'     => (int) self::post( 'term_id' ),
 			'name'        => $name,
 			'subject'     => self::post( 'subject' ),
@@ -707,17 +707,17 @@ class SMS_Actions {
 	}
 
 	private static function handle_delete_class() {
-		SMS_Classes::delete( (int) self::post( 'class_id' ) );
+		Nizamiye_Classes::delete( (int) self::post( 'class_id' ) );
 		self::back( 'Derslik silindi.', '', admin_url( 'admin.php?page=sms-classes' ) );
 	}
 
 	private static function handle_class_roster() {
 		$class_id = (int) self::post( 'class_id' );
-		if ( ! sms_can_manage_class( $class_id ) ) {
+		if ( ! nizamiye_can_manage_class( $class_id ) ) {
 			wp_die( 'Bu dersliği yönetme yetkiniz yok.' );
 		}
 		$ids = isset( $_POST['student_ids'] ) ? array_map( 'intval', (array) $_POST['student_ids'] ) : array();
-		SMS_Classes::set_students( $class_id, $ids );
+		Nizamiye_Classes::set_students( $class_id, $ids );
 		self::back( 'Derslik kadrosu güncellendi (' . count( $ids ) . ' öğrenci).' );
 	}
 
@@ -729,8 +729,8 @@ class SMS_Actions {
 		$class_id    = (int) self::post( 'class_id' );
 		$date        = self::post( 'att_date' );
 
-		$category = SMS_Attendance_Types::get_category( $category_id );
-		$session  = SMS_Attendance_Types::get_session( $session_id );
+		$category = Nizamiye_Attendance_Types::get_category( $category_id );
+		$session  = Nizamiye_Attendance_Types::get_session( $session_id );
 		if ( ! $category || ! $session || (int) $session->category_id !== $category_id ) {
 			self::back( '', 'Geçersiz yoklama türü.' );
 		}
@@ -740,19 +740,19 @@ class SMS_Actions {
 
 		// Yetki + öğrenci kapsamı, kategori türüne göre belirlenir.
 		if ( 'class' === $category->scope ) {
-			if ( ! sms_can_manage_class( $class_id ) ) {
+			if ( ! nizamiye_can_manage_class( $class_id ) ) {
 				wp_die( 'Bu dersliğin yoklamasını alma yetkiniz yok.' );
 			}
-			$class   = SMS_Classes::get( $class_id );
-			$term_id = $class ? (int) $class->term_id : sms_current_term_id();
-			$allowed = SMS_Classes::student_ids( $class_id );
+			$class   = Nizamiye_Classes::get( $class_id );
+			$term_id = $class ? (int) $class->term_id : nizamiye_current_term_id();
+			$allowed = Nizamiye_Classes::student_ids( $class_id );
 		} else {
-			if ( ! sms_can_take_general_attendance() ) {
+			if ( ! nizamiye_can_take_general_attendance() ) {
 				wp_die( 'Genel yoklama alma yetkiniz yok.' );
 			}
 			$class_id = 0;
-			$term_id  = sms_current_term_id();
-			$allowed  = sms_general_attendance_student_ids( $term_id, 0, $category_id );
+			$term_id  = nizamiye_current_term_id();
+			$allowed  = nizamiye_general_attendance_student_ids( $term_id, 0, $category_id );
 		}
 		$allowed = array_map( 'intval', $allowed );
 
@@ -770,7 +770,7 @@ class SMS_Actions {
 				'note'   => isset( $notes[ $student_id ] ) ? sanitize_text_field( wp_unslash( $notes[ $student_id ] ) ) : '',
 			);
 		}
-		SMS_Attendance::save_sheet( $term_id, $category_id, $session_id, $class_id, $date, $entries, get_current_user_id() );
+		Nizamiye_Attendance::save_sheet( $term_id, $category_id, $session_id, $class_id, $date, $entries, get_current_user_id() );
 		self::back( $category->name . ' yoklaması kaydedildi (' . count( $entries ) . ' öğrenci).' );
 	}
 
@@ -786,7 +786,7 @@ class SMS_Actions {
 			self::back( '', 'Alışkanlık adı gerekli.' );
 		}
 
-		$id = SMS_Habits::save( array(
+		$id = Nizamiye_Habits::save( array(
 			'term_id'     => (int) self::post( 'term_id' ),
 			'name'        => self::post( 'name' ),
 			'description' => isset( $_POST['description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['description'] ) ) : '',
@@ -796,13 +796,13 @@ class SMS_Actions {
 
 		$ids = isset( $_POST['student_ids'] ) ? array_map( 'intval', (array) $_POST['student_ids'] ) : array();
 		// Öğretmen yalnızca kendi öğrencilerini ekleyebilir; diğer atamalar korunur.
-		if ( sms_is_teacher() ) {
-			$allowed  = sms_teacher_student_ids();
+		if ( nizamiye_is_teacher() ) {
+			$allowed  = nizamiye_teacher_student_ids();
 			$ids      = array_intersect( $ids, $allowed );
-			$existing = SMS_Habits::student_ids( $id );
+			$existing = Nizamiye_Habits::student_ids( $id );
 			$ids      = array_merge( array_diff( $existing, $allowed ), $ids );
 		}
-		SMS_Habits::set_students( $id, $ids );
+		Nizamiye_Habits::set_students( $id, $ids );
 
 		self::back( 'Alışkanlık kaydedildi.', '', admin_url( 'admin.php?page=sms-habits&view=edit&habit_id=' . $id ) );
 	}
@@ -812,22 +812,22 @@ class SMS_Actions {
 		if ( ! self::can_manage_habit( $id ) ) {
 			wp_die( 'Bu alışkanlığı silme yetkiniz yok.' );
 		}
-		SMS_Habits::delete( $id );
+		Nizamiye_Habits::delete( $id );
 		self::back( 'Alışkanlık silindi.', '', admin_url( 'admin.php?page=sms-habits' ) );
 	}
 
 	private static function can_manage_habit( $habit_id ) {
-		if ( sms_is_manager() ) {
+		if ( nizamiye_is_manager() ) {
 			return true;
 		}
-		$habit = SMS_Habits::get( $habit_id );
+		$habit = Nizamiye_Habits::get( $habit_id );
 		return $habit && (int) $habit->created_by === get_current_user_id();
 	}
 
 	private static function handle_save_habit_logs() {
 		$habit_id = (int) self::post( 'habit_id' );
 		$date     = self::post( 'log_date' );
-		$habit    = SMS_Habits::get( $habit_id );
+		$habit    = Nizamiye_Habits::get( $habit_id );
 
 		if ( ! $habit ) {
 			self::back( '', 'Alışkanlık bulunamadı.' );
@@ -836,10 +836,10 @@ class SMS_Actions {
 			self::back( '', 'Geçerli bir tarih seçin.' );
 		}
 
-		$assigned = SMS_Habits::student_ids( $habit_id );
+		$assigned = Nizamiye_Habits::student_ids( $habit_id );
 		// Öğretmen yalnızca kendi öğrencilerinin kaydını doldurabilir (oluşturansa hepsini).
-		if ( sms_is_teacher() && (int) $habit->created_by !== get_current_user_id() ) {
-			$assigned = array_intersect( $assigned, sms_teacher_student_ids() );
+		if ( nizamiye_is_teacher() && (int) $habit->created_by !== get_current_user_id() ) {
+			$assigned = array_intersect( $assigned, nizamiye_teacher_student_ids() );
 		}
 
 		// Ham diziler; değer (int) cast ile, not aşağıda sanitize_text_field(wp_unslash()) ile işlenir.
@@ -854,7 +854,7 @@ class SMS_Actions {
 				'note'   => isset( $notes[ $student_id ] ) ? sanitize_text_field( wp_unslash( $notes[ $student_id ] ) ) : '',
 			);
 		}
-		SMS_Habits::save_logs( $habit_id, $date, $entries, get_current_user_id() );
+		Nizamiye_Habits::save_logs( $habit_id, $date, $entries, get_current_user_id() );
 		self::back( 'Alışkanlık takibi kaydedildi.' );
 	}
 
@@ -862,7 +862,7 @@ class SMS_Actions {
 
 	private static function handle_save_grades() {
 		$class_id = (int) self::post( 'class_id' );
-		if ( ! sms_can_manage_class( $class_id ) ) {
+		if ( ! nizamiye_can_manage_class( $class_id ) ) {
 			wp_die( 'Bu dersliğe not girme yetkiniz yok.' );
 		}
 		$title = self::post( 'title' );
@@ -870,7 +870,7 @@ class SMS_Actions {
 			self::back( '', 'Sınav adı gerekli.' );
 		}
 		$scores = isset( $_POST['score'] ) ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST['score'] ) ) : array();
-		$count  = SMS_Grades::add_exam(
+		$count  = Nizamiye_Grades::add_exam(
 			$class_id,
 			$title,
 			self::post( 'exam_type' ),
@@ -883,18 +883,18 @@ class SMS_Actions {
 	}
 
 	private static function handle_delete_grade() {
-		$grade = SMS_Grades::get( (int) self::post( 'grade_id' ) );
-		if ( ! $grade || ! sms_can_manage_class( (int) $grade->class_id ) ) {
+		$grade = Nizamiye_Grades::get( (int) self::post( 'grade_id' ) );
+		if ( ! $grade || ! nizamiye_can_manage_class( (int) $grade->class_id ) ) {
 			wp_die( 'Bu notu silme yetkiniz yok.' );
 		}
-		SMS_Grades::delete( (int) $grade->id );
+		Nizamiye_Grades::delete( (int) $grade->id );
 		self::back( 'Not silindi.' );
 	}
 
 	/* ---------- Ayarlar ---------- */
 
 	private static function handle_save_settings() {
-		sms_update_settings( array(
+		nizamiye_update_settings( array(
 			'school_name' => self::post( 'school_name' ),
 			'final_grade' => max( 1, (int) self::post( 'final_grade', '8' ) ),
 			'min_grade'   => max( 1, (int) self::post( 'min_grade', '1' ) ),
@@ -913,27 +913,27 @@ class SMS_Actions {
 			self::back( '', 'Kategori adı gerekli.' );
 		}
 		if ( $id ) {
-			SMS_Attendance_Types::update_category( $id, $name, $icon );
-			$cat = SMS_Attendance_Types::get_category( $id );
+			Nizamiye_Attendance_Types::update_category( $id, $name, $icon );
+			$cat = Nizamiye_Attendance_Types::get_category( $id );
 			if ( $cat && 'general' === $cat->scope ) {
 				$grades = isset( $_POST['cat_grades'] ) ? array_map( 'intval', (array) $_POST['cat_grades'] ) : array();
-				SMS_Attendance_Types::set_grade_levels( $id, $grades );
+				Nizamiye_Attendance_Types::set_grade_levels( $id, $grades );
 			}
 			self::back( 'Kategori güncellendi.' );
 		}
 		$scope   = self::post( 'scope', 'general' );
-		$cat_id  = SMS_Attendance_Types::create_category( $name, $scope, $icon );
+		$cat_id  = Nizamiye_Attendance_Types::create_category( $name, $scope, $icon );
 		$session = self::post( 'first_session' );
 		if ( $session ) {
-			SMS_Attendance_Types::add_session( $cat_id, $session );
+			Nizamiye_Attendance_Types::add_session( $cat_id, $session );
 		} else {
-			SMS_Attendance_Types::add_session( $cat_id, $name );
+			Nizamiye_Attendance_Types::add_session( $cat_id, $name );
 		}
 		self::back( 'Yoklama kategorisi oluşturuldu.' );
 	}
 
 	private static function handle_delete_category() {
-		$result = SMS_Attendance_Types::delete_category( (int) self::post( 'category_id' ) );
+		$result = Nizamiye_Attendance_Types::delete_category( (int) self::post( 'category_id' ) );
 		if ( is_wp_error( $result ) ) {
 			self::back( '', $result->get_error_message() );
 		}
@@ -943,15 +943,15 @@ class SMS_Actions {
 	private static function handle_add_session() {
 		$cat_id = (int) self::post( 'category_id' );
 		$name   = self::post( 'name' );
-		if ( ! $name || ! SMS_Attendance_Types::get_category( $cat_id ) ) {
+		if ( ! $name || ! Nizamiye_Attendance_Types::get_category( $cat_id ) ) {
 			self::back( '', 'Oturum adı gerekli.' );
 		}
-		SMS_Attendance_Types::add_session( $cat_id, $name );
+		Nizamiye_Attendance_Types::add_session( $cat_id, $name );
 		self::back( 'Oturum eklendi.' );
 	}
 
 	private static function handle_delete_session() {
-		$result = SMS_Attendance_Types::delete_session( (int) self::post( 'session_id' ) );
+		$result = Nizamiye_Attendance_Types::delete_session( (int) self::post( 'session_id' ) );
 		if ( is_wp_error( $result ) ) {
 			self::back( '', $result->get_error_message() );
 		}
@@ -973,7 +973,7 @@ class SMS_Actions {
 
 		$tmp  = $_FILES['import_file']['tmp_name']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- yukarıdaki self::back()/exit kontrolü nedeniyle 'error' boşsa (UPLOAD_ERR_OK) tmp_name PHP tarafından garanti doldurulur.
 		$ext  = strtolower( pathinfo( sanitize_file_name( wp_unslash( $_FILES['import_file']['name'] ) ), PATHINFO_EXTENSION ) );
-		$rows = SMS_Import::read_file( $tmp, $ext );
+		$rows = Nizamiye_Import::read_file( $tmp, $ext );
 		if ( is_wp_error( $rows ) ) {
 			self::back( '', $rows->get_error_message() );
 		}
@@ -982,27 +982,27 @@ class SMS_Actions {
 			if ( ! $term_id ) {
 				self::back( '', 'Öğrenci aktarımı için aktif bir dönem gerekli.' );
 			}
-			$res = SMS_Import::import_students( $rows, $term_id );
+			$res = Nizamiye_Import::import_students( $rows, $term_id );
 		} else {
-			$role = 'teachers' === $type ? 'sms_teacher' : 'sms_parent';
-			$res  = SMS_Import::import_users( $rows, $role );
+			$role = 'teachers' === $type ? 'nizamiye_teacher' : 'nizamiye_parent';
+			$res  = Nizamiye_Import::import_users( $rows, $role );
 		}
 
 		$msg = $res['created'] . ' kayıt içe aktarıldı.';
 		if ( ! empty( $res['errors'] ) ) {
 			$msg .= ' ' . count( $res['errors'] ) . ' satır atlandı/uyarı.';
-			set_transient( 'sms_import_errors_' . get_current_user_id(), $res['errors'], 120 );
+			set_transient( 'nizamiye_import_errors_' . get_current_user_id(), $res['errors'], 120 );
 		}
 		self::back( $msg, '', admin_url( 'admin.php?page=sms-import&tab=' . $type ) );
 	}
 
 	/** Seçili derslik için önceden doldurulmuş not listesi indirir (GET + nonce). */
 	public static function handle_grade_template() {
-		if ( ! current_user_can( 'sms_teach' ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'sms_grade_template' ) ) {
+		if ( ! current_user_can( 'nizamiye_teach' ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'nizamiye_grade_template' ) ) {
 			wp_die( 'Yetkisiz istek.' );
 		}
 		$class_id = isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
-		if ( ! sms_can_manage_class( $class_id ) ) {
+		if ( ! nizamiye_can_manage_class( $class_id ) ) {
 			wp_die( 'Bu derslik için yetkiniz yok.' );
 		}
 		$title     = isset( $_GET['title'] ) ? sanitize_text_field( wp_unslash( $_GET['title'] ) ) : 'Sınav';
@@ -1011,7 +1011,7 @@ class SMS_Actions {
 		$exam_date = isset( $_GET['exam_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['exam_date'] ) ) ? sanitize_text_field( wp_unslash( $_GET['exam_date'] ) ) : current_time( 'Y-m-d' );
 		$max_score = isset( $_GET['max_score'] ) ? max( 1, (float) $_GET['max_score'] ) : 100;
 
-		$content = SMS_Import::grade_template( $class_id, $title ?: 'Sınav', $exam_type, $exam_date, $max_score );
+		$content = Nizamiye_Import::grade_template( $class_id, $title ?: 'Sınav', $exam_type, $exam_date, $max_score );
 
 		nocache_headers();
 		header( 'Content-Type: text/csv; charset=utf-8' );
@@ -1028,27 +1028,27 @@ class SMS_Actions {
 		}
 		$tmp  = $_FILES['grade_file']['tmp_name']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- yukarıdaki self::back()/exit kontrolü nedeniyle 'error' boşsa (UPLOAD_ERR_OK) tmp_name PHP tarafından garanti doldurulur.
 		$ext  = strtolower( pathinfo( sanitize_file_name( wp_unslash( $_FILES['grade_file']['name'] ) ), PATHINFO_EXTENSION ) );
-		$rows = SMS_Import::read_file( $tmp, $ext );
+		$rows = Nizamiye_Import::read_file( $tmp, $ext );
 		if ( is_wp_error( $rows ) ) {
 			self::back( '', $rows->get_error_message() );
 		}
 
-		$res = SMS_Import::import_grades( $rows, get_current_user_id(), 'sms_can_manage_class' );
+		$res = Nizamiye_Import::import_grades( $rows, get_current_user_id(), 'nizamiye_can_manage_class' );
 
 		$msg = $res['created'] . ' not kaydedildi.';
 		if ( ! empty( $res['errors'] ) ) {
 			$msg .= ' ' . count( $res['errors'] ) . ' satır atlandı.';
-			set_transient( 'sms_grade_import_errors_' . get_current_user_id(), $res['errors'], 300 );
+			set_transient( 'nizamiye_grade_import_errors_' . get_current_user_id(), $res['errors'], 300 );
 		}
 		self::back( $msg );
 	}
 
 	public static function handle_import_template() {
 		$type = isset( $_GET['type'] ) ? sanitize_key( $_GET['type'] ) : '';
-		if ( ! current_user_can( 'sms_manage' ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'sms_template' ) ) {
+		if ( ! current_user_can( 'nizamiye_manage' ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'nizamiye_template' ) ) {
 			wp_die( 'Yetkisiz istek.' );
 		}
-		$content = SMS_Import::template( $type );
+		$content = Nizamiye_Import::template( $type );
 		if ( ! $content ) {
 			wp_die( 'Geçersiz şablon.' );
 		}

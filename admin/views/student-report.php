@@ -1,15 +1,15 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), yetki sms_can_access_student() ile ayrıca doğrulanır.
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), yetki nizamiye_can_access_student() ile ayrıca doğrulanır.
 $student_id = isset( $_GET['student'] ) ? (int) $_GET['student'] : 0;
 
-if ( ! $student_id || ! sms_can_access_student( $student_id ) ) {
+if ( ! $student_id || ! nizamiye_can_access_student( $student_id ) ) {
 	wp_die( 'Bu öğrencinin karnesine erişim yetkiniz yok.' );
 }
 
-$term_id = sms_current_term_id();
-$report  = SMS_Reports::student_report( $student_id, $term_id );
+$term_id = nizamiye_current_term_id();
+$report  = Nizamiye_Reports::student_report( $student_id, $term_id );
 $student = $report['student'];
 
 if ( ! $student ) {
@@ -18,7 +18,7 @@ if ( ! $student ) {
 }
 
 $att        = $report['att_all'];
-$statuses   = sms_attendance_statuses();
+$statuses   = nizamiye_attendance_statuses();
 $habit_avg  = null;
 if ( $report['habits'] ) {
 	$vals = array_filter( array_map( function ( $h ) {
@@ -36,17 +36,17 @@ if ( $report['grade_avgs'] ) {
 $parent = $student->parent_user_id ? get_userdata( (int) $student->parent_user_id ) : null;
 
 $print_url = wp_nonce_url( add_query_arg( array(
-	'action'   => 'sms_print_report',
+	'action'   => 'nizamiye_print_report',
 	'student'  => $student_id,
-	'sms_term' => $term_id,
-), admin_url( 'admin-post.php' ) ), 'sms_print_report_' . $student_id );
+	'nizamiye_term' => $term_id,
+), admin_url( 'admin-post.php' ) ), 'nizamiye_print_report_' . $student_id );
 ?>
 <div class="wrap sms-wrap">
-	<?php sms_view_header( 'Öğrenci Karnesi', '' ); ?>
+	<?php nizamiye_view_header( 'Öğrenci Karnesi', '' ); ?>
 
 	<div class="sms-toolbar">
-		<?php if ( current_user_can( 'sms_teach' ) ) : ?>
-			<a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-cards&sms_term=' . $term_id ) ); ?>">← Karnelere dön</a>
+		<?php if ( current_user_can( 'nizamiye_teach' ) ) : ?>
+			<a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-cards&nizamiye_term=' . $term_id ) ); ?>">← Karnelere dön</a>
 		<?php else : ?>
 			<span></span>
 		<?php endif; ?>
@@ -56,14 +56,14 @@ $print_url = wp_nonce_url( add_query_arg( array(
 	</div>
 
 	<div class="sms-card sms-profile-card">
-		<?php echo sms_avatar( sms_student_name( $student ), 'sms-avatar-lg' ); // phpcs:ignore ?>
+		<?php echo nizamiye_avatar( nizamiye_student_name( $student ), 'sms-avatar-lg' ); // phpcs:ignore ?>
 		<div class="sms-profile-info">
-			<h2><?php echo esc_html( sms_student_name( $student ) ); ?></h2>
+			<h2><?php echo esc_html( nizamiye_student_name( $student ) ); ?></h2>
 			<div class="sms-profile-meta">
-				<?php if ( $report['enrollment'] ) : ?><span class="sms-badge sms-badge-indigo"><?php echo esc_html( sms_grade_label( $report['enrollment']->grade_level ) ); ?></span><?php endif; ?>
-				<span class="sms-badge <?php echo 'active' === $student->status ? 'sms-badge-green' : 'sms-badge-amber'; ?>"><?php echo esc_html( sms_student_status_label( $student->status ) ); ?></span>
+				<?php if ( $report['enrollment'] ) : ?><span class="sms-badge sms-badge-indigo"><?php echo esc_html( nizamiye_grade_label( $report['enrollment']->grade_level ) ); ?></span><?php endif; ?>
+				<span class="sms-badge <?php echo 'active' === $student->status ? 'sms-badge-green' : 'sms-badge-amber'; ?>"><?php echo esc_html( nizamiye_student_status_label( $student->status ) ); ?></span>
 				<?php if ( $student->school ) : ?><span class="sms-muted"><span class="dashicons dashicons-building"></span> <?php echo esc_html( $student->school ); ?></span><?php endif; ?>
-				<?php if ( $student->birth_date ) : ?><span class="sms-muted"><span class="dashicons dashicons-cake"></span> <?php echo esc_html( sms_format_date( $student->birth_date ) ); ?></span><?php endif; ?>
+				<?php if ( $student->birth_date ) : ?><span class="sms-muted"><span class="dashicons dashicons-cake"></span> <?php echo esc_html( nizamiye_format_date( $student->birth_date ) ); ?></span><?php endif; ?>
 				<?php if ( $parent ) : ?><span class="sms-muted"><span class="dashicons dashicons-admin-users"></span> Veli: <?php echo esc_html( $parent->display_name ); ?></span><?php endif; ?>
 			</div>
 			<?php if ( $report['classes'] ) : ?>
@@ -77,15 +77,15 @@ $print_url = wp_nonce_url( add_query_arg( array(
 	<div class="sms-stat-grid sms-mt">
 		<div class="sms-stat-card">
 			<span class="sms-stat-icon" style="--c:#22c55e"><span class="dashicons dashicons-clipboard"></span></span>
-			<div><span class="sms-stat-value <?php echo esc_attr( sms_rate_class( $att['rate'] ) ); ?>"><?php echo null !== $att['rate'] ? (int) $att['rate'] . '%' : '—'; ?></span><span class="sms-stat-label">Devam Oranı</span></div>
+			<div><span class="sms-stat-value <?php echo esc_attr( nizamiye_rate_class( $att['rate'] ) ); ?>"><?php echo null !== $att['rate'] ? (int) $att['rate'] . '%' : '—'; ?></span><span class="sms-stat-label">Devam Oranı</span></div>
 		</div>
 		<div class="sms-stat-card">
 			<span class="sms-stat-icon" style="--c:#6366f1"><span class="dashicons dashicons-yes-alt"></span></span>
-			<div><span class="sms-stat-value <?php echo esc_attr( sms_rate_class( $habit_avg ) ); ?>"><?php echo null !== $habit_avg ? esc_html( $habit_avg . '%' ) : '—'; ?></span><span class="sms-stat-label">Alışkanlık Tamamlama</span></div>
+			<div><span class="sms-stat-value <?php echo esc_attr( nizamiye_rate_class( $habit_avg ) ); ?>"><?php echo null !== $habit_avg ? esc_html( $habit_avg . '%' ) : '—'; ?></span><span class="sms-stat-label">Alışkanlık Tamamlama</span></div>
 		</div>
 		<div class="sms-stat-card">
 			<span class="sms-stat-icon" style="--c:#f59e0b"><span class="dashicons dashicons-welcome-write-blog"></span></span>
-			<div><span class="sms-stat-value <?php echo esc_attr( sms_rate_class( $grade_avg ) ); ?>"><?php echo null !== $grade_avg ? esc_html( $grade_avg . '%' ) : '—'; ?></span><span class="sms-stat-label">Not Ortalaması</span></div>
+			<div><span class="sms-stat-value <?php echo esc_attr( nizamiye_rate_class( $grade_avg ) ); ?>"><?php echo null !== $grade_avg ? esc_html( $grade_avg . '%' ) : '—'; ?></span><span class="sms-stat-label">Not Ortalaması</span></div>
 		</div>
 		<div class="sms-stat-card">
 			<span class="sms-stat-icon" style="--c:#0ea5e9"><span class="dashicons dashicons-calendar-alt"></span></span>
@@ -103,12 +103,12 @@ $print_url = wp_nonce_url( add_query_arg( array(
 					<?php foreach ( $report['habits'] as $h ) : ?>
 						<tr>
 							<td><strong><?php echo esc_html( $h->name ); ?></strong></td>
-							<td class="sms-muted"><?php echo esc_html( sms_habit_track_type_label( $h ) ); ?></td>
+							<td class="sms-muted"><?php echo esc_html( nizamiye_habit_track_type_label( $h ) ); ?></td>
 							<td><?php echo (int) $h->log_count; ?></td>
 							<td>
 								<?php if ( $h->log_count > 0 ) : ?>
-									<div class="sms-progress sms-progress-inline"><div class="sms-progress-bar <?php echo esc_attr( sms_rate_class( (int) $h->rate ) ); ?>" style="width:<?php echo (int) $h->rate; ?>%"></div></div>
-									<span class="sms-score <?php echo esc_attr( sms_rate_class( (int) $h->rate ) ); ?>"><?php echo (int) $h->rate; ?>%</span>
+									<div class="sms-progress sms-progress-inline"><div class="sms-progress-bar <?php echo esc_attr( nizamiye_rate_class( (int) $h->rate ) ); ?>" style="width:<?php echo (int) $h->rate; ?>%"></div></div>
+									<span class="sms-score <?php echo esc_attr( nizamiye_rate_class( (int) $h->rate ) ); ?>"><?php echo (int) $h->rate; ?>%</span>
 								<?php else : ?>
 									<span class="sms-muted">Kayıt yok</span>
 								<?php endif; ?>
@@ -133,14 +133,14 @@ $print_url = wp_nonce_url( add_query_arg( array(
 									<span class="dashicons <?php echo esc_attr( $cat['icon'] ?: 'dashicons-clipboard' ); ?>"></span>
 									<strong><?php echo esc_html( $cat['category'] ); ?></strong>
 									<span class="sms-muted sms-cat-summary-count"><?php echo (int) $cat['overall_total']; ?> kayıt</span>
-									<span class="sms-score <?php echo esc_attr( sms_rate_class( $cat['overall_rate'] ) ); ?>"><?php echo null !== $cat['overall_rate'] ? (int) $cat['overall_rate'] . '%' : '—'; ?></span>
+									<span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $cat['overall_rate'] ) ); ?>"><?php echo null !== $cat['overall_rate'] ? (int) $cat['overall_rate'] . '%' : '—'; ?></span>
 								</div>
 								<?php if ( $cat['multi_session'] ) : ?>
 									<div class="sms-session-stats">
 										<?php foreach ( $cat['sessions'] as $s ) : ?>
 											<div class="sms-session-stat">
 												<span class="sms-session-stat-name"><?php echo esc_html( $s['name'] ); ?></span>
-												<span class="sms-session-stat-rate <?php echo esc_attr( sms_rate_class( $s['rate'] ) ); ?>"><?php echo null !== $s['rate'] ? (int) $s['rate'] . '%' : '—'; ?></span>
+												<span class="sms-session-stat-rate <?php echo esc_attr( nizamiye_rate_class( $s['rate'] ) ); ?>"><?php echo null !== $s['rate'] ? (int) $s['rate'] . '%' : '—'; ?></span>
 												<span class="sms-muted"><?php echo (int) $s['present']; ?>/<?php echo (int) $s['total']; ?></span>
 											</div>
 										<?php endforeach; ?>
@@ -160,7 +160,7 @@ $print_url = wp_nonce_url( add_query_arg( array(
 								<span class="sms-dot sms-att-<?php echo esc_attr( $a->status ); ?>"></span>
 								<?php
 									$ctx = $a->class_name ? $a->class_name : trim( $a->category_name . ( $a->session_name && $a->session_name !== $a->category_name ? ' · ' . $a->session_name : '' ) );
-									echo esc_html( sms_format_date( $a->att_date ) . ' — ' . $ctx . ': ' . ( $statuses[ $a->status ] ?? $a->status ) );
+									echo esc_html( nizamiye_format_date( $a->att_date ) . ' — ' . $ctx . ': ' . ( $statuses[ $a->status ] ?? $a->status ) );
 								?>
 								<?php echo $a->note ? '<span class="sms-muted">(' . esc_html( $a->note ) . ')</span>' : ''; ?>
 							</li>
@@ -184,7 +184,7 @@ $print_url = wp_nonce_url( add_query_arg( array(
 							<?php foreach ( $rh['books'] as $book ) : ?>
 								<li>
 									<strong><?php echo esc_html( $book['title'] ); ?></strong>
-									<span class="sms-muted"> — <?php echo (int) $book['pages']; ?> sayfa (<?php echo (int) $book['days']; ?> gün) • son: <?php echo esc_html( sms_format_date( $book['last_date'] ) ); ?></span>
+									<span class="sms-muted"> — <?php echo (int) $book['pages']; ?> sayfa (<?php echo (int) $book['days']; ?> gün) • son: <?php echo esc_html( nizamiye_format_date( $book['last_date'] ) ); ?></span>
 								</li>
 							<?php endforeach; ?>
 						</ul>
@@ -205,7 +205,7 @@ $print_url = wp_nonce_url( add_query_arg( array(
 						<tr>
 							<td><strong><?php echo esc_html( $g->title ); ?></strong> <span class="sms-muted"><?php echo esc_html( $g->exam_type ); ?></span></td>
 							<td class="sms-muted"><?php echo esc_html( $g->class_name ); ?></td>
-							<td class="sms-muted"><?php echo esc_html( sms_format_date( $g->exam_date ) ); ?></td>
+							<td class="sms-muted"><?php echo esc_html( nizamiye_format_date( $g->exam_date ) ); ?></td>
 							<td><strong><?php echo esc_html( rtrim( rtrim( (string) $g->score, '0' ), '.' ) ); ?></strong> <span class="sms-muted">/ <?php echo esc_html( rtrim( rtrim( (string) $g->max_score, '0' ), '.' ) ); ?></span></td>
 						</tr>
 					<?php endforeach; ?>
@@ -224,8 +224,8 @@ $print_url = wp_nonce_url( add_query_arg( array(
 						<?php foreach ( $report['grade_avgs'] as $g ) : ?>
 							<div class="sms-avg-row">
 								<span><?php echo esc_html( $g->class_name ); ?> <span class="sms-muted">(<?php echo (int) $g->exam_count; ?> sınav)</span></span>
-								<div class="sms-progress sms-progress-inline"><div class="sms-progress-bar <?php echo esc_attr( sms_rate_class( (int) $g->avg_rate ) ); ?>" style="width:<?php echo (int) $g->avg_rate; ?>%"></div></div>
-								<span class="sms-score <?php echo esc_attr( sms_rate_class( (int) $g->avg_rate ) ); ?>"><?php echo (int) $g->avg_rate; ?>%</span>
+								<div class="sms-progress sms-progress-inline"><div class="sms-progress-bar <?php echo esc_attr( nizamiye_rate_class( (int) $g->avg_rate ) ); ?>" style="width:<?php echo (int) $g->avg_rate; ?>%"></div></div>
+								<span class="sms-score <?php echo esc_attr( nizamiye_rate_class( (int) $g->avg_rate ) ); ?>"><?php echo (int) $g->avg_rate; ?>%</span>
 							</div>
 						<?php endforeach; ?>
 					</div>
@@ -239,7 +239,7 @@ $print_url = wp_nonce_url( add_query_arg( array(
 				<div class="sms-pad">
 					<ul class="sms-mini-list">
 						<?php foreach ( $report['history'] as $h ) : ?>
-							<li><?php echo esc_html( $h->term_name . ' — ' . sms_grade_label( $h->grade_level ) ); ?> <?php echo 'graduated' === $h->status ? '🎓 Mezun' : ( $h->is_active ? '<span class="sms-badge sms-badge-green">Aktif</span>' : '' ); ?></li>
+							<li><?php echo esc_html( $h->term_name . ' — ' . nizamiye_grade_label( $h->grade_level ) ); ?> <?php echo 'graduated' === $h->status ? '🎓 Mezun' : ( $h->is_active ? '<span class="sms-badge sms-badge-green">Aktif</span>' : '' ); ?></li>
 						<?php endforeach; ?>
 					</ul>
 				</div>

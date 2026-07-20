@@ -4,34 +4,34 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Roller ve yetenekler.
  *
- * sms_manage : tam yönetim (yönetici)
- * sms_teach  : öğretmen işlemleri (kendi derslikleri/öğrencileri ile sınırlı, kayıt bazında denetlenir)
- * sms_access : panele erişim (tüm sistem rolleri)
+ * nizamiye_manage : tam yönetim (yönetici)
+ * nizamiye_teach  : öğretmen işlemleri (kendi derslikleri/öğrencileri ile sınırlı, kayıt bazında denetlenir)
+ * nizamiye_access : panele erişim (tüm sistem rolleri)
  */
-class SMS_Roles {
+class Nizamiye_Roles {
 
 	public static function add_roles() {
-		add_role( 'sms_teacher', 'Öğretmen', array(
+		add_role( 'nizamiye_teacher', 'Öğretmen', array(
 			'read'       => true,
-			'sms_access' => true,
-			'sms_teach'  => true,
+			'nizamiye_access' => true,
+			'nizamiye_teach'  => true,
 		) );
 
-		add_role( 'sms_parent', 'Veli', array(
+		add_role( 'nizamiye_parent', 'Veli', array(
 			'read'       => true,
-			'sms_access' => true,
+			'nizamiye_access' => true,
 		) );
 
-		add_role( 'sms_student', 'Öğrenci', array(
+		add_role( 'nizamiye_student', 'Öğrenci', array(
 			'read'       => true,
-			'sms_access' => true,
+			'nizamiye_access' => true,
 		) );
 
 		$admin = get_role( 'administrator' );
 		if ( $admin ) {
-			$admin->add_cap( 'sms_access' );
-			$admin->add_cap( 'sms_teach' );
-			$admin->add_cap( 'sms_manage' );
+			$admin->add_cap( 'nizamiye_access' );
+			$admin->add_cap( 'nizamiye_teach' );
+			$admin->add_cap( 'nizamiye_manage' );
 		}
 	}
 }

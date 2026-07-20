@@ -2,7 +2,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
-// Bu dosyadaki tüm $wpdb sorguları eklentiye özel tablolar (wp_sms_*) üzerinde çalışır;
+// Bu dosyadaki tüm $wpdb sorguları eklentiye özel tablolar (wp_nizamiye_*) üzerinde çalışır;
 // tüm parametreler $wpdb->prepare() ile bağlanır ya da intval()/whitelist ile temizlenir.
 // WordPress çekirdeğinde özel tablolar için bir soyutlama/önbellekleme API'si olmadığından
 // doğrudan $wpdb kullanımı kaçınılmazdır; bkz. güvenlik incelemesinde doğrulanan analiz.
@@ -10,11 +10,11 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Dönemler ve dönem geçişi (otomatik sınıf atlatma / mezuniyet).
  */
-class SMS_Terms {
+class Nizamiye_Terms {
 
 	private static function table() {
 		global $wpdb;
-		return $wpdb->prefix . 'sms_terms';
+		return $wpdb->prefix . 'nizamiye_terms';
 	}
 
 	public static function all() {
@@ -59,13 +59,13 @@ class SMS_Terms {
 		$id = (int) $id;
 		// Döneme bağlı kayıt varsa silme.
 		$has = (int) $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$wpdb->prefix}sms_enrollments WHERE term_id = %d", $id
+			"SELECT COUNT(*) FROM {$wpdb->prefix}nizamiye_enrollments WHERE term_id = %d", $id
 		) );
 		$has += (int) $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$wpdb->prefix}sms_classes WHERE term_id = %d", $id
+			"SELECT COUNT(*) FROM {$wpdb->prefix}nizamiye_classes WHERE term_id = %d", $id
 		) );
 		if ( $has > 0 ) {
-			return new WP_Error( 'sms_term_in_use', 'Bu döneme bağlı kayıtlar var, silinemez.' );
+			return new WP_Error( 'nizamiye_term_in_use', 'Bu döneme bağlı kayıtlar var, silinemez.' );
 		}
 		$wpdb->delete( self::table(), array( 'id' => $id ) );
 		return true;
@@ -76,13 +76,13 @@ class SMS_Terms {
 	 */
 	public static function rollover_preview( $from_term_id ) {
 		global $wpdb;
-		$settings    = sms_get_settings();
+		$settings    = nizamiye_get_settings();
 		$final_grade = (int) $settings['final_grade'];
 
 		$rows = $wpdb->get_results( $wpdb->prepare(
 			"SELECT e.grade_level, COUNT(*) AS cnt
-			 FROM {$wpdb->prefix}sms_enrollments e
-			 INNER JOIN {$wpdb->prefix}sms_students s ON s.id = e.student_id
+			 FROM {$wpdb->prefix}nizamiye_enrollments e
+			 INNER JOIN {$wpdb->prefix}nizamiye_students s ON s.id = e.student_id
 			 WHERE e.term_id = %d AND e.status = 'active' AND s.status = 'active'
 			 GROUP BY e.grade_level ORDER BY e.grade_level",
 			$from_term_id
@@ -127,13 +127,13 @@ class SMS_Terms {
 		$graduated = 0;
 
 		if ( $auto_promote && $old_term ) {
-			$settings    = sms_get_settings();
+			$settings    = nizamiye_get_settings();
 			$final_grade = (int) $settings['final_grade'];
 
 			$enrollments = $wpdb->get_results( $wpdb->prepare(
 				"SELECT e.student_id, e.grade_level
-				 FROM {$wpdb->prefix}sms_enrollments e
-				 INNER JOIN {$wpdb->prefix}sms_students s ON s.id = e.student_id
+				 FROM {$wpdb->prefix}nizamiye_enrollments e
+				 INNER JOIN {$wpdb->prefix}nizamiye_students s ON s.id = e.student_id
 				 WHERE e.term_id = %d AND e.status = 'active' AND s.status = 'active'",
 				$old_term->id
 			) );
@@ -143,18 +143,18 @@ class SMS_Terms {
 				if ( $grade >= $final_grade ) {
 					// Mezun: yeni döneme aktarılmaz, arşivde kalır.
 					$wpdb->update(
-						$wpdb->prefix . 'sms_students',
+						$wpdb->prefix . 'nizamiye_students',
 						array( 'status' => 'graduated' ),
 						array( 'id' => (int) $enr->student_id )
 					);
 					$wpdb->update(
-						$wpdb->prefix . 'sms_enrollments',
+						$wpdb->prefix . 'nizamiye_enrollments',
 						array( 'status' => 'graduated' ),
 						array( 'term_id' => (int) $old_term->id, 'student_id' => (int) $enr->student_id )
 					);
 					$graduated++;
 				} else {
-					$wpdb->insert( $wpdb->prefix . 'sms_enrollments', array(
+					$wpdb->insert( $wpdb->prefix . 'nizamiye_enrollments', array(
 						'student_id'  => (int) $enr->student_id,
 						'term_id'     => $new_term_id,
 						'grade_level' => $grade + 1,

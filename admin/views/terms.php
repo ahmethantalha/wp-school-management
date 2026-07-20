@@ -1,13 +1,13 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-$terms    = SMS_Terms::all();
-$active   = SMS_Terms::active();
-$settings = sms_get_settings();
-$preview  = $active ? SMS_Terms::rollover_preview( (int) $active->id ) : null;
+$terms    = Nizamiye_Terms::all();
+$active   = Nizamiye_Terms::active();
+$settings = nizamiye_get_settings();
+$preview  = $active ? Nizamiye_Terms::rollover_preview( (int) $active->id ) : null;
 ?>
 <div class="wrap sms-wrap">
-	<?php sms_view_header( 'Dönemler', 'Eğitim dönemlerini yönetin; yeni dönem açıldığında öğrenciler otomatik olarak bir üst sınıfa aktarılır.', false ); ?>
+	<?php nizamiye_view_header( 'Dönemler', 'Eğitim dönemlerini yönetin; yeni dönem açıldığında öğrenciler otomatik olarak bir üst sınıfa aktarılır.', false ); ?>
 
 	<div class="sms-grid-2 sms-grid-uneven">
 		<div class="sms-card">
@@ -19,16 +19,16 @@ $preview  = $active ? SMS_Terms::rollover_preview( (int) $active->id ) : null;
 					<?php foreach ( $terms as $t ) : ?>
 						<tr>
 							<td><strong><?php echo esc_html( $t->name ); ?></strong></td>
-							<td class="sms-muted"><?php echo esc_html( sms_format_date( $t->start_date ) . ' – ' . sms_format_date( $t->end_date ) ); ?></td>
-							<td><?php echo (int) SMS_Students::count_for_term( (int) $t->id ); ?></td>
+							<td class="sms-muted"><?php echo esc_html( nizamiye_format_date( $t->start_date ) . ' – ' . nizamiye_format_date( $t->end_date ) ); ?></td>
+							<td><?php echo (int) Nizamiye_Students::count_for_term( (int) $t->id ); ?></td>
 							<td><?php echo $t->is_active ? '<span class="sms-badge sms-badge-green">Aktif</span>' : '<span class="sms-badge">Arşiv</span>'; ?></td>
 							<td class="sms-actions-cell">
 								<?php if ( ! $t->is_active ) : ?>
-									<?php sms_form_open( 'sms_activate_term', 'sms-inline' ); sms_back_url_field(); ?>
+									<?php nizamiye_form_open( 'nizamiye_activate_term', 'sms-inline' ); nizamiye_back_url_field(); ?>
 										<input type="hidden" name="term_id" value="<?php echo (int) $t->id; ?>">
 										<button type="submit" class="sms-btn sms-btn-ghost sms-btn-sm">Aktif Yap</button>
 									</form>
-									<?php sms_form_open( 'sms_delete_term', 'sms-inline sms-confirm' ); sms_back_url_field(); ?>
+									<?php nizamiye_form_open( 'nizamiye_delete_term', 'sms-inline sms-confirm' ); nizamiye_back_url_field(); ?>
 										<input type="hidden" name="term_id" value="<?php echo (int) $t->id; ?>">
 										<button type="submit" class="sms-btn sms-btn-danger-ghost sms-btn-sm" data-confirm="Bu dönemi silmek istediğinize emin misiniz?">Sil</button>
 									</form>
@@ -65,7 +65,7 @@ $preview  = $active ? SMS_Terms::rollover_preview( (int) $active->id ) : null;
 						</div>
 					<?php endif; ?>
 
-					<?php sms_form_open( $active ? 'sms_open_term' : 'sms_save_term' ); sms_back_url_field(); ?>
+					<?php nizamiye_form_open( $active ? 'nizamiye_open_term' : 'nizamiye_save_term' ); nizamiye_back_url_field(); ?>
 						<?php if ( ! $active ) : ?><input type="hidden" name="activate" value="1"><?php endif; ?>
 						<div class="sms-field">
 							<label>Dönem Adı *</label>

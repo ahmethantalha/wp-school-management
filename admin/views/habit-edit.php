@@ -3,29 +3,29 @@ defined( 'ABSPATH' ) || exit;
 
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok.
 $habit_id = isset( $_GET['habit_id'] ) ? (int) $_GET['habit_id'] : 0;
-$habit    = $habit_id ? SMS_Habits::get( $habit_id ) : null;
-$term_id  = $habit ? (int) $habit->term_id : sms_current_term_id();
-$teacher  = sms_is_teacher();
+$habit    = $habit_id ? Nizamiye_Habits::get( $habit_id ) : null;
+$term_id  = $habit ? (int) $habit->term_id : nizamiye_current_term_id();
+$teacher  = nizamiye_is_teacher();
 
 // Öğretmen başkasının alışkanlığını düzenleyemez, ama öğrenci ekleyebilsin diye görüntüleyebilir.
-$can_edit_meta = sms_is_manager() || ! $habit || (int) $habit->created_by === get_current_user_id();
+$can_edit_meta = nizamiye_is_manager() || ! $habit || (int) $habit->created_by === get_current_user_id();
 
-$assigned_ids = $habit ? SMS_Habits::student_ids( $habit_id ) : array();
-$all_students = SMS_Students::query( array( 'term_id' => $term_id, 'status' => 'active' ) );
+$assigned_ids = $habit ? Nizamiye_Habits::student_ids( $habit_id ) : array();
+$all_students = Nizamiye_Students::query( array( 'term_id' => $term_id, 'status' => 'active' ) );
 if ( $teacher ) {
-	$my_ids       = sms_teacher_student_ids();
+	$my_ids       = nizamiye_teacher_student_ids();
 	$all_students = array_values( array_filter( $all_students, function ( $s ) use ( $my_ids, $assigned_ids ) {
 		return in_array( (int) $s->id, $my_ids, true ) || in_array( (int) $s->id, $assigned_ids, true );
 	} ) );
 }
-$grades = SMS_Students::grades_in_term( $term_id );
+$grades = Nizamiye_Students::grades_in_term( $term_id );
 ?>
 <div class="wrap sms-wrap">
-	<?php sms_view_header( $habit ? 'Alışkanlık: ' . $habit->name : 'Yeni Alışkanlık', 'Takip tipini seçin ve öğrencileri atayın.' ); ?>
+	<?php nizamiye_view_header( $habit ? 'Alışkanlık: ' . $habit->name : 'Yeni Alışkanlık', 'Takip tipini seçin ve öğrencileri atayın.' ); ?>
 
-	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-habits&sms_term=' . $term_id ) ); ?>">← Alışkanlık listesine dön</a></p>
+	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-habits&nizamiye_term=' . $term_id ) ); ?>">← Alışkanlık listesine dön</a></p>
 
-	<?php sms_form_open( 'sms_save_habit' ); sms_back_url_field(); ?>
+	<?php nizamiye_form_open( 'nizamiye_save_habit' ); nizamiye_back_url_field(); ?>
 		<input type="hidden" name="habit_id" value="<?php echo (int) $habit_id; ?>">
 		<input type="hidden" name="term_id" value="<?php echo (int) $term_id; ?>">
 
@@ -41,7 +41,7 @@ $grades = SMS_Students::grades_in_term( $term_id );
 						<select data-sms-filter-grade>
 							<option value="">Tüm sınıflar</option>
 							<?php foreach ( $grades as $g ) : ?>
-								<option value="<?php echo (int) $g; ?>"><?php echo esc_html( sms_grade_label( $g ) ); ?></option>
+								<option value="<?php echo (int) $g; ?>"><?php echo esc_html( nizamiye_grade_label( $g ) ); ?></option>
 							<?php endforeach; ?>
 						</select>
 						<button type="button" class="sms-btn sms-btn-ghost sms-btn-sm" data-sms-select-visible>Görünenleri Seç</button>
@@ -49,11 +49,11 @@ $grades = SMS_Students::grades_in_term( $term_id );
 					</div>
 					<div class="sms-roster-list" data-sms-roster>
 						<?php if ( $all_students ) : foreach ( $all_students as $s ) : ?>
-							<label class="sms-roster-item" data-grade="<?php echo (int) ( $s->grade_level ?? 0 ); ?>" data-name="<?php echo esc_attr( mb_strtolower( sms_student_name( $s ) ) ); ?>">
+							<label class="sms-roster-item" data-grade="<?php echo (int) ( $s->grade_level ?? 0 ); ?>" data-name="<?php echo esc_attr( mb_strtolower( nizamiye_student_name( $s ) ) ); ?>">
 								<input type="checkbox" name="student_ids[]" value="<?php echo (int) $s->id; ?>" <?php checked( in_array( (int) $s->id, $assigned_ids, true ) ); ?>>
-								<?php echo sms_avatar( sms_student_name( $s ) ); // phpcs:ignore ?>
-								<span class="sms-roster-name"><?php echo esc_html( sms_student_name( $s ) ); ?></span>
-								<span class="sms-badge sms-badge-indigo"><?php echo esc_html( sms_grade_label( $s->grade_level ?? 0 ) ); ?></span>
+								<?php echo nizamiye_avatar( nizamiye_student_name( $s ) ); // phpcs:ignore ?>
+								<span class="sms-roster-name"><?php echo esc_html( nizamiye_student_name( $s ) ); ?></span>
+								<span class="sms-badge sms-badge-indigo"><?php echo esc_html( nizamiye_grade_label( $s->grade_level ?? 0 ) ); ?></span>
 							</label>
 						<?php endforeach; else : ?>
 							<p class="sms-muted">Bu dönemde atanabilir öğrenci yok.</p>
@@ -106,7 +106,7 @@ $grades = SMS_Students::grades_in_term( $term_id );
 				<?php if ( $habit ) : ?>
 					<div class="sms-card sms-mt">
 						<div class="sms-pad">
-							<a class="sms-btn sms-btn-ghost sms-btn-block" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-habits&view=track&habit_id=' . (int) $habit_id . '&sms_term=' . $term_id ) ); ?>"><span class="dashicons dashicons-edit"></span> Günlük Takip Doldur</a>
+							<a class="sms-btn sms-btn-ghost sms-btn-block" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-habits&view=track&habit_id=' . (int) $habit_id . '&nizamiye_term=' . $term_id ) ); ?>"><span class="dashicons dashicons-edit"></span> Günlük Takip Doldur</a>
 						</div>
 					</div>
 					<?php if ( $can_edit_meta ) : ?>
@@ -124,8 +124,8 @@ $grades = SMS_Students::grades_in_term( $term_id );
 
 	<?php if ( $habit && $can_edit_meta ) : ?>
 		<form id="sms-delete-habit-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sms-confirm">
-			<input type="hidden" name="action" value="sms_delete_habit">
-			<?php wp_nonce_field( 'sms_delete_habit', '_sms_nonce' ); ?>
+			<input type="hidden" name="action" value="nizamiye_delete_habit">
+			<?php wp_nonce_field( 'nizamiye_delete_habit', '_nizamiye_nonce' ); ?>
 			<input type="hidden" name="habit_id" value="<?php echo (int) $habit_id; ?>">
 		</form>
 	<?php endif; ?>

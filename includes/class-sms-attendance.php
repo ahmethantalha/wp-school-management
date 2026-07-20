@@ -2,7 +2,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
-// Bu dosyadaki tüm $wpdb sorguları eklentiye özel tablolar (wp_sms_*) üzerinde çalışır;
+// Bu dosyadaki tüm $wpdb sorguları eklentiye özel tablolar (wp_nizamiye_*) üzerinde çalışır;
 // tüm parametreler $wpdb->prepare() ile bağlanır ya da intval()/whitelist ile temizlenir.
 // WordPress çekirdeğinde özel tablolar için bir soyutlama/önbellekleme API'si olmadığından
 // doğrudan $wpdb kullanımı kaçınılmazdır; bkz. güvenlik incelemesinde doğrulanan analiz.
@@ -10,11 +10,11 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Yoklama kayıtları. Kategori (Ders/Namaz/Temizlik...) + oturum (vakit) + dönem bazlı.
  */
-class SMS_Attendance {
+class Nizamiye_Attendance {
 
 	private static function table() {
 		global $wpdb;
-		return $wpdb->prefix . 'sms_attendance';
+		return $wpdb->prefix . 'nizamiye_attendance';
 	}
 
 	/**
@@ -39,7 +39,7 @@ class SMS_Attendance {
 	 */
 	public static function save_sheet( $term_id, $category_id, $session_id, $class_id, $date, array $entries, $recorded_by ) {
 		global $wpdb;
-		$valid    = array_keys( sms_attendance_statuses() );
+		$valid    = array_keys( nizamiye_attendance_statuses() );
 		$existing = self::sheet( $category_id, $session_id, $class_id, $date );
 
 		foreach ( $entries as $student_id => $entry ) {
@@ -121,7 +121,7 @@ class SMS_Attendance {
 		}
 
 		$out = array();
-		foreach ( SMS_Attendance_Types::categories( false ) as $cat ) {
+		foreach ( Nizamiye_Attendance_Types::categories( false ) as $cat ) {
 			if ( empty( $by_cs[ (int) $cat->id ] ) ) {
 				continue;
 			}
@@ -129,7 +129,7 @@ class SMS_Attendance {
 			$ov_present = 0;
 			$ov_late    = 0;
 			$ov_total   = 0;
-			foreach ( SMS_Attendance_Types::sessions( (int) $cat->id ) as $sess ) {
+			foreach ( Nizamiye_Attendance_Types::sessions( (int) $cat->id ) as $sess ) {
 				$row = $by_cs[ (int) $cat->id ][ (int) $sess->id ] ?? null;
 				if ( ! $row ) {
 					continue;
@@ -249,9 +249,9 @@ class SMS_Attendance {
 		return $wpdb->get_results( $wpdb->prepare(
 			'SELECT a.*, c.name AS class_name, cat.name AS category_name, s.name AS session_name
 			 FROM ' . self::table() . " a
-			 LEFT JOIN {$wpdb->prefix}sms_classes c ON c.id = a.class_id
-			 LEFT JOIN {$wpdb->prefix}sms_att_categories cat ON cat.id = a.category_id
-			 LEFT JOIN {$wpdb->prefix}sms_att_sessions s ON s.id = a.session_id
+			 LEFT JOIN {$wpdb->prefix}nizamiye_classes c ON c.id = a.class_id
+			 LEFT JOIN {$wpdb->prefix}nizamiye_att_categories cat ON cat.id = a.category_id
+			 LEFT JOIN {$wpdb->prefix}nizamiye_att_sessions s ON s.id = a.session_id
 			 WHERE a.student_id = %d AND a.term_id = %d
 			 ORDER BY a.att_date DESC, a.id DESC LIMIT %d",
 			$student_id, $term_id, $limit

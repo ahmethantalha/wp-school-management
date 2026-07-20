@@ -1,16 +1,16 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-$settings = sms_get_settings();
+$settings = nizamiye_get_settings();
 ?>
 <div class="wrap sms-wrap">
-	<?php sms_view_header( 'Ayarlar', 'Kurum bilgileri ve sınıf seviyesi yapılandırması', false ); ?>
+	<?php nizamiye_view_header( 'Ayarlar', 'Kurum bilgileri ve sınıf seviyesi yapılandırması', false ); ?>
 
 	<div class="sms-grid-2 sms-grid-uneven">
 		<div class="sms-card">
 			<div class="sms-card-head"><h2>Genel Ayarlar</h2></div>
 			<div class="sms-pad">
-				<?php sms_form_open( 'sms_save_settings' ); sms_back_url_field(); ?>
+				<?php nizamiye_form_open( 'nizamiye_save_settings' ); nizamiye_back_url_field(); ?>
 					<div class="sms-field">
 						<label>Kurum Adı</label>
 						<input type="text" name="school_name" value="<?php echo esc_attr( $settings['school_name'] ); ?>">

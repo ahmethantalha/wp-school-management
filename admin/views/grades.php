@@ -1,7 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-$term_id = sms_current_term_id();
+$term_id = nizamiye_current_term_id();
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme filtreleri (GET), durum değişikliği yok; her değer sanitize edilir.
 $gview   = isset( $_GET['gview'] ) ? sanitize_key( $_GET['gview'] ) : '';
 $subject = isset( $_GET['subject'] ) ? sanitize_text_field( wp_unslash( $_GET['subject'] ) ) : '';
@@ -14,18 +14,18 @@ if ( $class_id && ! $gview ) {
 }
 
 // Yönetici ve sınıf öğretmeni tüm branşları gezebilir; branş öğretmeni kendi dersliklerini görür.
-$full_browse = sms_is_manager() || sms_is_class_teacher();
-$grades_url  = admin_url( 'admin.php?page=sms-grades&sms_term=' . $term_id );
+$full_browse = nizamiye_is_manager() || nizamiye_is_class_teacher();
+$grades_url  = admin_url( 'admin.php?page=sms-grades&nizamiye_term=' . $term_id );
 
-$class = $class_id ? SMS_Classes::get( $class_id ) : null;
-if ( $class && ! sms_can_view_grades( $class_id ) ) {
+$class = $class_id ? Nizamiye_Classes::get( $class_id ) : null;
+if ( $class && ! nizamiye_can_view_grades( $class_id ) ) {
 	wp_die( 'Bu dersliğin notlarına erişim yetkiniz yok.' );
 }
-$can_manage = $class ? sms_can_manage_class( $class_id ) : false;
+$can_manage = $class ? nizamiye_can_manage_class( $class_id ) : false;
 
-$import_errors = get_transient( 'sms_grade_import_errors_' . get_current_user_id() );
+$import_errors = get_transient( 'nizamiye_grade_import_errors_' . get_current_user_id() );
 if ( $import_errors ) {
-	delete_transient( 'sms_grade_import_errors_' . get_current_user_id() );
+	delete_transient( 'nizamiye_grade_import_errors_' . get_current_user_id() );
 }
 
 /* ============================ NOT GİRİŞİ EKRANI ============================ */
@@ -33,12 +33,12 @@ if ( 'entry' === $gview && $class ) {
 	if ( ! $can_manage ) {
 		wp_die( 'Bu dersliğe not girme yetkiniz yok.' );
 	}
-	$students  = SMS_Classes::students( $class_id );
-	$class_url = add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'class', 'class_id' => $class_id, 'sms_term' => $term_id ), admin_url( 'admin.php' ) );
-	$tpl_base  = wp_nonce_url( add_query_arg( array( 'action' => 'sms_grade_template', 'class_id' => $class_id ), admin_url( 'admin-post.php' ) ), 'sms_grade_template' );
+	$students  = Nizamiye_Classes::students( $class_id );
+	$class_url = add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'class', 'class_id' => $class_id, 'nizamiye_term' => $term_id ), admin_url( 'admin.php' ) );
+	$tpl_base  = wp_nonce_url( add_query_arg( array( 'action' => 'nizamiye_grade_template', 'class_id' => $class_id ), admin_url( 'admin-post.php' ) ), 'nizamiye_grade_template' );
 	?>
 	<div class="wrap sms-wrap">
-		<?php sms_view_header( 'Not Gir: ' . $class->name, 'Sınav bilgilerini doldurun; ardından ister tek tek girin, ister listeyi indirip toplu yükleyin.' ); ?>
+		<?php nizamiye_view_header( 'Not Gir: ' . $class->name, 'Sınav bilgilerini doldurun; ardından ister tek tek girin, ister listeyi indirip toplu yükleyin.' ); ?>
 		<p><a class="sms-back-link" href="<?php echo esc_url( $class_url ); ?>">← Sınav listesine dön</a></p>
 
 		<?php if ( $import_errors ) : ?>
@@ -59,7 +59,7 @@ if ( 'entry' === $gview && $class ) {
 			<div class="sms-card">
 				<div class="sms-card-head"><h2>Sınav Bilgileri ve Not Girişi</h2><span class="sms-muted"><?php echo count( $students ); ?> öğrenci</span></div>
 				<div class="sms-pad">
-					<?php sms_form_open( 'sms_save_grades' ); sms_back_url_field( $class_url ); ?>
+					<?php nizamiye_form_open( 'nizamiye_save_grades' ); nizamiye_back_url_field( $class_url ); ?>
 						<input type="hidden" name="class_id" value="<?php echo (int) $class_id; ?>">
 						<div class="sms-entry-meta">
 							<div class="sms-field"><label>Sınav Adı *</label><input type="text" name="title" placeholder="Örn. 1. Yazılı" required></div>
@@ -91,7 +91,7 @@ if ( 'entry' === $gview && $class ) {
 							<tbody>
 							<?php foreach ( $students as $s ) : ?>
 								<tr>
-									<td class="sms-name-cell"><?php echo sms_avatar( sms_student_name( $s ) ); // phpcs:ignore ?><?php echo esc_html( sms_student_name( $s ) ); ?></td>
+									<td class="sms-name-cell"><?php echo nizamiye_avatar( nizamiye_student_name( $s ) ); // phpcs:ignore ?><?php echo esc_html( nizamiye_student_name( $s ) ); ?></td>
 									<td><input type="number" class="sms-input-sm" name="score[<?php echo (int) $s->id; ?>]" min="0" step="0.01" placeholder="—"></td>
 								</tr>
 							<?php endforeach; ?>
@@ -107,9 +107,9 @@ if ( 'entry' === $gview && $class ) {
 					<h4>Doldurulmuş Listeyi Yükle</h4>
 					<p class="sms-muted">İndirdiğiniz listeyi puanlarla doldurup yükleyin — hemen ya da daha sonra (dosya derslik ve sınav bilgisini taşır). Kimlik, ad-soyad, yetki ve puan aralığı doğrulanır; uyuşmayan satırlar kaydedilmez.</p>
 					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data" class="sms-form">
-						<input type="hidden" name="action" value="sms_grade_import">
-						<?php wp_nonce_field( 'sms_grade_import', '_sms_nonce' ); ?>
-						<?php sms_back_url_field( add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'entry', 'class_id' => $class_id, 'sms_term' => $term_id ), admin_url( 'admin.php' ) ) ); ?>
+						<input type="hidden" name="action" value="nizamiye_grade_import">
+						<?php wp_nonce_field( 'nizamiye_grade_import', '_nizamiye_nonce' ); ?>
+						<?php nizamiye_back_url_field( add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'entry', 'class_id' => $class_id, 'nizamiye_term' => $term_id ), admin_url( 'admin.php' ) ) ); ?>
 						<div class="sms-inline-form">
 							<input type="file" name="grade_file" accept=".xlsx,.csv,.txt" required>
 							<button type="submit" class="sms-btn sms-btn-primary sms-btn-sm"><span class="dashicons dashicons-upload"></span> Yükle</button>
@@ -132,8 +132,8 @@ if ( 'exam' === $gview && $class ) {
 	$exam_date = isset( $_GET['exam_date'] ) ? sanitize_text_field( wp_unslash( $_GET['exam_date'] ) ) : '';
 	$exam_type = isset( $_GET['exam_type'] ) ? sanitize_text_field( wp_unslash( $_GET['exam_type'] ) ) : '';
 	// phpcs:enable WordPress.Security.NonceVerification.Recommended
-	$scores    = $title ? SMS_Grades::exam_scores( $class_id, $title, $exam_date, $exam_type ) : array();
-	$class_url = add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'class', 'class_id' => $class_id, 'sms_term' => $term_id ), admin_url( 'admin.php' ) );
+	$scores    = $title ? Nizamiye_Grades::exam_scores( $class_id, $title, $exam_date, $exam_type ) : array();
+	$class_url = add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'class', 'class_id' => $class_id, 'nizamiye_term' => $term_id ), admin_url( 'admin.php' ) );
 
 	$sum = 0;
 	$max = 0;
@@ -144,7 +144,7 @@ if ( 'exam' === $gview && $class ) {
 	$avg = $scores ? round( $sum / count( $scores ), 1 ) : 0;
 	?>
 	<div class="wrap sms-wrap">
-		<?php sms_view_header( $title ?: 'Sınav', $class->name . ( $exam_type ? ' • ' . $exam_type : '' ) . ( $exam_date ? ' • ' . sms_format_date( $exam_date ) : '' ) ); ?>
+		<?php nizamiye_view_header( $title ?: 'Sınav', $class->name . ( $exam_type ? ' • ' . $exam_type : '' ) . ( $exam_date ? ' • ' . nizamiye_format_date( $exam_date ) : '' ) ); ?>
 		<p><a class="sms-back-link" href="<?php echo esc_url( $class_url ); ?>">← Sınav listesine dön</a></p>
 
 		<div class="sms-card">
@@ -162,12 +162,12 @@ if ( 'exam' === $gview && $class ) {
 						?>
 						<tr>
 							<td class="sms-muted">#<?php echo (int) $i + 1; ?></td>
-							<td class="sms-name-cell"><?php echo sms_avatar( $r->first_name . ' ' . $r->last_name ); // phpcs:ignore ?><strong><?php echo esc_html( $r->first_name . ' ' . $r->last_name ); ?></strong></td>
+							<td class="sms-name-cell"><?php echo nizamiye_avatar( $r->first_name . ' ' . $r->last_name ); // phpcs:ignore ?><strong><?php echo esc_html( $r->first_name . ' ' . $r->last_name ); ?></strong></td>
 							<td><strong><?php echo esc_html( rtrim( rtrim( (string) $r->score, '0' ), '.' ) ); ?></strong> <span class="sms-muted">/ <?php echo esc_html( rtrim( rtrim( (string) $r->max_score, '0' ), '.' ) ); ?></span></td>
-							<td><span class="sms-score <?php echo esc_attr( sms_rate_class( $rate ) ); ?>"><?php echo null !== $rate ? esc_html( $rate . '%' ) : '—'; ?></span></td>
+							<td><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $rate ) ); ?>"><?php echo null !== $rate ? esc_html( $rate . '%' ) : '—'; ?></span></td>
 							<?php if ( $can_manage ) : ?>
 								<td class="sms-actions-cell">
-									<?php sms_form_open( 'sms_delete_grade', 'sms-inline sms-confirm' ); sms_back_url_field(); ?>
+									<?php nizamiye_form_open( 'nizamiye_delete_grade', 'sms-inline sms-confirm' ); nizamiye_back_url_field(); ?>
 										<input type="hidden" name="grade_id" value="<?php echo (int) $r->id; ?>">
 										<button type="submit" class="sms-btn sms-btn-danger-ghost sms-btn-sm" data-confirm="Bu not silinsin mi?">Sil</button>
 									</form>
@@ -189,20 +189,20 @@ if ( 'exam' === $gview && $class ) {
 
 /* ============================ DERSLİĞİN SINAVLARI ============================ */
 if ( 'class' === $gview && $class ) {
-	$exams    = SMS_Grades::exams_for_class( $class_id );
+	$exams    = Nizamiye_Grades::exams_for_class( $class_id );
 	$teacher_u = $class->teacher_id ? get_userdata( (int) $class->teacher_id ) : null;
 	$back_url  = $full_browse
-		? add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'subject', 'subject' => ( trim( (string) $class->subject ) ?: 'Diğer' ), 'sms_term' => $term_id ), admin_url( 'admin.php' ) )
+		? add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'subject', 'subject' => ( trim( (string) $class->subject ) ?: 'Diğer' ), 'nizamiye_term' => $term_id ), admin_url( 'admin.php' ) )
 		: $grades_url;
 	?>
 	<div class="wrap sms-wrap">
-		<?php sms_view_header( 'Notlar: ' . $class->name, ( $class->subject ?: 'Branş belirtilmedi' ) . ( $class->grade_level ? ' • ' . sms_grade_label( $class->grade_level ) : '' ) . ( $teacher_u ? ' • ' . $teacher_u->display_name : '' ) ); ?>
+		<?php nizamiye_view_header( 'Notlar: ' . $class->name, ( $class->subject ?: 'Branş belirtilmedi' ) . ( $class->grade_level ? ' • ' . nizamiye_grade_label( $class->grade_level ) : '' ) . ( $teacher_u ? ' • ' . $teacher_u->display_name : '' ) ); ?>
 		<p><a class="sms-back-link" href="<?php echo esc_url( $back_url ); ?>">← Geri</a></p>
 
 		<?php if ( $can_manage ) : ?>
 			<div class="sms-toolbar">
 				<span></span>
-				<a class="sms-btn sms-btn-primary" href="<?php echo esc_url( add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'entry', 'class_id' => $class_id, 'sms_term' => $term_id ), admin_url( 'admin.php' ) ) ); ?>">
+				<a class="sms-btn sms-btn-primary" href="<?php echo esc_url( add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'entry', 'class_id' => $class_id, 'nizamiye_term' => $term_id ), admin_url( 'admin.php' ) ) ); ?>">
 					<span class="dashicons dashicons-plus-alt2"></span> Not Gir
 				</a>
 			</div>
@@ -223,15 +223,15 @@ if ( 'class' === $gview && $class ) {
 							'title'     => $e->title,
 							'exam_date' => (string) $e->exam_date,
 							'exam_type' => $e->exam_type,
-							'sms_term'  => $term_id,
+							'nizamiye_term'  => $term_id,
 						), admin_url( 'admin.php' ) );
 						?>
 						<tr>
 							<td><a href="<?php echo esc_url( $exam_url ); ?>"><strong><?php echo esc_html( $e->title ); ?></strong></a></td>
 							<td><span class="sms-badge sms-badge-indigo"><?php echo esc_html( $e->exam_type ?: '—' ); ?></span></td>
-							<td class="sms-muted"><?php echo esc_html( sms_format_date( $e->exam_date ) ); ?></td>
+							<td class="sms-muted"><?php echo esc_html( nizamiye_format_date( $e->exam_date ) ); ?></td>
 							<td><?php echo (int) $e->cnt; ?></td>
-							<td><span class="sms-score <?php echo esc_attr( sms_rate_class( (int) $e->avg_rate ) ); ?>"><?php echo esc_html( $e->avg_score ); ?></span> <span class="sms-muted">/ <?php echo esc_html( rtrim( rtrim( (string) $e->max_score, '0' ), '.' ) ); ?> (%<?php echo (int) $e->avg_rate; ?>)</span></td>
+							<td><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( (int) $e->avg_rate ) ); ?>"><?php echo esc_html( $e->avg_score ); ?></span> <span class="sms-muted">/ <?php echo esc_html( rtrim( rtrim( (string) $e->max_score, '0' ), '.' ) ); ?> (%<?php echo (int) $e->avg_rate; ?>)</span></td>
 							<td class="sms-actions-cell"><a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( $exam_url ); ?>">Öğrenci Bazında</a></td>
 						</tr>
 					<?php endforeach; ?>
@@ -253,16 +253,16 @@ if ( 'class' === $gview && $class ) {
 
 /* ============================ BRANŞIN DERSLİKLERİ ============================ */
 if ( 'subject' === $gview && $full_browse ) {
-	$classes = $term_id && $subject ? SMS_Grades::classes_for_subject( $term_id, $subject ) : array();
+	$classes = $term_id && $subject ? Nizamiye_Grades::classes_for_subject( $term_id, $subject ) : array();
 	?>
 	<div class="wrap sms-wrap">
-		<?php sms_view_header( 'Notlar: ' . $subject, 'Derslik seçin; sınav listesine ulaşın.' ); ?>
+		<?php nizamiye_view_header( 'Notlar: ' . $subject, 'Derslik seçin; sınav listesine ulaşın.' ); ?>
 		<p><a class="sms-back-link" href="<?php echo esc_url( $grades_url ); ?>">← Branşlara dön</a></p>
 
 		<?php if ( $classes ) : ?>
 			<div class="sms-cat-grid">
 				<?php foreach ( $classes as $c ) : $t = $c->teacher_id ? get_userdata( (int) $c->teacher_id ) : null; ?>
-					<a class="sms-cat-card" href="<?php echo esc_url( add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'class', 'class_id' => (int) $c->id, 'sms_term' => $term_id ), admin_url( 'admin.php' ) ) ); ?>">
+					<a class="sms-cat-card" href="<?php echo esc_url( add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'class', 'class_id' => (int) $c->id, 'nizamiye_term' => $term_id ), admin_url( 'admin.php' ) ) ); ?>">
 						<span class="sms-cat-icon"><span class="dashicons dashicons-book-alt"></span></span>
 						<span class="sms-cat-name"><?php echo esc_html( $c->name ); ?></span>
 						<span class="sms-cat-meta"><?php echo $t ? esc_html( $t->display_name ) : 'Öğretmen atanmadı'; ?> • <?php echo (int) $c->exam_count; ?> sınav</span>
@@ -280,16 +280,16 @@ if ( 'subject' === $gview && $full_browse ) {
 /* ============================ GİRİŞ: BRANŞLAR / KENDİ DERSLİKLERİ ============================ */
 ?>
 <div class="wrap sms-wrap">
-	<?php sms_view_header( 'Notlar', $full_browse ? 'Branş seçin; derslik ve sınavlara ulaşın.' : 'Dersliğinizi seçin; sınav listesine ulaşın.' ); ?>
+	<?php nizamiye_view_header( 'Notlar', $full_browse ? 'Branş seçin; derslik ve sınavlara ulaşın.' : 'Dersliğinizi seçin; sınav listesine ulaşın.' ); ?>
 
 	<?php if ( ! $term_id ) : ?>
 		<div class="sms-card"><div class="sms-empty"><span class="dashicons dashicons-calendar-alt"></span><h2>Aktif dönem yok</h2></div></div>
 	<?php elseif ( $full_browse ) : ?>
-		<?php $subjects = SMS_Grades::subjects_for_term( $term_id ); ?>
+		<?php $subjects = Nizamiye_Grades::subjects_for_term( $term_id ); ?>
 		<?php if ( $subjects ) : ?>
 			<div class="sms-cat-grid">
 				<?php foreach ( $subjects as $s ) : ?>
-					<a class="sms-cat-card" href="<?php echo esc_url( add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'subject', 'subject' => $s->subject, 'sms_term' => $term_id ), admin_url( 'admin.php' ) ) ); ?>">
+					<a class="sms-cat-card" href="<?php echo esc_url( add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'subject', 'subject' => $s->subject, 'nizamiye_term' => $term_id ), admin_url( 'admin.php' ) ) ); ?>">
 						<span class="sms-cat-icon"><span class="sms-subject-initial"><?php echo esc_html( mb_strtoupper( mb_substr( $s->subject, 0, 2 ) ) ); ?></span></span>
 						<span class="sms-cat-name"><?php echo esc_html( $s->subject ); ?></span>
 						<span class="sms-cat-meta"><?php echo (int) $s->class_count; ?> derslik • <?php echo (int) $s->grade_count; ?> not kaydı</span>
@@ -300,11 +300,11 @@ if ( 'subject' === $gview && $full_browse ) {
 			<div class="sms-card"><div class="sms-empty"><span class="dashicons dashicons-book-alt"></span><h2>Derslik yok</h2><p>Önce Derslikler sayfasından derslik oluşturun.</p></div></div>
 		<?php endif; ?>
 	<?php else : ?>
-		<?php $classes = SMS_Classes::for_term( $term_id, get_current_user_id() ); ?>
+		<?php $classes = Nizamiye_Classes::for_term( $term_id, get_current_user_id() ); ?>
 		<?php if ( $classes ) : ?>
 			<div class="sms-cat-grid">
 				<?php foreach ( $classes as $c ) : ?>
-					<a class="sms-cat-card" href="<?php echo esc_url( add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'class', 'class_id' => (int) $c->id, 'sms_term' => $term_id ), admin_url( 'admin.php' ) ) ); ?>">
+					<a class="sms-cat-card" href="<?php echo esc_url( add_query_arg( array( 'page' => 'sms-grades', 'gview' => 'class', 'class_id' => (int) $c->id, 'nizamiye_term' => $term_id ), admin_url( 'admin.php' ) ) ); ?>">
 						<span class="sms-cat-icon"><span class="dashicons dashicons-book-alt"></span></span>
 						<span class="sms-cat-name"><?php echo esc_html( $c->name ); ?></span>
 						<span class="sms-cat-meta"><?php echo (int) $c->student_count; ?> öğrenci</span>

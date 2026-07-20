@@ -3,19 +3,19 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Tek bir öğrencinin karne içeriği (yalnızca gövde — <html>/<head>/<body> sarmalayıcısı yok).
- * student-report-print.php bu parçayı sarmalar; toplu indirmede (SMS_Actions::handle_print_report_bulk)
+ * student-report-print.php bu parçayı sarmalar; toplu indirmede (Nizamiye_Actions::handle_print_report_bulk)
  * her öğrenci için ayrı ayrı PDF üretilirken aynı şablon döngü içinde tekrar kullanılır.
  * Beklenen: $student_id, $term_id tanımlı.
  */
 
-$report  = SMS_Reports::student_report( $student_id, $term_id );
+$report  = Nizamiye_Reports::student_report( $student_id, $term_id );
 $student = $report['student'];
 if ( ! $student ) {
 	return;
 }
 
-$settings = sms_get_settings();
-$term     = SMS_Terms::get( $term_id );
+$settings = nizamiye_get_settings();
+$term     = Nizamiye_Terms::get( $term_id );
 $att      = $report['att_all'];
 
 $habit_rates = array_filter( array_map( function ( $h ) {
@@ -55,16 +55,16 @@ $rate_color = function ( $v ) {
 <table class="identity"><tr>
 	<td class="avatar-cell">
 		<div class="avatar"><?php
-			$parts = preg_split( '/\s+/', trim( sms_student_name( $student ) ) );
+			$parts = preg_split( '/\s+/', trim( nizamiye_student_name( $student ) ) );
 			echo esc_html( mb_strtoupper( mb_substr( $parts[0] ?? '', 0, 1 ) . mb_substr( $parts[ count( $parts ) - 1 ] ?? '', 0, 1 ) ) );
 		?></div>
 	</td>
 	<td>
-		<p class="name"><?php echo esc_html( sms_student_name( $student ) ); ?></p>
+		<p class="name"><?php echo esc_html( nizamiye_student_name( $student ) ); ?></p>
 		<div class="sub">
-			<?php echo $report['enrollment'] ? esc_html( sms_grade_label( $report['enrollment']->grade_level ) ) . ' • ' : ''; ?>
+			<?php echo $report['enrollment'] ? esc_html( nizamiye_grade_label( $report['enrollment']->grade_level ) ) . ' • ' : ''; ?>
 			<?php echo $student->school ? esc_html( $student->school ) . ' • ' : ''; ?>
-			<?php echo $student->birth_date ? 'Doğum: ' . esc_html( sms_format_date( $student->birth_date ) ) . ' • ' : ''; ?>
+			<?php echo $student->birth_date ? 'Doğum: ' . esc_html( nizamiye_format_date( $student->birth_date ) ) . ' • ' : ''; ?>
 			<?php echo $parent ? 'Veli: ' . esc_html( $parent->display_name ) : ''; ?>
 		</div>
 	</td>
@@ -104,7 +104,7 @@ $rate_color = function ( $v ) {
 		<?php foreach ( $report['habits'] as $h ) : ?>
 			<tr>
 				<td><?php echo esc_html( $h->name ); ?></td>
-				<td><?php echo esc_html( sms_habit_track_type_label( $h ) ); ?></td>
+				<td><?php echo esc_html( nizamiye_habit_track_type_label( $h ) ); ?></td>
 				<td class="center" style="color:<?php echo esc_attr( $rate_color( $h->log_count > 0 ? (int) $h->rate : null ) ); ?>"><?php echo $h->log_count > 0 ? (int) $h->rate . '%' : '—'; ?></td>
 			</tr>
 		<?php endforeach; ?>
