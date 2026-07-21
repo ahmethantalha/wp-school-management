@@ -2,8 +2,7 @@
 defined( 'ABSPATH' ) || exit;
 
 $categories = Nizamiye_Attendance_Types::categories( false );
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok.
-$edit_id    = isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
+$edit_id    = nizamiye_verify_view_nonce() && isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
 $edit       = $edit_id ? Nizamiye_Attendance_Types::get_category( $edit_id ) : null;
 
 // Kullanılabilir dashicon seçenekleri.
@@ -33,7 +32,7 @@ $edit_grades  = $edit ? Nizamiye_Attendance_Types::get_grade_levels( (int) $edit
 							<?php endif; ?>
 						</h2>
 						<div class="sms-actions-cell">
-							<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-att-types&cat=' . (int) $cat->id ) ); ?>">Adı Düzenle</a>
+							<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-att-types&cat=' . (int) $cat->id ) ) ); ?>">Adı Düzenle</a>
 							<?php if ( ! $cat->is_system ) : ?>
 								<?php nizamiye_form_open( 'nizamiye_delete_category', 'sms-inline sms-confirm' ); nizamiye_back_url_field( admin_url( 'admin.php?page=nizamiye-att-types' ) ); ?>
 									<input type="hidden" name="category_id" value="<?php echo (int) $cat->id; ?>">

@@ -12,25 +12,26 @@ $teacher = nizamiye_is_teacher();
 $term    = $term_id ? Nizamiye_Terms::get( $term_id ) : null;
 
 /* ---------- Filtre parametreleri ---------- */
-// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme filtreleri (GET), durum değişikliği yok; her değer sanitize/whitelist edilir.
-$rtype  = isset( $_GET['rtype'] ) ? sanitize_key( $_GET['rtype'] ) : 'yoklama';
+// Nonce eksik/geçersizse (ör. eski bir yer imi) filtreler yok sayılır, varsayılan görünüm yüklenir.
+$has_nonce = nizamiye_verify_view_nonce();
+$rtype  = $has_nonce && isset( $_GET['rtype'] ) ? sanitize_key( $_GET['rtype'] ) : 'yoklama';
 if ( ! in_array( $rtype, array( 'yoklama', 'aliskanlik', 'not', 'genel' ), true ) ) {
 	$rtype = 'yoklama';
 }
-$group  = isset( $_GET['group'] ) && 'sinif' === $_GET['group'] ? 'sinif' : 'ogrenci';
-$grade  = isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
-$metric = isset( $_GET['metric'] ) ? sanitize_key( $_GET['metric'] ) : 'rate';
+$group  = $has_nonce && isset( $_GET['group'] ) && 'sinif' === $_GET['group'] ? 'sinif' : 'ogrenci';
+$grade  = $has_nonce && isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
+$metric = $has_nonce && isset( $_GET['metric'] ) ? sanitize_key( $_GET['metric'] ) : 'rate';
 if ( ! in_array( $metric, array( 'rate', 'present', 'absent', 'late', 'excused' ), true ) ) {
 	$metric = 'rate';
 }
 
 $namaz  = Nizamiye_Attendance_Types::get_category_by_slug( 'namaz' );
-$cat_id = isset( $_GET['cat'] ) ? (int) $_GET['cat'] : ( $namaz ? (int) $namaz->id : 0 );
+$cat_id = $has_nonce && isset( $_GET['cat'] ) ? (int) $_GET['cat'] : ( $namaz ? (int) $namaz->id : 0 );
 
 // Oturum (vakit) odağı: 0 = tüm oturumlar (matris), aksi halde tek vakte kırılım.
 $cat_sessions   = $cat_id ? Nizamiye_Attendance_Types::sessions( $cat_id ) : array();
 $valid_sess_ids = array_map( function ( $s ) { return (int) $s->id; }, $cat_sessions );
-$sess_id        = isset( $_GET['rsession'] ) ? (int) $_GET['rsession'] : 0;
+$sess_id        = $has_nonce && isset( $_GET['rsession'] ) ? (int) $_GET['rsession'] : 0;
 if ( $sess_id && ! in_array( $sess_id, $valid_sess_ids, true ) ) {
 	$sess_id = 0; // kategoriye ait olmayan (bayat) oturum seçimini sıfırla.
 }
@@ -41,7 +42,6 @@ foreach ( $cat_sessions as $s ) {
 		break;
 	}
 }
-// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 $default_from = $term && $term->start_date && '0000-00-00' !== $term->start_date
 	? $term->start_date
@@ -122,6 +122,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 	<div class="sms-card">
 		<div class="sms-pad">
 			<form method="get" class="sms-filters">
+				<?php nizamiye_view_nonce_field(); ?>
 				<input type="hidden" name="page" value="nizamiye-reports">
 				<input type="hidden" name="rtype" value="<?php echo esc_attr( $rtype ); ?>">
 				<?php if ( $term_id ) : ?><input type="hidden" name="nizamiye_term" value="<?php echo (int) $term_id; ?>"><?php endif; ?>
@@ -284,7 +285,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 							<tr>
 								<td class="sms-name-cell">
 									<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $st ) ) ); ?>
-									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
+									<div><a href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
 									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( nizamiye_grade_label( $st->grade_level ) ) : ''; ?></span></div>
 								</td>
 								<?php echo wp_kses_post( $focus_cells( $row['cells'][ $sess_id ] ) ); ?>
@@ -326,7 +327,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 							<tr>
 								<td class="sms-name-cell">
 									<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $st ) ) ); ?>
-									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
+									<div><a href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
 									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( nizamiye_grade_label( $st->grade_level ) ) : ''; ?></span></div>
 								</td>
 								<?php foreach ( $sessions as $s ) : $cell = $row['cells'][ (int) $s->id ]; $v = $cell_value( $cell ); ?>
@@ -420,7 +421,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 							<tr>
 								<td class="sms-name-cell">
 									<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $st ) ) ); ?>
-									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
+									<div><a href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
 									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( nizamiye_grade_label( $st->grade_level ) ) : ''; ?></span></div>
 								</td>
 								<?php foreach ( $habits as $h ) : $cell = $row['cells'][ (int) $h->id ]; ?>
@@ -514,7 +515,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 							<tr>
 								<td class="sms-name-cell">
 									<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $st ) ) ); ?>
-									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
+									<div><a href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
 									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( nizamiye_grade_label( $st->grade_level ) ) : ''; ?></span></div>
 								</td>
 								<?php foreach ( $classes as $c ) : $cell = $row['cells'][ (int) $c->id ]; ?>
@@ -591,7 +592,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 						<?php foreach ( $scores as $i => $row ) : $s = $row['student']; ?>
 							<tr>
 								<td class="sms-muted">#<?php echo (int) $i + 1; ?></td>
-								<td class="sms-name-cell"><?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $s ) ) ); ?><a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $s ) ); ?></strong></a></td>
+								<td class="sms-name-cell"><?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $s ) ) ); ?><a href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $s ) ); ?></strong></a></td>
 								<td><?php echo isset( $s->grade_level ) ? esc_html( nizamiye_grade_label( $s->grade_level ) ) : '—'; ?></td>
 								<td class="sms-center"><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['attendance'] ) ); ?>"><?php echo null !== $row['attendance'] ? esc_html( $row['attendance'] . '%' ) : '—'; ?></span></td>
 								<td class="sms-center"><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? esc_html( $row['habit'] . '%' ) : '—'; ?></span></td>

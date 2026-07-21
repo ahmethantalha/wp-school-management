@@ -1,8 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET) sekmesi, durum değişikliği yok.
-$tab     = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'students';
+$tab     = nizamiye_verify_view_nonce() && isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'students';
 $term_id = nizamiye_current_term_id();
 $tabs    = array(
 	'students' => array( 'Öğrenciler', 'dashicons-groups' ),

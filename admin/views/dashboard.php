@@ -95,7 +95,7 @@ $settings = nizamiye_get_settings();
 						<li>
 							<span class="sms-rank">#<?php echo (int) $i + 1; ?></span>
 							<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $st ) ) ); ?>
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><?php echo esc_html( nizamiye_student_name( $st ) ); ?></a>
+							<a href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ) ); ?>"><?php echo esc_html( nizamiye_student_name( $st ) ); ?></a>
 							<span class="sms-score sms-rate-good"><?php echo (int) $row['score']; ?></span>
 						</li>
 					<?php endforeach; ?>
@@ -112,7 +112,7 @@ $settings = nizamiye_get_settings();
 					<?php foreach ( $bottom as $row ) : $st = $row['student']; ?>
 						<li>
 							<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $st ) ) ); ?>
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><?php echo esc_html( nizamiye_student_name( $st ) ); ?></a>
+							<a href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ) ); ?>"><?php echo esc_html( nizamiye_student_name( $st ) ); ?></a>
 							<span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['score'] ) ); ?>"><?php echo (int) $row['score']; ?></span>
 						</li>
 					<?php endforeach; ?>

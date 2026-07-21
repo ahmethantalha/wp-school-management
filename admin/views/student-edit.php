@@ -5,8 +5,7 @@ if ( ! nizamiye_is_manager() ) {
 	wp_die( 'Öğrenci düzenleme yetkiniz yok.' );
 }
 
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok; yetki üstte nizamiye_is_manager() ile kontrol edilir.
-$student_id = isset( $_GET['student'] ) ? (int) $_GET['student'] : 0;
+$student_id = nizamiye_verify_view_nonce() && isset( $_GET['student'] ) ? (int) $_GET['student'] : 0;
 $student    = $student_id ? Nizamiye_Students::get( $student_id ) : null;
 $term_id    = nizamiye_current_term_id();
 $enrollment = $student ? Nizamiye_Students::enrollment( $student_id, $term_id ) : null;
@@ -95,7 +94,7 @@ $linked_user = $student && $student->user_id ? get_userdata( (int) $student->use
 						<?php if ( $classes ) : ?>
 							<ul class="sms-mini-list">
 								<?php foreach ( $classes as $c ) : ?>
-									<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-classes&view=edit&class_id=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>"><?php echo esc_html( $c->name ); ?></a></li>
+									<li><a href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-classes&view=edit&class_id=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ) ); ?>"><?php echo esc_html( $c->name ); ?></a></li>
 								<?php endforeach; ?>
 							</ul>
 						<?php else : ?>

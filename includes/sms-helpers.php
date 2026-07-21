@@ -1,6 +1,32 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
+/**
+ * Salt görüntüleme amaçlı (GET) iç bağlantılar/formlar için ortak nonce.
+ * Durum değiştirmez; nonce eksik/geçersizse (ör. eski bir yer imi) ilgili
+ * filtre/parametre yok sayılır ve sayfa varsayılan görünümle yüklenir —
+ * sert bir hataya (wp_die) düşülmez.
+ */
+function nizamiye_view_nonce_url( $url ) {
+	return wp_nonce_url( $url, 'nizamiye_view' );
+}
+
+/**
+ * wp_nonce_url() ile aynı işi görür ama HTML kaçışlaması (esc_html, &amp;) yapmaz —
+ * wp_safe_redirect() gibi ham URL bekleyen bağlamlarda (ör. self::back() hedefi) kullanılır.
+ */
+function nizamiye_view_nonce_url_raw( $url ) {
+	return add_query_arg( '_wpnonce', wp_create_nonce( 'nizamiye_view' ), $url );
+}
+
+function nizamiye_view_nonce_field() {
+	wp_nonce_field( 'nizamiye_view', '_wpnonce', false );
+}
+
+function nizamiye_verify_view_nonce() {
+	return isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' );
+}
+
 /** Eklenti ayarlarını varsayılanlarla birlikte döndürür. */
 function nizamiye_get_settings() {
 	$defaults = array(
@@ -25,14 +51,12 @@ function nizamiye_active_term() {
  * Görüntülenen dönem: ?nizamiye_term=ID parametresi varsa o, yoksa aktif dönem.
  */
 function nizamiye_current_term_id() {
-	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme parametresi, durum değişikliği yok.
-	if ( isset( $_GET['nizamiye_term'] ) && (int) $_GET['nizamiye_term'] > 0 ) {
+	if ( nizamiye_verify_view_nonce() && isset( $_GET['nizamiye_term'] ) && (int) $_GET['nizamiye_term'] > 0 ) {
 		$term = Nizamiye_Terms::get( (int) $_GET['nizamiye_term'] );
 		if ( $term ) {
 			return (int) $term->id;
 		}
 	}
-	// phpcs:enable WordPress.Security.NonceVerification.Recommended
 	$active = nizamiye_active_term();
 	return $active ? (int) $active->id : 0;
 }
@@ -257,14 +281,21 @@ function nizamiye_month_names() {
  * (ay=0 ise seçili yılın tamamı). Reports.php ile export handler'ının aynı
  * mantığı kullanmasını sağlar, ikisi arasında sürüklenmeyi önler.
  */
-// phpcs:disable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- salt görüntüleme/dışa aktarma filtreleri (GET), durum değişikliği yok; ham değer yalnızca regex biçim doğrulaması için okunur, kullanılan değer sanitize_text_field(wp_unslash()) ile temizlenir.
-function nizamiye_resolve_report_dates( $default_from = '' ) {
-	$mode     = isset( $_GET['datemode'] ) && 'month' === $_GET['datemode'] ? 'month' : 'range';
-	$cur_year = (int) current_time( 'Y' );
+/**
+ * $check_nonce=true (varsayılan, reports.php) 'nizamiye_view' nonce'unu arar.
+ * handle_export_report() gibi zaten kendi (daha dar kapsamlı) nonce'uyla
+ * doğrulanmış admin-post işleyicileri $check_nonce=false geçer; aksi halde
+ * farklı bir action için üretilmiş nonce burada geçersiz sayılır ve tarih
+ * filtresi sessizce sıfırlanırdı.
+ */
+function nizamiye_resolve_report_dates( $default_from = '', $check_nonce = true ) {
+	$has_nonce = ! $check_nonce || nizamiye_verify_view_nonce();
+	$mode      = $has_nonce && isset( $_GET['datemode'] ) && 'month' === $_GET['datemode'] ? 'month' : 'range';
+	$cur_year  = (int) current_time( 'Y' );
 
 	if ( 'month' === $mode ) {
-		$month = isset( $_GET['rmonth'] ) ? max( 0, min( 12, (int) $_GET['rmonth'] ) ) : 0;
-		$year  = isset( $_GET['ryear'] ) ? max( 2000, min( 2100, (int) $_GET['ryear'] ) ) : $cur_year;
+		$month = $has_nonce && isset( $_GET['rmonth'] ) ? max( 0, min( 12, (int) $_GET['rmonth'] ) ) : 0;
+		$year  = $has_nonce && isset( $_GET['ryear'] ) ? max( 2000, min( 2100, (int) $_GET['ryear'] ) ) : $cur_year;
 		if ( $month > 0 ) {
 			$from = sprintf( '%04d-%02d-01', $year, $month );
 			$to   = gmdate( 'Y-m-t', strtotime( $from ) );
@@ -275,16 +306,15 @@ function nizamiye_resolve_report_dates( $default_from = '' ) {
 		return array( 'mode' => 'month', 'month' => $month, 'year' => $year, 'from' => $from, 'to' => $to );
 	}
 
-	$from = isset( $_GET['from'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['from'] ) )
+	$from = $has_nonce && isset( $_GET['from'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['from'] ) )
 		? sanitize_text_field( wp_unslash( $_GET['from'] ) )
 		: ( $default_from ?: gmdate( 'Y-m-d', strtotime( '-29 days', current_time( 'timestamp' ) ) ) );
-	$to   = isset( $_GET['to'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['to'] ) )
+	$to   = $has_nonce && isset( $_GET['to'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['to'] ) )
 		? sanitize_text_field( wp_unslash( $_GET['to'] ) )
 		: current_time( 'Y-m-d' );
 
 	return array( 'mode' => 'range', 'month' => 0, 'year' => $cur_year, 'from' => $from, 'to' => $to );
 }
-// phpcs:enable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 /**
  * Karne PDF'lerinin paylaştığı CSS. Dompdf (sunucu taraflı PDF motoru) tarafından
@@ -359,14 +389,15 @@ function nizamiye_users_by_role( $role ) {
 
 /** Sayfa içi başarı/hata bildirimini yazdırır (?nizamiye_msg & ?nizamiye_err). */
 function nizamiye_render_notices() {
-	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok; çıktı esc_html ile kaçışlanır.
+	if ( ! nizamiye_verify_view_nonce() ) {
+		return;
+	}
 	if ( ! empty( $_GET['nizamiye_msg'] ) ) {
 		echo '<div class="sms-notice sms-notice-success"><span class="dashicons dashicons-yes-alt"></span>' . esc_html( sanitize_text_field( wp_unslash( $_GET['nizamiye_msg'] ) ) ) . '</div>';
 	}
 	if ( ! empty( $_GET['nizamiye_err'] ) ) {
 		echo '<div class="sms-notice sms-notice-error"><span class="dashicons dashicons-warning"></span>' . esc_html( sanitize_text_field( wp_unslash( $_GET['nizamiye_err'] ) ) ) . '</div>';
 	}
-	// phpcs:enable WordPress.Security.NonceVerification.Recommended
 }
 
 /** Ortak sayfa başlığı + dönem seçici (+ sınırlı kullanıcılar için hesap çipi). */
@@ -382,14 +413,20 @@ function nizamiye_view_header( $title, $subtitle = '', $show_term_picker = true 
 	echo '<div class="sms-head-tools">';
 	if ( $show_term_picker && $terms ) {
 		echo '<form method="get" class="sms-term-picker">';
-		// Mevcut sayfa parametrelerini koru.
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET) parametrelerini forma taşır, durum değişikliği yok; çıktı esc_attr ile kaçışlanır.
-		foreach ( array( 'page', 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'rsession', 'tab', 'rtype', 'group', 'grade', 'metric', 'from', 'to', 'datemode', 'rmonth', 'ryear', 'gview', 'subject', 'title', 'exam_date', 'exam_type' ) as $keep ) {
-			if ( isset( $_GET[ $keep ] ) ) {
-				echo '<input type="hidden" name="' . esc_attr( $keep ) . '" value="' . esc_attr( sanitize_text_field( wp_unslash( $_GET[ $keep ] ) ) ) . '">';
+		nizamiye_view_nonce_field();
+		// 'page' WordPress'in kendi menü yönlendirmesidir (nonce taşımaz), her zaman korunur.
+		if ( isset( $_GET['page'] ) ) {
+			echo '<input type="hidden" name="page" value="' . esc_attr( sanitize_key( $_GET['page'] ) ) . '">';
+		}
+		// Diğer parametreler yalnızca geçerli bir görüntüleme nonce'u varsa korunur
+		// (aksi halde bu değerler zaten sayfanın kendisinde de yok sayılmış demektir).
+		if ( nizamiye_verify_view_nonce() ) {
+			foreach ( array( 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'rsession', 'tab', 'rtype', 'group', 'grade', 'metric', 'from', 'to', 'datemode', 'rmonth', 'ryear', 'gview', 'subject', 'title', 'exam_date', 'exam_type' ) as $keep ) {
+				if ( isset( $_GET[ $keep ] ) ) {
+					echo '<input type="hidden" name="' . esc_attr( $keep ) . '" value="' . esc_attr( sanitize_text_field( wp_unslash( $_GET[ $keep ] ) ) ) . '">';
+				}
 			}
 		}
-		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		echo '<label>Dönem</label><select name="nizamiye_term" onchange="this.form.submit()">';
 		foreach ( $terms as $t ) {
 			printf(

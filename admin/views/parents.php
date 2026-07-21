@@ -3,8 +3,7 @@ defined( 'ABSPATH' ) || exit;
 
 $parents = nizamiye_users_by_role( 'nizamiye_parent' );
 $term_id = nizamiye_current_term_id();
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok.
-$edit_id = isset( $_GET['user'] ) ? (int) $_GET['user'] : 0;
+$edit_id = nizamiye_verify_view_nonce() && isset( $_GET['user'] ) ? (int) $_GET['user'] : 0;
 $edit    = $edit_id ? get_userdata( $edit_id ) : null;
 if ( $edit && ! in_array( 'nizamiye_parent', (array) $edit->roles, true ) ) {
 	$edit = null;
@@ -27,14 +26,14 @@ if ( $edit && ! in_array( 'nizamiye_parent', (array) $edit->roles, true ) ) {
 							<td>
 								<?php if ( $children ) : ?>
 									<?php foreach ( $children as $c ) : ?>
-										<a class="sms-badge sms-badge-indigo" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>"><?php echo esc_html( nizamiye_student_name( $c ) ); ?></a>
+										<a class="sms-badge sms-badge-indigo" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ) ); ?>"><?php echo esc_html( nizamiye_student_name( $c ) ); ?></a>
 									<?php endforeach; ?>
 								<?php else : ?>
 									<span class="sms-muted">—</span>
 								<?php endif; ?>
 							</td>
 							<td class="sms-actions-cell">
-								<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-parents&user=' . (int) $p->ID ) ); ?>">Düzenle</a>
+								<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-parents&user=' . (int) $p->ID ) ) ); ?>">Düzenle</a>
 								<?php nizamiye_form_open( 'nizamiye_delete_user', 'sms-inline sms-confirm' ); nizamiye_back_url_field( admin_url( 'admin.php?page=nizamiye-parents' ) ); ?>
 									<input type="hidden" name="user_id" value="<?php echo (int) $p->ID; ?>">
 									<button type="submit" class="sms-btn sms-btn-danger-ghost sms-btn-sm" data-confirm="Veli hesabı silinecek; öğrencilerin veli bağı kaldırılır. Emin misiniz?">Sil</button>

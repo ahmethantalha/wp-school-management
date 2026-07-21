@@ -2,11 +2,10 @@
 defined( 'ABSPATH' ) || exit;
 
 $term_id = nizamiye_current_term_id();
-// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme filtreleri (GET), durum değişikliği yok.
-$cat_id  = isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
-$sess_id = isset( $_GET['session'] ) ? (int) $_GET['session'] : 0;
-$class_id = isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
-// phpcs:enable WordPress.Security.NonceVerification.Recommended
+$has_nonce = nizamiye_verify_view_nonce();
+$cat_id  = $has_nonce && isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
+$sess_id = $has_nonce && isset( $_GET['session'] ) ? (int) $_GET['session'] : 0;
+$class_id = $has_nonce && isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
 
 // Eski bağlantı uyumu: class_id var ama kategori yoksa Ders kategorisini varsay.
 if ( $class_id && ! $cat_id ) {
@@ -29,7 +28,7 @@ if ( ! $category ) {
 				<?php foreach ( $cats as $cat ) :
 					$scount = Nizamiye_Attendance_Types::session_count( (int) $cat->id );
 					?>
-					<a class="sms-cat-card sms-scope-<?php echo esc_attr( $cat->scope ); ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-attendance&cat=' . (int) $cat->id . '&nizamiye_term=' . $term_id ) ); ?>">
+					<a class="sms-cat-card sms-scope-<?php echo esc_attr( $cat->scope ); ?>" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-attendance&cat=' . (int) $cat->id . '&nizamiye_term=' . $term_id ) ) ); ?>">
 						<span class="sms-cat-icon"><span class="dashicons <?php echo esc_attr( $cat->icon ?: 'dashicons-clipboard' ); ?>"></span></span>
 						<span class="sms-cat-name"><?php echo esc_html( $cat->name ); ?></span>
 						<span class="sms-cat-meta">
@@ -58,7 +57,7 @@ if ( 'class' === $category->scope && ! $class_id ) {
 			<div class="sms-cat-grid">
 				<?php $sess = Nizamiye_Attendance_Types::sessions( (int) $category->id ); $sid = $sess ? (int) $sess[0]->id : 0; ?>
 				<?php foreach ( $classes as $c ) : ?>
-					<a class="sms-cat-card" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-attendance&cat=' . (int) $category->id . '&session=' . $sid . '&class_id=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>">
+					<a class="sms-cat-card" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-attendance&cat=' . (int) $category->id . '&session=' . $sid . '&class_id=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ) ); ?>">
 						<span class="sms-cat-icon"><span class="dashicons dashicons-book-alt"></span></span>
 						<span class="sms-cat-name"><?php echo esc_html( $c->name ); ?></span>
 						<span class="sms-cat-meta"><?php echo (int) $c->student_count; ?> öğrenci</span>
@@ -82,7 +81,7 @@ if ( 'general' === $category->scope && count( $sessions ) > 1 && ! $sess_id ) {
 		<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-attendance&nizamiye_term=' . $term_id ) ); ?>">← Yoklama türlerine dön</a></p>
 		<div class="sms-cat-grid">
 			<?php foreach ( $sessions as $s ) : ?>
-				<a class="sms-cat-card sms-session-card" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-attendance&cat=' . (int) $category->id . '&session=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>">
+				<a class="sms-cat-card sms-session-card" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-attendance&cat=' . (int) $category->id . '&session=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ) ); ?>">
 					<span class="sms-cat-icon"><span class="dashicons <?php echo esc_attr( $category->icon ?: 'dashicons-clock' ); ?>"></span></span>
 					<span class="sms-cat-name"><?php echo esc_html( $s->name ); ?></span>
 				</a>
@@ -104,8 +103,7 @@ if ( ! $session || (int) $session->category_id !== (int) $category->id ) {
 }
 
 /* ============================ 4) YOKLAMA CETVELİ ============================ */
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- salt görüntüleme (GET), durum değişikliği yok; ham değer yalnızca regex biçim doğrulaması için okunur, kullanılan değer sanitize_text_field(wp_unslash()) ile temizlenir.
-$date = isset( $_GET['att_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['att_date'] ) ) ? sanitize_text_field( wp_unslash( $_GET['att_date'] ) ) : current_time( 'Y-m-d' );
+$date = $has_nonce && isset( $_GET['att_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['att_date'] ) ) ? sanitize_text_field( wp_unslash( $_GET['att_date'] ) ) : current_time( 'Y-m-d' );
 
 if ( 'class' === $category->scope ) {
 	if ( ! nizamiye_can_manage_class( $class_id ) ) {
@@ -130,7 +128,7 @@ $grades   = 'general' === $category->scope ? Nizamiye_Students::grades_in_term( 
 $multi_session = count( $sessions ) > 1;
 $title    = $category->name . ( $multi_session ? ' — ' . $session->name : '' ) . ' Yoklaması';
 $back_url = $multi_session
-	? admin_url( 'admin.php?page=nizamiye-attendance&cat=' . (int) $category->id . '&nizamiye_term=' . $term_id )
+	? nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-attendance&cat=' . (int) $category->id . '&nizamiye_term=' . $term_id ) )
 	: admin_url( 'admin.php?page=nizamiye-attendance&nizamiye_term=' . $term_id );
 ?>
 <div class="wrap sms-wrap">
@@ -140,6 +138,7 @@ $back_url = $multi_session
 	<div class="sms-card">
 		<div class="sms-pad">
 			<form method="get" class="sms-filters">
+				<?php nizamiye_view_nonce_field(); ?>
 				<input type="hidden" name="page" value="nizamiye-attendance">
 				<input type="hidden" name="cat" value="<?php echo (int) $category->id; ?>">
 				<input type="hidden" name="session" value="<?php echo (int) $session->id; ?>">

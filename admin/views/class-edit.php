@@ -1,8 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok; yetki aşağıda nizamiye_can_manage_class() ile kontrol edilir.
-$class_id = isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
+$class_id = nizamiye_verify_view_nonce() && isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
 $class    = $class_id ? Nizamiye_Classes::get( $class_id ) : null;
 $term_id  = $class ? (int) $class->term_id : nizamiye_current_term_id();
 $settings = nizamiye_get_settings();
@@ -108,8 +107,8 @@ $grades      = Nizamiye_Students::grades_in_term( $term_id );
 			<?php if ( $class ) : ?>
 				<div class="sms-card sms-mt">
 					<div class="sms-pad">
-						<a class="sms-btn sms-btn-ghost sms-btn-block" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-attendance&class_id=' . (int) $class_id . '&nizamiye_term=' . $term_id ) ); ?>"><span class="dashicons dashicons-clipboard"></span> Yoklama Al</a>
-						<a class="sms-btn sms-btn-ghost sms-btn-block sms-mt-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-grades&gview=class&class_id=' . (int) $class_id . '&nizamiye_term=' . $term_id ) ); ?>"><span class="dashicons dashicons-welcome-write-blog"></span> Notlar</a>
+						<a class="sms-btn sms-btn-ghost sms-btn-block" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-attendance&class_id=' . (int) $class_id . '&nizamiye_term=' . $term_id ) ) ); ?>"><span class="dashicons dashicons-clipboard"></span> Yoklama Al</a>
+						<a class="sms-btn sms-btn-ghost sms-btn-block sms-mt-sm" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-grades&gview=class&class_id=' . (int) $class_id . '&nizamiye_term=' . $term_id ) ) ); ?>"><span class="dashicons dashicons-welcome-write-blog"></span> Notlar</a>
 					</div>
 				</div>
 

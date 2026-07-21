@@ -1,8 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), yetki nizamiye_can_access_student() ile ayrıca doğrulanır.
-$student_id = isset( $_GET['student'] ) ? (int) $_GET['student'] : 0;
+$student_id = nizamiye_verify_view_nonce() && isset( $_GET['student'] ) ? (int) $_GET['student'] : 0;
 
 if ( ! $student_id || ! nizamiye_can_access_student( $student_id ) ) {
 	wp_die( 'Bu öğrencinin karnesine erişim yetkiniz yok.' );

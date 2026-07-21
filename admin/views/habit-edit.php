@@ -1,8 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok.
-$habit_id = isset( $_GET['habit_id'] ) ? (int) $_GET['habit_id'] : 0;
+$habit_id = nizamiye_verify_view_nonce() && isset( $_GET['habit_id'] ) ? (int) $_GET['habit_id'] : 0;
 $habit    = $habit_id ? Nizamiye_Habits::get( $habit_id ) : null;
 $term_id  = $habit ? (int) $habit->term_id : nizamiye_current_term_id();
 $teacher  = nizamiye_is_teacher();
@@ -106,7 +105,7 @@ $grades = Nizamiye_Students::grades_in_term( $term_id );
 				<?php if ( $habit ) : ?>
 					<div class="sms-card sms-mt">
 						<div class="sms-pad">
-							<a class="sms-btn sms-btn-ghost sms-btn-block" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-habits&view=track&habit_id=' . (int) $habit_id . '&nizamiye_term=' . $term_id ) ); ?>"><span class="dashicons dashicons-edit"></span> Günlük Takip Doldur</a>
+							<a class="sms-btn sms-btn-ghost sms-btn-block" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-habits&view=track&habit_id=' . (int) $habit_id . '&nizamiye_term=' . $term_id ) ) ); ?>"><span class="dashicons dashicons-edit"></span> Günlük Takip Doldur</a>
 						</div>
 					</div>
 					<?php if ( $can_edit_meta ) : ?>

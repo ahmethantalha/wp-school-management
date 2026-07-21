@@ -40,7 +40,7 @@ $term_id  = nizamiye_current_term_id();
 						<span><span class="dashicons dashicons-yes-alt"></span> Alışkanlık: <strong class="<?php echo esc_attr( nizamiye_rate_class( $habit_avg ) ); ?>"><?php echo null !== $habit_avg ? esc_html( $habit_avg . '%' ) : '—'; ?></strong></span>
 					</div>
 					<div class="sms-class-card-actions">
-						<a class="sms-btn sms-btn-primary sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>">Detaylı Karne</a>
+						<a class="sms-btn sms-btn-primary sms-btn-sm" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ) ); ?>">Detaylı Karne</a>
 					</div>
 				</div>
 			<?php endforeach; ?>

@@ -9,10 +9,9 @@ if ( ! current_user_can( 'nizamiye_teach' ) ) {
 
 $term_id = nizamiye_current_term_id();
 $teacher = nizamiye_is_teacher();
-// phpcs:disable WordPress.Security.NonceVerification.Recommended -- salt görüntüleme filtreleri (GET), durum değişikliği yok.
-$grade_f = isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
-$search  = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
-// phpcs:enable WordPress.Security.NonceVerification.Recommended
+$has_nonce = nizamiye_verify_view_nonce();
+$grade_f = $has_nonce && isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
+$search  = $has_nonce && isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
 $scores  = $term_id ? Nizamiye_Reports::student_scores( $term_id, $teacher ? nizamiye_teacher_student_ids() : null ) : array();
 
 // Sınıf ve arama filtreleri.
@@ -36,6 +35,7 @@ $grades = $term_id ? Nizamiye_Students::grades_in_term( $term_id ) : array();
 
 	<div class="sms-toolbar">
 		<form method="get" class="sms-filters">
+			<?php nizamiye_view_nonce_field(); ?>
 			<input type="hidden" name="page" value="nizamiye-cards">
 			<?php if ( $term_id ) : ?><input type="hidden" name="nizamiye_term" value="<?php echo (int) $term_id; ?>"><?php endif; ?>
 			<input type="search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="Öğrenci ara…">
@@ -80,7 +80,7 @@ $grades = $term_id ? Nizamiye_Students::grades_in_term( $term_id ) : array();
 							<td><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? (int) $row['habit'] . '%' : '—'; ?></span></td>
 							<td><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['grade'] ) ); ?>"><?php echo null !== $row['grade'] ? (int) $row['grade'] . '%' : '—'; ?></span></td>
 							<td><span class="sms-score sms-score-big <?php echo esc_attr( nizamiye_rate_class( $row['score'] ) ); ?>"><?php echo (int) $row['score']; ?></span></td>
-							<td class="sms-actions-cell"><a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>">Karne</a></td>
+							<td class="sms-actions-cell"><a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ) ); ?>">Karne</a></td>
 						</tr>
 					<?php endforeach; ?>
 					</tbody>

@@ -3,8 +3,7 @@ defined( 'ABSPATH' ) || exit;
 
 $teachers = nizamiye_users_by_role( 'nizamiye_teacher' );
 $term_id  = nizamiye_current_term_id();
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt görüntüleme (GET), durum değişikliği yok.
-$edit_id  = isset( $_GET['user'] ) ? (int) $_GET['user'] : 0;
+$edit_id  = nizamiye_verify_view_nonce() && isset( $_GET['user'] ) ? (int) $_GET['user'] : 0;
 $edit     = $edit_id ? get_userdata( $edit_id ) : null;
 if ( $edit && ! in_array( 'nizamiye_teacher', (array) $edit->roles, true ) ) {
 	$edit = null;
@@ -29,7 +28,7 @@ $settings      = nizamiye_get_settings();
 							<td class="sms-muted"><?php echo esc_html( $t->user_email ); ?></td>
 							<td><?php echo (int) Nizamiye_Classes::count_for_term( $term_id, (int) $t->ID ); ?></td>
 							<td class="sms-actions-cell">
-								<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-teachers&user=' . (int) $t->ID ) ); ?>">Düzenle</a>
+								<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-teachers&user=' . (int) $t->ID ) ) ); ?>">Düzenle</a>
 								<?php nizamiye_form_open( 'nizamiye_delete_user', 'sms-inline sms-confirm' ); nizamiye_back_url_field( admin_url( 'admin.php?page=nizamiye-teachers' ) ); ?>
 									<input type="hidden" name="user_id" value="<?php echo (int) $t->ID; ?>">
 									<button type="submit" class="sms-btn sms-btn-danger-ghost sms-btn-sm" data-confirm="Öğretmen hesabı silinecek; derslikleri öğretmensiz kalır. Emin misiniz?">Sil</button>

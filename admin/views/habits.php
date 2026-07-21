@@ -41,8 +41,8 @@ $habits  = $term_id ? Nizamiye_Habits::for_term( $term_id, $teacher ? get_curren
 						<span><span class="dashicons dashicons-chart-line"></span> <?php echo null !== $rate ? (int) $rate . '% tamamlama' : 'Henüz kayıt yok'; ?></span>
 					</div>
 					<div class="sms-class-card-actions">
-						<a class="sms-btn sms-btn-primary sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-habits&view=track&habit_id=' . (int) $h->id . '&nizamiye_term=' . $term_id ) ); ?>">Takip Doldur</a>
-						<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-habits&view=edit&habit_id=' . (int) $h->id . '&nizamiye_term=' . $term_id ) ); ?>">Düzenle</a>
+						<a class="sms-btn sms-btn-primary sms-btn-sm" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-habits&view=track&habit_id=' . (int) $h->id . '&nizamiye_term=' . $term_id ) ) ); ?>">Takip Doldur</a>
+						<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-habits&view=edit&habit_id=' . (int) $h->id . '&nizamiye_term=' . $term_id ) ) ); ?>">Düzenle</a>
 					</div>
 				</div>
 			<?php endforeach; ?>

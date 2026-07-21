@@ -1,16 +1,15 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-// phpcs:disable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- salt görüntüleme filtreleri (GET), durum değişikliği yok; ham değer yalnızca regex biçim doğrulaması için okunur, kullanılan değer sanitize_text_field(wp_unslash()) ile temizlenir.
-$habit_id = isset( $_GET['habit_id'] ) ? (int) $_GET['habit_id'] : 0;
+$has_nonce = nizamiye_verify_view_nonce();
+$habit_id = $has_nonce && isset( $_GET['habit_id'] ) ? (int) $_GET['habit_id'] : 0;
 $habit    = $habit_id ? Nizamiye_Habits::get( $habit_id ) : null;
 if ( ! $habit ) {
 	echo '<div class="wrap sms-wrap"><div class="sms-card sms-empty"><h2>Alışkanlık bulunamadı</h2></div></div>';
 	return;
 }
 $term_id = (int) $habit->term_id;
-$date    = isset( $_GET['log_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['log_date'] ) ) ? sanitize_text_field( wp_unslash( $_GET['log_date'] ) ) : current_time( 'Y-m-d' );
-// phpcs:enable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+$date    = $has_nonce && isset( $_GET['log_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['log_date'] ) ) ? sanitize_text_field( wp_unslash( $_GET['log_date'] ) ) : current_time( 'Y-m-d' );
 
 $students = Nizamiye_Habits::students( $habit_id );
 // Öğretmen (oluşturan değilse) yalnızca kendi öğrencilerini doldurur.
@@ -40,6 +39,7 @@ if ( $is_scale ) {
 	<div class="sms-card">
 		<div class="sms-pad">
 			<form method="get" class="sms-filters">
+				<?php nizamiye_view_nonce_field(); ?>
 				<input type="hidden" name="page" value="nizamiye-habits">
 				<input type="hidden" name="view" value="track">
 				<input type="hidden" name="habit_id" value="<?php echo (int) $habit_id; ?>">
