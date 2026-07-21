@@ -36,12 +36,14 @@ class Nizamiye_Habits {
 		$params = array( (int) $term_id );
 
 		if ( $restrict_teacher_id ) {
-			$student_ids = nizamiye_teacher_student_ids( $restrict_teacher_id, $term_id );
-			$in          = $student_ids ? implode( ',', array_map( 'intval', $student_ids ) ) : '0';
-			$sql        .= " AND (h.created_by = %d OR EXISTS (
+			$student_ids      = nizamiye_teacher_student_ids( $restrict_teacher_id, $term_id );
+			$student_id_list  = $student_ids ? array_map( 'intval', $student_ids ) : array( 0 );
+			$id_placeholders  = implode( ',', array_fill( 0, count( $student_id_list ), '%d' ) );
+			$sql             .= " AND (h.created_by = %d OR EXISTS (
 				SELECT 1 FROM {$wpdb->prefix}nizamiye_habit_students hs2
-				WHERE hs2.habit_id = h.id AND hs2.student_id IN ($in)))";
-			$params[]    = (int) $restrict_teacher_id;
+				WHERE hs2.habit_id = h.id AND hs2.student_id IN ($id_placeholders)))";
+			$params[]         = (int) $restrict_teacher_id;
+			$params           = array_merge( $params, $student_id_list );
 		}
 
 		$sql .= ' ORDER BY h.id DESC';
@@ -222,16 +224,20 @@ class Nizamiye_Habits {
 			 FROM {$wpdb->prefix}nizamiye_habit_logs l
 			 INNER JOIN " . self::table() . ' h ON h.id = l.habit_id
 			 WHERE h.term_id = %d AND l.log_date >= %s';
+		$params = array( $term_id, $start );
 		if ( null !== $student_ids ) {
 			if ( ! $student_ids ) {
 				$rows = array();
 			} else {
-				$sql .= ' AND l.student_id IN (' . implode( ',', array_map( 'intval', $student_ids ) ) . ')';
+				$student_id_list  = array_map( 'intval', $student_ids );
+				$id_placeholders  = implode( ',', array_fill( 0, count( $student_id_list ), '%d' ) );
+				$sql             .= " AND l.student_id IN ($id_placeholders)";
+				$params           = array_merge( $params, $student_id_list );
 			}
 		}
 		if ( ! isset( $rows ) ) {
 			$sql .= ' GROUP BY l.log_date';
-			$rows = $wpdb->get_results( $wpdb->prepare( $sql, $term_id, $start ) );
+			$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
 		}
 
 		$by_date = array();

@@ -18,7 +18,7 @@ $linked_user = $student && $student->user_id ? get_userdata( (int) $student->use
 <div class="wrap sms-wrap">
 	<?php nizamiye_view_header( $student ? 'Öğrenciyi Düzenle' : 'Yeni Öğrenci', $student ? nizamiye_student_name( $student ) : 'Yeni öğrenci kaydı oluşturun' ); ?>
 
-	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-students&nizamiye_term=' . $term_id ) ); ?>">← Öğrenci listesine dön</a></p>
+	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-students&nizamiye_term=' . $term_id ) ); ?>">← Öğrenci listesine dön</a></p>
 
 	<div class="sms-grid-2 sms-grid-uneven">
 		<div class="sms-card">
@@ -95,11 +95,11 @@ $linked_user = $student && $student->user_id ? get_userdata( (int) $student->use
 						<?php if ( $classes ) : ?>
 							<ul class="sms-mini-list">
 								<?php foreach ( $classes as $c ) : ?>
-									<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-classes&view=edit&class_id=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>"><?php echo esc_html( $c->name ); ?></a></li>
+									<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-classes&view=edit&class_id=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>"><?php echo esc_html( $c->name ); ?></a></li>
 								<?php endforeach; ?>
 							</ul>
 						<?php else : ?>
-							<p class="sms-muted">Henüz bir dersliğe eklenmemiş. Atama <a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-classes&nizamiye_term=' . $term_id ) ); ?>">Derslikler</a> sayfasındaki kadro yönetiminden yapılır.</p>
+							<p class="sms-muted">Henüz bir dersliğe eklenmemiş. Atama <a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-classes&nizamiye_term=' . $term_id ) ); ?>">Derslikler</a> sayfasındaki kadro yönetiminden yapılır.</p>
 						<?php endif; ?>
 					</div>
 				</div>

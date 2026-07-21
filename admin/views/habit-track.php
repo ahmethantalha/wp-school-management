@@ -35,12 +35,12 @@ if ( $is_scale ) {
 <div class="wrap sms-wrap">
 	<?php nizamiye_view_header( 'Takip: ' . $habit->name, $subtitle ); ?>
 
-	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-habits&nizamiye_term=' . $term_id ) ); ?>">← Alışkanlık listesine dön</a></p>
+	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-habits&nizamiye_term=' . $term_id ) ); ?>">← Alışkanlık listesine dön</a></p>
 
 	<div class="sms-card">
 		<div class="sms-pad">
 			<form method="get" class="sms-filters">
-				<input type="hidden" name="page" value="sms-habits">
+				<input type="hidden" name="page" value="nizamiye-habits">
 				<input type="hidden" name="view" value="track">
 				<input type="hidden" name="habit_id" value="<?php echo (int) $habit_id; ?>">
 				<input type="hidden" name="nizamiye_term" value="<?php echo (int) $term_id; ?>">
@@ -77,7 +77,7 @@ if ( $is_scale ) {
 						$log = $logs[ (int) $s->id ] ?? null;
 						?>
 						<tr>
-							<td class="sms-name-cell"><?php echo nizamiye_avatar( nizamiye_student_name( $s ) ); // phpcs:ignore ?><strong><?php echo esc_html( nizamiye_student_name( $s ) ); ?></strong></td>
+							<td class="sms-name-cell"><?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $s ) ) ); ?><strong><?php echo esc_html( nizamiye_student_name( $s ) ); ?></strong></td>
 							<?php if ( $is_reading ) :
 								$book_options = Nizamiye_Habits::book_titles_for_student( $habit_id, (int) $s->id );
 								?>

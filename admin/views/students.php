@@ -31,7 +31,7 @@ foreach ( $parents as $p ) {
 
 	<div class="sms-toolbar">
 		<form method="get" class="sms-filters">
-			<input type="hidden" name="page" value="sms-students">
+			<input type="hidden" name="page" value="nizamiye-students">
 			<?php if ( $term_id ) : ?><input type="hidden" name="nizamiye_term" value="<?php echo (int) $term_id; ?>"><?php endif; ?>
 			<input type="search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="Ad, numara veya okul ara…">
 			<select name="grade">
@@ -47,7 +47,7 @@ foreach ( $parents as $p ) {
 			<button type="submit" class="sms-btn sms-btn-ghost">Filtrele</button>
 		</form>
 		<?php if ( nizamiye_is_manager() ) : ?>
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-students&view=edit&nizamiye_term=' . $term_id ) ); ?>" class="sms-btn sms-btn-primary"><span class="dashicons dashicons-plus-alt2"></span> Yeni Öğrenci</a>
+			<a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-students&view=edit&nizamiye_term=' . $term_id ) ); ?>" class="sms-btn sms-btn-primary"><span class="dashicons dashicons-plus-alt2"></span> Yeni Öğrenci</a>
 		<?php endif; ?>
 	</div>
 
@@ -59,9 +59,9 @@ foreach ( $parents as $p ) {
 				<?php foreach ( $students as $s ) : ?>
 					<tr>
 						<td class="sms-name-cell">
-							<?php echo nizamiye_avatar( nizamiye_student_name( $s ) ); // phpcs:ignore ?>
+							<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $s ) ) ); ?>
 							<div>
-								<a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $s ) ); ?></strong></a>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $s ) ); ?></strong></a>
 								<?php if ( $s->student_no ) : ?><span class="sms-muted">No: <?php echo esc_html( $s->student_no ); ?></span><?php endif; ?>
 							</div>
 						</td>
@@ -74,9 +74,9 @@ foreach ( $parents as $p ) {
 							<span class="sms-badge <?php echo esc_attr( $badge ); ?>"><?php echo esc_html( nizamiye_student_status_label( $s->status ) ); ?></span>
 						</td>
 						<td class="sms-actions-cell">
-							<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>">Karne</a>
+							<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>">Karne</a>
 							<?php if ( nizamiye_is_manager() ) : ?>
-								<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-students&view=edit&student=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>">Düzenle</a>
+								<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-students&view=edit&student=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>">Düzenle</a>
 							<?php endif; ?>
 						</td>
 					</tr>

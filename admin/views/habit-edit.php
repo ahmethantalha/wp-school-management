@@ -23,7 +23,7 @@ $grades = Nizamiye_Students::grades_in_term( $term_id );
 <div class="wrap sms-wrap">
 	<?php nizamiye_view_header( $habit ? 'Alışkanlık: ' . $habit->name : 'Yeni Alışkanlık', 'Takip tipini seçin ve öğrencileri atayın.' ); ?>
 
-	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-habits&nizamiye_term=' . $term_id ) ); ?>">← Alışkanlık listesine dön</a></p>
+	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-habits&nizamiye_term=' . $term_id ) ); ?>">← Alışkanlık listesine dön</a></p>
 
 	<?php nizamiye_form_open( 'nizamiye_save_habit' ); nizamiye_back_url_field(); ?>
 		<input type="hidden" name="habit_id" value="<?php echo (int) $habit_id; ?>">
@@ -51,7 +51,7 @@ $grades = Nizamiye_Students::grades_in_term( $term_id );
 						<?php if ( $all_students ) : foreach ( $all_students as $s ) : ?>
 							<label class="sms-roster-item" data-grade="<?php echo (int) ( $s->grade_level ?? 0 ); ?>" data-name="<?php echo esc_attr( mb_strtolower( nizamiye_student_name( $s ) ) ); ?>">
 								<input type="checkbox" name="student_ids[]" value="<?php echo (int) $s->id; ?>" <?php checked( in_array( (int) $s->id, $assigned_ids, true ) ); ?>>
-								<?php echo nizamiye_avatar( nizamiye_student_name( $s ) ); // phpcs:ignore ?>
+								<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $s ) ) ); ?>
 								<span class="sms-roster-name"><?php echo esc_html( nizamiye_student_name( $s ) ); ?></span>
 								<span class="sms-badge sms-badge-indigo"><?php echo esc_html( nizamiye_grade_label( $s->grade_level ?? 0 ) ); ?></span>
 							</label>
@@ -106,7 +106,7 @@ $grades = Nizamiye_Students::grades_in_term( $term_id );
 				<?php if ( $habit ) : ?>
 					<div class="sms-card sms-mt">
 						<div class="sms-pad">
-							<a class="sms-btn sms-btn-ghost sms-btn-block" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-habits&view=track&habit_id=' . (int) $habit_id . '&nizamiye_term=' . $term_id ) ); ?>"><span class="dashicons dashicons-edit"></span> Günlük Takip Doldur</a>
+							<a class="sms-btn sms-btn-ghost sms-btn-block" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-habits&view=track&habit_id=' . (int) $habit_id . '&nizamiye_term=' . $term_id ) ); ?>"><span class="dashicons dashicons-edit"></span> Günlük Takip Doldur</a>
 						</div>
 					</div>
 					<?php if ( $can_edit_meta ) : ?>

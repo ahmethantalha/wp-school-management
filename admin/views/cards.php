@@ -36,7 +36,7 @@ $grades = $term_id ? Nizamiye_Students::grades_in_term( $term_id ) : array();
 
 	<div class="sms-toolbar">
 		<form method="get" class="sms-filters">
-			<input type="hidden" name="page" value="sms-cards">
+			<input type="hidden" name="page" value="nizamiye-cards">
 			<?php if ( $term_id ) : ?><input type="hidden" name="nizamiye_term" value="<?php echo (int) $term_id; ?>"><?php endif; ?>
 			<input type="search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="Öğrenci ara…">
 			<select name="grade">
@@ -74,13 +74,13 @@ $grades = $term_id ? Nizamiye_Students::grades_in_term( $term_id ) : array();
 						<tr>
 							<td class="sms-check-col"><input type="checkbox" name="student_ids[]" value="<?php echo (int) $s->id; ?>" data-sms-bulk-item></td>
 							<td class="sms-muted">#<?php echo (int) $i + 1; ?></td>
-							<td class="sms-name-cell"><?php echo nizamiye_avatar( nizamiye_student_name( $s ) ); // phpcs:ignore ?><strong><?php echo esc_html( nizamiye_student_name( $s ) ); ?></strong></td>
+							<td class="sms-name-cell"><?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $s ) ) ); ?><strong><?php echo esc_html( nizamiye_student_name( $s ) ); ?></strong></td>
 							<td><?php echo isset( $s->grade_level ) ? esc_html( nizamiye_grade_label( $s->grade_level ) ) : '—'; ?></td>
 							<td><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['attendance'] ) ); ?>"><?php echo null !== $row['attendance'] ? (int) $row['attendance'] . '%' : '—'; ?></span></td>
 							<td><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? (int) $row['habit'] . '%' : '—'; ?></span></td>
 							<td><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['grade'] ) ); ?>"><?php echo null !== $row['grade'] ? (int) $row['grade'] . '%' : '—'; ?></span></td>
 							<td><span class="sms-score sms-score-big <?php echo esc_attr( nizamiye_rate_class( $row['score'] ) ); ?>"><?php echo (int) $row['score']; ?></span></td>
-							<td class="sms-actions-cell"><a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>">Karne</a></td>
+							<td class="sms-actions-cell"><a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>">Karne</a></td>
 						</tr>
 					<?php endforeach; ?>
 					</tbody>

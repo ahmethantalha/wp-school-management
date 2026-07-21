@@ -90,7 +90,7 @@ $preview  = $active ? Nizamiye_Terms::rollover_preview( (int) $active->id ) : nu
 				<div class="sms-pad sms-muted">
 					<span class="dashicons dashicons-lightbulb"></span>
 					Kurumunuzun son sınıfı şu an <strong><?php echo (int) $settings['final_grade']; ?>. sınıf</strong> olarak tanımlı.
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-settings' ) ); ?>">Ayarlar</a> sayfasından değiştirebilirsiniz.
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-settings' ) ); ?>">Ayarlar</a> sayfasından değiştirebilirsiniz.
 				</div>
 			</div>
 		</div>

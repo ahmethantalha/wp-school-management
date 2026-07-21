@@ -22,7 +22,7 @@ $grades      = Nizamiye_Students::grades_in_term( $term_id );
 <div class="wrap sms-wrap">
 	<?php nizamiye_view_header( $class ? 'Derslik: ' . $class->name : 'Yeni Derslik', 'Derslik bilgileri ve öğrenci kadrosu' ); ?>
 
-	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-classes&nizamiye_term=' . $term_id ) ); ?>">← Derslik listesine dön</a></p>
+	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-classes&nizamiye_term=' . $term_id ) ); ?>">← Derslik listesine dön</a></p>
 
 	<div class="sms-grid-2 sms-grid-uneven">
 		<div>
@@ -51,7 +51,7 @@ $grades      = Nizamiye_Students::grades_in_term( $term_id );
 								<?php if ( $all_students ) : foreach ( $all_students as $s ) : ?>
 									<label class="sms-roster-item" data-grade="<?php echo (int) ( $s->grade_level ?? 0 ); ?>" data-name="<?php echo esc_attr( mb_strtolower( nizamiye_student_name( $s ) ) ); ?>">
 										<input type="checkbox" name="student_ids[]" value="<?php echo (int) $s->id; ?>" <?php checked( in_array( (int) $s->id, $roster_ids, true ) ); ?>>
-										<?php echo nizamiye_avatar( nizamiye_student_name( $s ) ); // phpcs:ignore ?>
+										<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $s ) ) ); ?>
 										<span class="sms-roster-name"><?php echo esc_html( nizamiye_student_name( $s ) ); ?></span>
 										<span class="sms-badge sms-badge-indigo"><?php echo esc_html( nizamiye_grade_label( $s->grade_level ?? 0 ) ); ?></span>
 									</label>
@@ -108,8 +108,8 @@ $grades      = Nizamiye_Students::grades_in_term( $term_id );
 			<?php if ( $class ) : ?>
 				<div class="sms-card sms-mt">
 					<div class="sms-pad">
-						<a class="sms-btn sms-btn-ghost sms-btn-block" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&class_id=' . (int) $class_id . '&nizamiye_term=' . $term_id ) ); ?>"><span class="dashicons dashicons-clipboard"></span> Yoklama Al</a>
-						<a class="sms-btn sms-btn-ghost sms-btn-block sms-mt-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-grades&gview=class&class_id=' . (int) $class_id . '&nizamiye_term=' . $term_id ) ); ?>"><span class="dashicons dashicons-welcome-write-blog"></span> Notlar</a>
+						<a class="sms-btn sms-btn-ghost sms-btn-block" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-attendance&class_id=' . (int) $class_id . '&nizamiye_term=' . $term_id ) ); ?>"><span class="dashicons dashicons-clipboard"></span> Yoklama Al</a>
+						<a class="sms-btn sms-btn-ghost sms-btn-block sms-mt-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-grades&gview=class&class_id=' . (int) $class_id . '&nizamiye_term=' . $term_id ) ); ?>"><span class="dashicons dashicons-welcome-write-blog"></span> Notlar</a>
 					</div>
 				</div>
 

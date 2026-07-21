@@ -164,15 +164,19 @@ class Nizamiye_Attendance {
 	/** Dönem geneli durum dağılımı (halka grafik). $student_ids ile sınırlandırılabilir. */
 	public static function term_breakdown( $term_id, array $student_ids = null ) {
 		global $wpdb;
-		$sql = 'SELECT status, COUNT(*) AS cnt FROM ' . self::table() . ' WHERE term_id = %d';
+		$sql    = 'SELECT status, COUNT(*) AS cnt FROM ' . self::table() . ' WHERE term_id = %d';
+		$params = array( $term_id );
 		if ( null !== $student_ids ) {
 			if ( ! $student_ids ) {
 				return array();
 			}
-			$sql .= ' AND student_id IN (' . implode( ',', array_map( 'intval', $student_ids ) ) . ')';
+			$student_id_list  = array_map( 'intval', $student_ids );
+			$id_placeholders  = implode( ',', array_fill( 0, count( $student_id_list ), '%d' ) );
+			$sql             .= " AND student_id IN ($id_placeholders)";
+			$params           = array_merge( $params, $student_id_list );
 		}
 		$sql .= ' GROUP BY status';
-		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $term_id ) );
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
 		$out  = array();
 		foreach ( $rows as $r ) {
 			$out[ $r->status ] = (int) $r->cnt;
@@ -189,17 +193,21 @@ class Nizamiye_Attendance {
 				SUM(CASE WHEN status = %s THEN 1 WHEN status = %s THEN 0.5 ELSE 0 END) AS score,
 				COUNT(*) AS total
 			 FROM ' . self::table() . ' WHERE term_id = %d AND att_date >= %s';
-		$rows = null;
+		$rows   = null;
+		$params = array( 'present', 'late', $term_id, $start );
 		if ( null !== $student_ids ) {
 			if ( ! $student_ids ) {
 				$rows = array();
 			} else {
-				$sql .= ' AND student_id IN (' . implode( ',', array_map( 'intval', $student_ids ) ) . ')';
+				$student_id_list  = array_map( 'intval', $student_ids );
+				$id_placeholders  = implode( ',', array_fill( 0, count( $student_id_list ), '%d' ) );
+				$sql             .= " AND student_id IN ($id_placeholders)";
+				$params           = array_merge( $params, $student_id_list );
 			}
 		}
 		if ( null === $rows ) {
 			$sql .= ' GROUP BY att_date';
-			$rows = $wpdb->get_results( $wpdb->prepare( $sql, 'present', 'late', $term_id, $start ) );
+			$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
 		}
 
 		$by_date = array();

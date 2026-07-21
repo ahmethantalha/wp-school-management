@@ -46,7 +46,7 @@ $print_url = wp_nonce_url( add_query_arg( array(
 
 	<div class="sms-toolbar">
 		<?php if ( current_user_can( 'nizamiye_teach' ) ) : ?>
-			<a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-cards&nizamiye_term=' . $term_id ) ); ?>">← Karnelere dön</a>
+			<a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-cards&nizamiye_term=' . $term_id ) ); ?>">← Karnelere dön</a>
 		<?php else : ?>
 			<span></span>
 		<?php endif; ?>
@@ -56,7 +56,7 @@ $print_url = wp_nonce_url( add_query_arg( array(
 	</div>
 
 	<div class="sms-card sms-profile-card">
-		<?php echo nizamiye_avatar( nizamiye_student_name( $student ), 'sms-avatar-lg' ); // phpcs:ignore ?>
+		<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $student ), 'sms-avatar-lg' ) ); ?>
 		<div class="sms-profile-info">
 			<h2><?php echo esc_html( nizamiye_student_name( $student ) ); ?></h2>
 			<div class="sms-profile-meta">

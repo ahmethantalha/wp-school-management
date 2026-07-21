@@ -488,7 +488,7 @@ class Nizamiye_Actions {
 			$url = esc_url_raw( wp_unslash( $_POST['_nizamiye_back'] ) );
 		}
 		if ( ! $url ) {
-			$url = admin_url( 'admin.php?page=sms-dashboard' );
+			$url = admin_url( 'admin.php?page=nizamiye-dashboard' );
 		}
 		$url = remove_query_arg( array( 'nizamiye_msg', 'nizamiye_err' ), $url );
 		if ( $msg ) {
@@ -545,7 +545,7 @@ class Nizamiye_Actions {
 			'"%s" dönemi açıldı. %d öğrenci bir üst sınıfa aktarıldı, %d öğrenci mezun olarak arşivlendi.',
 			$name, $stats['promoted'], $stats['graduated']
 		);
-		self::back( $msg, '', admin_url( 'admin.php?page=sms-terms' ) );
+		self::back( $msg, '', admin_url( 'admin.php?page=nizamiye-terms' ) );
 	}
 
 	/* ---------- Öğrenciler ---------- */
@@ -601,12 +601,12 @@ class Nizamiye_Actions {
 		}
 
 		$id = Nizamiye_Students::save( $data, $term_id, $grade, $id );
-		self::back( 'Öğrenci kaydedildi.', '', admin_url( 'admin.php?page=sms-students&view=edit&student=' . $id ) );
+		self::back( 'Öğrenci kaydedildi.', '', admin_url( 'admin.php?page=nizamiye-students&view=edit&student=' . $id ) );
 	}
 
 	private static function handle_delete_student() {
 		Nizamiye_Students::delete( (int) self::post( 'student_id' ) );
-		self::back( 'Öğrenci ve bağlı tüm kayıtları silindi.', '', admin_url( 'admin.php?page=sms-students' ) );
+		self::back( 'Öğrenci ve bağlı tüm kayıtları silindi.', '', admin_url( 'admin.php?page=nizamiye-students' ) );
 	}
 
 	/* ---------- Kullanıcılar (öğretmen/veli) ---------- */
@@ -703,12 +703,12 @@ class Nizamiye_Actions {
 			'grade_level' => (int) self::post( 'grade_level' ),
 			'teacher_id'  => (int) self::post( 'teacher_id' ),
 		), $id );
-		self::back( 'Derslik kaydedildi.', '', admin_url( 'admin.php?page=sms-classes&view=edit&class_id=' . $id ) );
+		self::back( 'Derslik kaydedildi.', '', admin_url( 'admin.php?page=nizamiye-classes&view=edit&class_id=' . $id ) );
 	}
 
 	private static function handle_delete_class() {
 		Nizamiye_Classes::delete( (int) self::post( 'class_id' ) );
-		self::back( 'Derslik silindi.', '', admin_url( 'admin.php?page=sms-classes' ) );
+		self::back( 'Derslik silindi.', '', admin_url( 'admin.php?page=nizamiye-classes' ) );
 	}
 
 	private static function handle_class_roster() {
@@ -804,7 +804,7 @@ class Nizamiye_Actions {
 		}
 		Nizamiye_Habits::set_students( $id, $ids );
 
-		self::back( 'Alışkanlık kaydedildi.', '', admin_url( 'admin.php?page=sms-habits&view=edit&habit_id=' . $id ) );
+		self::back( 'Alışkanlık kaydedildi.', '', admin_url( 'admin.php?page=nizamiye-habits&view=edit&habit_id=' . $id ) );
 	}
 
 	private static function handle_delete_habit() {
@@ -813,7 +813,7 @@ class Nizamiye_Actions {
 			wp_die( 'Bu alışkanlığı silme yetkiniz yok.' );
 		}
 		Nizamiye_Habits::delete( $id );
-		self::back( 'Alışkanlık silindi.', '', admin_url( 'admin.php?page=sms-habits' ) );
+		self::back( 'Alışkanlık silindi.', '', admin_url( 'admin.php?page=nizamiye-habits' ) );
 	}
 
 	private static function can_manage_habit( $habit_id ) {
@@ -993,7 +993,7 @@ class Nizamiye_Actions {
 			$msg .= ' ' . count( $res['errors'] ) . ' satır atlandı/uyarı.';
 			set_transient( 'nizamiye_import_errors_' . get_current_user_id(), $res['errors'], 120 );
 		}
-		self::back( $msg, '', admin_url( 'admin.php?page=sms-import&tab=' . $type ) );
+		self::back( $msg, '', admin_url( 'admin.php?page=nizamiye-import&tab=' . $type ) );
 	}
 
 	/** Seçili derslik için önceden doldurulmuş not listesi indirir (GET + nonce). */

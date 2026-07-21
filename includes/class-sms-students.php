@@ -54,7 +54,10 @@ class Nizamiye_Students {
 			if ( ! $args['ids'] ) {
 				return array();
 			}
-			$where[] = 's.id IN (' . implode( ',', array_map( 'intval', $args['ids'] ) ) . ')';
+			$id_list          = array_map( 'intval', $args['ids'] );
+			$id_placeholders  = implode( ',', array_fill( 0, count( $id_list ), '%d' ) );
+			$where[]          = "s.id IN ($id_placeholders)";
+			$params           = array_merge( $params, $id_list );
 		}
 
 		if ( $args['term_id'] ) {

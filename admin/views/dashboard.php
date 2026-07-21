@@ -94,8 +94,8 @@ $settings = nizamiye_get_settings();
 					<?php foreach ( $top as $i => $row ) : $st = $row['student']; ?>
 						<li>
 							<span class="sms-rank">#<?php echo (int) $i + 1; ?></span>
-							<?php echo nizamiye_avatar( nizamiye_student_name( $st ) ); // phpcs:ignore ?>
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><?php echo esc_html( nizamiye_student_name( $st ) ); ?></a>
+							<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $st ) ) ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><?php echo esc_html( nizamiye_student_name( $st ) ); ?></a>
 							<span class="sms-score sms-rate-good"><?php echo (int) $row['score']; ?></span>
 						</li>
 					<?php endforeach; ?>
@@ -111,8 +111,8 @@ $settings = nizamiye_get_settings();
 				<ul class="sms-rank-list">
 					<?php foreach ( $bottom as $row ) : $st = $row['student']; ?>
 						<li>
-							<?php echo nizamiye_avatar( nizamiye_student_name( $st ) ); // phpcs:ignore ?>
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><?php echo esc_html( nizamiye_student_name( $st ) ); ?></a>
+							<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $st ) ) ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><?php echo esc_html( nizamiye_student_name( $st ) ); ?></a>
 							<span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['score'] ) ); ?>"><?php echo (int) $row['score']; ?></span>
 						</li>
 					<?php endforeach; ?>
@@ -127,7 +127,7 @@ $settings = nizamiye_get_settings();
 		<div class="sms-card">
 			<div class="sms-card-head">
 				<h2>Sınıf Bazında Özet</h2>
-				<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&rtype=genel&group=sinif&nizamiye_term=' . $term_id ) ); ?>">Detaylı Analiz →</a>
+				<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&rtype=genel&group=sinif&nizamiye_term=' . $term_id ) ); ?>">Detaylı Analiz →</a>
 			</div>
 			<?php if ( $grade_sum ) : ?>
 				<table class="sms-table">
@@ -152,7 +152,7 @@ $settings = nizamiye_get_settings();
 		<div class="sms-card">
 			<div class="sms-card-head">
 				<h2>Yoklama Türlerine Göre</h2>
-				<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&rtype=yoklama&nizamiye_term=' . $term_id ) ); ?>">Detaylı Analiz →</a>
+				<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&rtype=yoklama&nizamiye_term=' . $term_id ) ); ?>">Detaylı Analiz →</a>
 			</div>
 			<?php if ( $cat_sum ) : ?>
 				<table class="sms-table">

@@ -69,12 +69,13 @@ function nizamiye_teacher_student_ids( $user_id = 0, $term_id = 0 ) {
 	$ids       = array();
 	$class_ids = nizamiye_teacher_class_ids( $user_id, $term_id );
 	if ( $class_ids ) {
-		$in  = implode( ',', array_map( 'intval', $class_ids ) ); // intval ile temizlenmiş, sorguya güvenle gömülür.
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- özel eklenti tablosu; $in yalnızca intval edilmiş id'lerden oluşur.
-		$ids = array_map( 'intval', $wpdb->get_col(
-			"SELECT DISTINCT student_id FROM {$wpdb->prefix}nizamiye_class_students WHERE class_id IN ($in)"
-		) );
-		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$class_id_list    = array_map( 'intval', $class_ids );
+		$id_placeholders  = implode( ',', array_fill( 0, count( $class_id_list ), '%d' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- özel eklenti tablosu, parametreler $wpdb->prepare() ile bağlanır.
+		$ids = array_map( 'intval', $wpdb->get_col( $wpdb->prepare(
+			"SELECT DISTINCT student_id FROM {$wpdb->prefix}nizamiye_class_students WHERE class_id IN ($id_placeholders)",
+			$class_id_list
+		) ) );
 	}
 
 	// Sınıf öğretmeni: sorumlu sınıf seviyelerindeki (veya tüm) aktif öğrenciler.
@@ -407,7 +408,7 @@ function nizamiye_view_header( $title, $subtitle = '', $show_term_picker = true 
 	nizamiye_render_notices();
 
 	if ( ! $terms && nizamiye_is_manager() ) {
-		echo '<div class="sms-notice sms-notice-info"><span class="dashicons dashicons-info"></span>Henüz dönem oluşturulmadı. Başlamak için <a href="' . esc_url( admin_url( 'admin.php?page=sms-terms' ) ) . '">Dönemler</a> sayfasından bir dönem açın (örn. 2025-2026).</div>';
+		echo '<div class="sms-notice sms-notice-info"><span class="dashicons dashicons-info"></span>Henüz dönem oluşturulmadı. Başlamak için <a href="' . esc_url( admin_url( 'admin.php?page=nizamiye-terms' ) ) . '">Dönemler</a> sayfasından bir dönem açın (örn. 2025-2026).</div>';
 	}
 }
 
@@ -421,7 +422,7 @@ function nizamiye_form_open( $action, $extra_class = '' ) {
 /** İşlem sonrası geri dönüş adresi (form içinden gönderilir). */
 function nizamiye_back_url_field( $url = '' ) {
 	if ( ! $url ) {
-		$url = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : admin_url( 'admin.php?page=sms-dashboard' );
+		$url = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : admin_url( 'admin.php?page=nizamiye-dashboard' );
 	}
 	echo '<input type="hidden" name="_nizamiye_back" value="' . esc_attr( $url ) . '">';
 }

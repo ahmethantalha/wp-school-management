@@ -113,7 +113,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 
 	<div class="sms-tabs">
 		<?php foreach ( $tabs as $key => $t ) : ?>
-			<a class="sms-tab <?php echo $rtype === $key ? 'is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&rtype=' . $key . '&nizamiye_term=' . $term_id ) ); ?>">
+			<a class="sms-tab <?php echo $rtype === $key ? 'is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&rtype=' . $key . '&nizamiye_term=' . $term_id ) ); ?>">
 				<span class="dashicons <?php echo esc_attr( $t[1] ); ?>"></span> <?php echo esc_html( $t[0] ); ?>
 			</a>
 		<?php endforeach; ?>
@@ -122,7 +122,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 	<div class="sms-card">
 		<div class="sms-pad">
 			<form method="get" class="sms-filters">
-				<input type="hidden" name="page" value="sms-reports">
+				<input type="hidden" name="page" value="nizamiye-reports">
 				<input type="hidden" name="rtype" value="<?php echo esc_attr( $rtype ); ?>">
 				<?php if ( $term_id ) : ?><input type="hidden" name="nizamiye_term" value="<?php echo (int) $term_id; ?>"><?php endif; ?>
 
@@ -255,7 +255,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 		<div class="sms-card sms-mt">
 			<div class="sms-card-head">
 				<h2><?php echo esc_html( ( $category ? $category->name : '' ) . ( $focus_session ? ' — ' . $focus_session->name . ' vakti' : ' — ' . $metric_labels[ $metric ] ) ); ?></h2>
-				<div class="sms-head-tools"><span class="sms-muted"><?php echo esc_html( nizamiye_format_date( $from ) . ' – ' . nizamiye_format_date( $to ) ); ?></span><?php echo $matrix['rows'] ? $export_btn : ''; // phpcs:ignore ?></div>
+				<div class="sms-head-tools"><span class="sms-muted"><?php echo esc_html( nizamiye_format_date( $from ) . ' – ' . nizamiye_format_date( $to ) ); ?></span><?php echo wp_kses_post( $matrix['rows'] ? $export_btn : '' ); ?></div>
 			</div>
 			<?php if ( $matrix['rows'] && $focus_session ) : ?>
 				<?php // ---- ODAK: tek vakit için tam durum kırılımı ---- ?>
@@ -276,23 +276,23 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 						<?php foreach ( $grade_rows as $g => $gr ) : ?>
 							<tr>
 								<td><strong><?php echo esc_html( nizamiye_grade_label( $g ) ); ?></strong> <span class="sms-muted">(<?php echo (int) $gr['count']; ?> öğrenci)</span></td>
-								<?php echo $focus_cells( $gr['cells'][ $sess_id ] ); // phpcs:ignore ?>
+								<?php echo wp_kses_post( $focus_cells( $gr['cells'][ $sess_id ] ) ); ?>
 							</tr>
 						<?php endforeach; ?>
 					<?php else : ?>
 						<?php foreach ( $matrix['rows'] as $row ) : $st = $row['student']; ?>
 							<tr>
 								<td class="sms-name-cell">
-									<?php echo nizamiye_avatar( nizamiye_student_name( $st ) ); // phpcs:ignore ?>
-									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
+									<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $st ) ) ); ?>
+									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
 									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( nizamiye_grade_label( $st->grade_level ) ) : ''; ?></span></div>
 								</td>
-								<?php echo $focus_cells( $row['cells'][ $sess_id ] ); // phpcs:ignore ?>
+								<?php echo wp_kses_post( $focus_cells( $row['cells'][ $sess_id ] ) ); ?>
 							</tr>
 						<?php endforeach; ?>
 						<tr class="sms-total-row">
 							<td><strong>Toplu (tüm liste)</strong></td>
-							<?php echo $focus_cells( $matrix['totals'][ $sess_id ] ?? array( 'present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0, 'total' => 0, 'rate' => null ) ); // phpcs:ignore ?>
+							<?php echo wp_kses_post( $focus_cells( $matrix['totals'][ $sess_id ] ?? array( 'present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0, 'total' => 0, 'rate' => null ) ) ); ?>
 						</tr>
 					<?php endif; ?>
 					</tbody>
@@ -325,8 +325,8 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 						<?php foreach ( $matrix['rows'] as $row ) : $st = $row['student']; ?>
 							<tr>
 								<td class="sms-name-cell">
-									<?php echo nizamiye_avatar( nizamiye_student_name( $st ) ); // phpcs:ignore ?>
-									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
+									<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $st ) ) ); ?>
+									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
 									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( nizamiye_grade_label( $st->grade_level ) ) : ''; ?></span></div>
 								</td>
 								<?php foreach ( $sessions as $s ) : $cell = $row['cells'][ (int) $s->id ]; $v = $cell_value( $cell ); ?>
@@ -382,7 +382,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 		}
 		?>
 		<div class="sms-card sms-mt">
-			<div class="sms-card-head"><h2>Alışkanlık Tamamlama Oranları</h2><div class="sms-head-tools"><span class="sms-muted">Dönem geneli</span><?php echo ( $matrix['rows'] && $habits ) ? $export_btn : ''; // phpcs:ignore ?></div></div>
+			<div class="sms-card-head"><h2>Alışkanlık Tamamlama Oranları</h2><div class="sms-head-tools"><span class="sms-muted">Dönem geneli</span><?php echo wp_kses_post( ( $matrix['rows'] && $habits ) ? $export_btn : '' ); ?></div></div>
 			<?php if ( $matrix['rows'] && $habits ) : ?>
 				<div class="sms-table-scroll">
 				<table class="sms-table sms-matrix">
@@ -419,8 +419,8 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 						<?php foreach ( $matrix['rows'] as $row ) : $st = $row['student']; ?>
 							<tr>
 								<td class="sms-name-cell">
-									<?php echo nizamiye_avatar( nizamiye_student_name( $st ) ); // phpcs:ignore ?>
-									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
+									<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $st ) ) ); ?>
+									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
 									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( nizamiye_grade_label( $st->grade_level ) ) : ''; ?></span></div>
 								</td>
 								<?php foreach ( $habits as $h ) : $cell = $row['cells'][ (int) $h->id ]; ?>
@@ -476,7 +476,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 		}
 		?>
 		<div class="sms-card sms-mt">
-			<div class="sms-card-head"><h2>Not Ortalamaları (%)</h2><div class="sms-head-tools"><span class="sms-muted">Derslik bazında, dönem geneli</span><?php echo ( $matrix['rows'] && $classes ) ? $export_btn : ''; // phpcs:ignore ?></div></div>
+			<div class="sms-card-head"><h2>Not Ortalamaları (%)</h2><div class="sms-head-tools"><span class="sms-muted">Derslik bazında, dönem geneli</span><?php echo wp_kses_post( ( $matrix['rows'] && $classes ) ? $export_btn : '' ); ?></div></div>
 			<?php if ( $matrix['rows'] && $classes ) : ?>
 				<div class="sms-table-scroll">
 				<table class="sms-table sms-matrix">
@@ -513,8 +513,8 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 						<?php foreach ( $matrix['rows'] as $row ) : if ( ! $row['has_any'] ) { continue; } $st = $row['student']; ?>
 							<tr>
 								<td class="sms-name-cell">
-									<?php echo nizamiye_avatar( nizamiye_student_name( $st ) ); // phpcs:ignore ?>
-									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
+									<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $st ) ) ); ?>
+									<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $st->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $st ) ); ?></strong></a>
 									<span class="sms-muted"><?php echo isset( $st->grade_level ) ? esc_html( nizamiye_grade_label( $st->grade_level ) ) : ''; ?></span></div>
 								</td>
 								<?php foreach ( $classes as $c ) : $cell = $row['cells'][ (int) $c->id ]; ?>
@@ -551,7 +551,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 			$summary = Nizamiye_Reports::grade_level_summary( $term_id, $student_ids );
 			?>
 			<div class="sms-card sms-mt">
-				<div class="sms-card-head"><h2>Sınıf Bazında Genel Özet</h2><?php echo $summary ? $export_btn : ''; // phpcs:ignore ?></div>
+				<div class="sms-card-head"><h2>Sınıf Bazında Genel Özet</h2><?php echo wp_kses_post( $summary ? $export_btn : '' ); ?></div>
 				<?php if ( $summary ) : ?>
 					<div class="sms-table-scroll">
 					<table class="sms-table">
@@ -582,7 +582,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 			}
 			?>
 			<div class="sms-card sms-mt">
-				<div class="sms-card-head"><h2>Genel Başarı Sıralaması</h2><div class="sms-head-tools"><span class="sms-muted">Bileşik skor: %40 devam + %40 alışkanlık + %20 not</span><?php echo $scores ? $export_btn : ''; // phpcs:ignore ?></div></div>
+				<div class="sms-card-head"><h2>Genel Başarı Sıralaması</h2><div class="sms-head-tools"><span class="sms-muted">Bileşik skor: %40 devam + %40 alışkanlık + %20 not</span><?php echo wp_kses_post( $scores ? $export_btn : '' ); ?></div></div>
 				<?php if ( $scores ) : ?>
 					<div class="sms-table-scroll">
 					<table class="sms-table">
@@ -591,7 +591,7 @@ $export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . esc_url( $e
 						<?php foreach ( $scores as $i => $row ) : $s = $row['student']; ?>
 							<tr>
 								<td class="sms-muted">#<?php echo (int) $i + 1; ?></td>
-								<td class="sms-name-cell"><?php echo nizamiye_avatar( nizamiye_student_name( $s ) ); // phpcs:ignore ?><a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $s ) ); ?></strong></a></td>
+								<td class="sms-name-cell"><?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $s ) ) ); ?><a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>"><strong><?php echo esc_html( nizamiye_student_name( $s ) ); ?></strong></a></td>
 								<td><?php echo isset( $s->grade_level ) ? esc_html( nizamiye_grade_label( $s->grade_level ) ) : '—'; ?></td>
 								<td class="sms-center"><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['attendance'] ) ); ?>"><?php echo null !== $row['attendance'] ? esc_html( $row['attendance'] . '%' ) : '—'; ?></span></td>
 								<td class="sms-center"><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? esc_html( $row['habit'] . '%' ) : '—'; ?></span></td>

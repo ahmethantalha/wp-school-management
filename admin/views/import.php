@@ -34,7 +34,7 @@ $hints = array(
 
 	<div class="sms-tabs">
 		<?php foreach ( $tabs as $key => $t ) : ?>
-			<a class="sms-tab <?php echo $tab === $key ? 'is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-import&tab=' . $key ) ); ?>">
+			<a class="sms-tab <?php echo $tab === $key ? 'is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-import&tab=' . $key ) ); ?>">
 				<span class="dashicons <?php echo esc_attr( $t[1] ); ?>"></span> <?php echo esc_html( $t[0] ); ?>
 			</a>
 		<?php endforeach; ?>
@@ -66,7 +66,7 @@ $hints = array(
 						<?php wp_nonce_field( 'nizamiye_import', '_nizamiye_nonce' ); ?>
 						<input type="hidden" name="import_type" value="<?php echo esc_attr( $tab ); ?>">
 						<input type="hidden" name="term_id" value="<?php echo (int) $term_id; ?>">
-						<input type="hidden" name="_nizamiye_back" value="<?php echo esc_attr( admin_url( 'admin.php?page=sms-import&tab=' . $tab ) ); ?>">
+						<input type="hidden" name="_nizamiye_back" value="<?php echo esc_attr( admin_url( 'admin.php?page=nizamiye-import&tab=' . $tab ) ); ?>">
 
 						<div class="sms-dropzone">
 							<span class="dashicons dashicons-upload"></span>

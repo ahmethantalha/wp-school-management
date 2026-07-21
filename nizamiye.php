@@ -23,15 +23,15 @@ define( 'NIZAMIYE_URL', plugin_dir_url( __FILE__ ) );
 require_once NIZAMIYE_DIR . 'includes/class-sms-install.php';
 require_once NIZAMIYE_DIR . 'includes/class-sms-roles.php';
 require_once NIZAMIYE_DIR . 'includes/sms-helpers.php';
-require_once NIZAMIYE_DIR . 'includes/class-sms-terms.php';
-require_once NIZAMIYE_DIR . 'includes/class-sms-students.php';
-require_once NIZAMIYE_DIR . 'includes/class-sms-classes.php';
-require_once NIZAMIYE_DIR . 'includes/class-sms-attendance-types.php';
-require_once NIZAMIYE_DIR . 'includes/class-sms-attendance.php';
-require_once NIZAMIYE_DIR . 'includes/class-sms-import.php';
-require_once NIZAMIYE_DIR . 'includes/class-sms-habits.php';
-require_once NIZAMIYE_DIR . 'includes/class-sms-grades.php';
-require_once NIZAMIYE_DIR . 'includes/class-sms-reports.php';
+require_once NIZAMIYE_DIR . 'includes/class-nizamiye-terms.php';
+require_once NIZAMIYE_DIR . 'includes/class-nizamiye-students.php';
+require_once NIZAMIYE_DIR . 'includes/class-nizamiye-classes.php';
+require_once NIZAMIYE_DIR . 'includes/class-nizamiye-attendance-types.php';
+require_once NIZAMIYE_DIR . 'includes/class-nizamiye-attendance.php';
+require_once NIZAMIYE_DIR . 'includes/class-nizamiye-import.php';
+require_once NIZAMIYE_DIR . 'includes/class-nizamiye-habits.php';
+require_once NIZAMIYE_DIR . 'includes/class-nizamiye-grades.php';
+require_once NIZAMIYE_DIR . 'includes/class-nizamiye-reports.php';
 require_once NIZAMIYE_DIR . 'includes/class-sms-pdf.php';
 
 if ( is_admin() ) {
@@ -140,10 +140,10 @@ add_action( 'admin_init', function () {
 	global $pagenow;
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only route check, no state change.
 	$page    = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
-	$allowed = ( 'admin.php' === $pagenow && 0 === strpos( $page, 'sms-' ) )
+	$allowed = ( 'admin.php' === $pagenow && 0 === strpos( $page, 'nizamiye-' ) )
 		|| 'admin-post.php' === $pagenow;
 	if ( ! $allowed ) {
-		wp_safe_redirect( admin_url( 'admin.php?page=sms-dashboard' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=nizamiye-dashboard' ) );
 		exit;
 	}
 }, 1 );
@@ -155,7 +155,7 @@ add_action( 'admin_menu', function () {
 	}
 	global $menu;
 	foreach ( (array) $menu as $item ) {
-		if ( isset( $item[2] ) && 'sms-dashboard' !== $item[2] ) {
+		if ( isset( $item[2] ) && 'nizamiye-dashboard' !== $item[2] ) {
 			remove_menu_page( $item[2] );
 		}
 	}
@@ -202,7 +202,7 @@ add_action( 'admin_enqueue_scripts', function () {
 // Giriş sonrası veli/öğrenci/öğretmeni doğrudan panele yönlendir.
 add_filter( 'login_redirect', function ( $redirect_to, $requested, $user ) {
 	if ( $user instanceof WP_User && ! user_can( $user, 'manage_options' ) && user_can( $user, 'nizamiye_access' ) ) {
-		return admin_url( 'admin.php?page=sms-dashboard' );
+		return admin_url( 'admin.php?page=nizamiye-dashboard' );
 	}
 	return $redirect_to;
 }, 10, 3 );

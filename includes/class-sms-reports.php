@@ -111,14 +111,15 @@ class Nizamiye_Reports {
 			return array( 'sessions' => Nizamiye_Attendance_Types::sessions( $category_id ), 'rows' => array(), 'totals' => array() );
 		}
 
-		$ids = implode( ',', array_map( function ( $s ) { return (int) $s->id; }, $students ) );
+		$student_id_list = array_map( function ( $s ) { return (int) $s->id; }, $students );
+		$id_placeholders = implode( ',', array_fill( 0, count( $student_id_list ), '%d' ) );
 		$raw = $wpdb->get_results( $wpdb->prepare(
 			"SELECT student_id, session_id, status, COUNT(*) AS cnt
 			 FROM {$wpdb->prefix}nizamiye_attendance
 			 WHERE term_id = %d AND category_id = %d AND att_date >= %s AND att_date <= %s
-			   AND student_id IN ($ids)
+			   AND student_id IN ($id_placeholders)
 			 GROUP BY student_id, session_id, status",
-			$term_id, $category_id, $date_from, $date_to
+			array_merge( array( $term_id, $category_id, $date_from, $date_to ), $student_id_list )
 		) );
 
 		$empty = array( 'present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0, 'total' => 0, 'rate' => null );
@@ -187,15 +188,16 @@ class Nizamiye_Reports {
 			return array( 'habits' => $habits, 'rows' => array(), 'totals' => array() );
 		}
 
-		$ids = implode( ',', array_map( function ( $s ) { return (int) $s->id; }, $students ) );
+		$student_id_list = array_map( function ( $s ) { return (int) $s->id; }, $students );
+		$id_placeholders = implode( ',', array_fill( 0, count( $student_id_list ), '%d' ) );
 		$raw = $wpdb->get_results( $wpdb->prepare(
 			"SELECT l.student_id, l.habit_id, COUNT(*) AS logs,
 				ROUND(AVG(CASE WHEN h.track_type IN ('binary','reading') THEN LEAST(l.value,1) * 100 ELSE l.value / h.scale_max * 100 END)) AS rate
 			 FROM {$wpdb->prefix}nizamiye_habit_logs l
 			 INNER JOIN {$wpdb->prefix}nizamiye_habits h ON h.id = l.habit_id
-			 WHERE h.term_id = %d AND l.student_id IN ($ids)
+			 WHERE h.term_id = %d AND l.student_id IN ($id_placeholders)
 			 GROUP BY l.student_id, l.habit_id",
-			$term_id
+			array_merge( array( $term_id ), $student_id_list )
 		) );
 
 		$map = array();
@@ -253,15 +255,16 @@ class Nizamiye_Reports {
 			return array( 'classes' => $classes, 'rows' => array(), 'totals' => array() );
 		}
 
-		$ids = implode( ',', array_map( function ( $s ) { return (int) $s->id; }, $students ) );
+		$student_id_list = array_map( function ( $s ) { return (int) $s->id; }, $students );
+		$id_placeholders = implode( ',', array_fill( 0, count( $student_id_list ), '%d' ) );
 		$raw = $wpdb->get_results( $wpdb->prepare(
 			"SELECT g.student_id, g.class_id, COUNT(*) AS exams,
 				ROUND(AVG(g.score / g.max_score * 100)) AS rate
 			 FROM {$wpdb->prefix}nizamiye_grades g
 			 INNER JOIN {$wpdb->prefix}nizamiye_classes c ON c.id = g.class_id
-			 WHERE c.term_id = %d AND g.max_score > 0 AND g.student_id IN ($ids)
+			 WHERE c.term_id = %d AND g.max_score > 0 AND g.student_id IN ($id_placeholders)
 			 GROUP BY g.student_id, g.class_id",
-			$term_id
+			array_merge( array( $term_id ), $student_id_list )
 		) );
 
 		$map = array();
@@ -354,15 +357,18 @@ class Nizamiye_Reports {
 	/** Yoklama türü (kategori) bazında dönem özeti. */
 	public static function category_summary( $term_id, array $student_ids = null ) {
 		global $wpdb;
-		$sql = "SELECT category_id, status, COUNT(*) AS cnt FROM {$wpdb->prefix}nizamiye_attendance WHERE term_id = %d";
+		$sql    = "SELECT category_id, status, COUNT(*) AS cnt FROM {$wpdb->prefix}nizamiye_attendance WHERE term_id = %d";
+		$params = array( $term_id );
 		if ( null !== $student_ids ) {
 			if ( ! $student_ids ) {
 				return array();
 			}
-			$sql .= ' AND student_id IN (' . implode( ',', array_map( 'intval', $student_ids ) ) . ')';
+			$clean_ids = array_map( 'intval', $student_ids );
+			$sql      .= ' AND student_id IN (' . implode( ',', array_fill( 0, count( $clean_ids ), '%d' ) ) . ')';
+			$params    = array_merge( $params, $clean_ids );
 		}
 		$sql .= ' GROUP BY category_id, status';
-		$raw  = $wpdb->get_results( $wpdb->prepare( $sql, $term_id ) );
+		$raw  = $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
 
 		$by_cat = array();
 		foreach ( $raw as $r ) {

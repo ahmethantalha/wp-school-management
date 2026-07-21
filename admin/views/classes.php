@@ -16,7 +16,7 @@ foreach ( nizamiye_users_by_role( 'nizamiye_teacher' ) as $t ) {
 	<?php if ( nizamiye_is_manager() && $term_id ) : ?>
 		<div class="sms-toolbar">
 			<span></span>
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-classes&view=edit&nizamiye_term=' . $term_id ) ); ?>" class="sms-btn sms-btn-primary"><span class="dashicons dashicons-plus-alt2"></span> Yeni Derslik</a>
+			<a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-classes&view=edit&nizamiye_term=' . $term_id ) ); ?>" class="sms-btn sms-btn-primary"><span class="dashicons dashicons-plus-alt2"></span> Yeni Derslik</a>
 		</div>
 	<?php endif; ?>
 
@@ -36,9 +36,9 @@ foreach ( nizamiye_users_by_role( 'nizamiye_teacher' ) as $t ) {
 						<span><span class="dashicons dashicons-groups"></span> <?php echo (int) $c->student_count; ?> öğrenci</span>
 					</div>
 					<div class="sms-class-card-actions">
-						<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-classes&view=edit&class_id=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>">Yönet</a>
-						<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&class_id=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>">Yoklama</a>
-						<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-grades&gview=class&class_id=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>">Notlar</a>
+						<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-classes&view=edit&class_id=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>">Yönet</a>
+						<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-attendance&class_id=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>">Yoklama</a>
+						<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-grades&gview=class&class_id=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>">Notlar</a>
 					</div>
 				</div>
 			<?php endforeach; ?>

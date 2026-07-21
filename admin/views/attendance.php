@@ -29,7 +29,7 @@ if ( ! $category ) {
 				<?php foreach ( $cats as $cat ) :
 					$scount = Nizamiye_Attendance_Types::session_count( (int) $cat->id );
 					?>
-					<a class="sms-cat-card sms-scope-<?php echo esc_attr( $cat->scope ); ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&cat=' . (int) $cat->id . '&nizamiye_term=' . $term_id ) ); ?>">
+					<a class="sms-cat-card sms-scope-<?php echo esc_attr( $cat->scope ); ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-attendance&cat=' . (int) $cat->id . '&nizamiye_term=' . $term_id ) ); ?>">
 						<span class="sms-cat-icon"><span class="dashicons <?php echo esc_attr( $cat->icon ?: 'dashicons-clipboard' ); ?>"></span></span>
 						<span class="sms-cat-name"><?php echo esc_html( $cat->name ); ?></span>
 						<span class="sms-cat-meta">
@@ -38,7 +38,7 @@ if ( ! $category ) {
 					</a>
 				<?php endforeach; ?>
 			</div>
-			<p class="sms-muted sms-mt"><span class="dashicons dashicons-info"></span> Yeni yoklama türü mü lazım? Yönetici olarak <a href="<?php echo esc_url( admin_url( 'admin.php?page=sms-att-types' ) ); ?>">Yoklama Türleri</a> sayfasından ekleyebilirsiniz.</p>
+			<p class="sms-muted sms-mt"><span class="dashicons dashicons-info"></span> Yeni yoklama türü mü lazım? Yönetici olarak <a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-att-types' ) ); ?>">Yoklama Türleri</a> sayfasından ekleyebilirsiniz.</p>
 		<?php else : ?>
 			<div class="sms-card sms-empty"><span class="dashicons dashicons-clipboard"></span><h2>Yetkili olduğunuz yoklama türü yok</h2><p>Branş öğretmenleri kendi dersliklerinin, sınıf öğretmenleri genel yoklamaların (namaz, temizlik, telefon) sorumlusudur.</p></div>
 		<?php endif; ?>
@@ -53,12 +53,12 @@ if ( 'class' === $category->scope && ! $class_id ) {
 	?>
 	<div class="wrap sms-wrap">
 		<?php nizamiye_view_header( $category->name . ' Yoklaması', 'Yoklama alacağınız dersliği seçin.' ); ?>
-		<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&nizamiye_term=' . $term_id ) ); ?>">← Yoklama türlerine dön</a></p>
+		<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-attendance&nizamiye_term=' . $term_id ) ); ?>">← Yoklama türlerine dön</a></p>
 		<?php if ( $classes ) : ?>
 			<div class="sms-cat-grid">
 				<?php $sess = Nizamiye_Attendance_Types::sessions( (int) $category->id ); $sid = $sess ? (int) $sess[0]->id : 0; ?>
 				<?php foreach ( $classes as $c ) : ?>
-					<a class="sms-cat-card" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&cat=' . (int) $category->id . '&session=' . $sid . '&class_id=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>">
+					<a class="sms-cat-card" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-attendance&cat=' . (int) $category->id . '&session=' . $sid . '&class_id=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>">
 						<span class="sms-cat-icon"><span class="dashicons dashicons-book-alt"></span></span>
 						<span class="sms-cat-name"><?php echo esc_html( $c->name ); ?></span>
 						<span class="sms-cat-meta"><?php echo (int) $c->student_count; ?> öğrenci</span>
@@ -79,10 +79,10 @@ if ( 'general' === $category->scope && count( $sessions ) > 1 && ! $sess_id ) {
 	?>
 	<div class="wrap sms-wrap">
 		<?php nizamiye_view_header( $category->name . ' Yoklaması', 'Hangi oturumun yoklamasını alacaksınız?' ); ?>
-		<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&nizamiye_term=' . $term_id ) ); ?>">← Yoklama türlerine dön</a></p>
+		<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-attendance&nizamiye_term=' . $term_id ) ); ?>">← Yoklama türlerine dön</a></p>
 		<div class="sms-cat-grid">
 			<?php foreach ( $sessions as $s ) : ?>
-				<a class="sms-cat-card sms-session-card" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-attendance&cat=' . (int) $category->id . '&session=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>">
+				<a class="sms-cat-card sms-session-card" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-attendance&cat=' . (int) $category->id . '&session=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ); ?>">
 					<span class="sms-cat-icon"><span class="dashicons <?php echo esc_attr( $category->icon ?: 'dashicons-clock' ); ?>"></span></span>
 					<span class="sms-cat-name"><?php echo esc_html( $s->name ); ?></span>
 				</a>
@@ -130,8 +130,8 @@ $grades   = 'general' === $category->scope ? Nizamiye_Students::grades_in_term( 
 $multi_session = count( $sessions ) > 1;
 $title    = $category->name . ( $multi_session ? ' — ' . $session->name : '' ) . ' Yoklaması';
 $back_url = $multi_session
-	? admin_url( 'admin.php?page=sms-attendance&cat=' . (int) $category->id . '&nizamiye_term=' . $term_id )
-	: admin_url( 'admin.php?page=sms-attendance&nizamiye_term=' . $term_id );
+	? admin_url( 'admin.php?page=nizamiye-attendance&cat=' . (int) $category->id . '&nizamiye_term=' . $term_id )
+	: admin_url( 'admin.php?page=nizamiye-attendance&nizamiye_term=' . $term_id );
 ?>
 <div class="wrap sms-wrap">
 	<?php nizamiye_view_header( $title, $scope_lbl ); ?>
@@ -140,7 +140,7 @@ $back_url = $multi_session
 	<div class="sms-card">
 		<div class="sms-pad">
 			<form method="get" class="sms-filters">
-				<input type="hidden" name="page" value="sms-attendance">
+				<input type="hidden" name="page" value="nizamiye-attendance">
 				<input type="hidden" name="cat" value="<?php echo (int) $category->id; ?>">
 				<input type="hidden" name="session" value="<?php echo (int) $session->id; ?>">
 				<?php if ( $class_id ) : ?><input type="hidden" name="class_id" value="<?php echo (int) $class_id; ?>"><?php endif; ?>

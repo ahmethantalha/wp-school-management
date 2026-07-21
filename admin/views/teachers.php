@@ -25,12 +25,12 @@ $settings      = nizamiye_get_settings();
 					<tbody>
 					<?php foreach ( $teachers as $t ) : ?>
 						<tr>
-							<td class="sms-name-cell"><?php echo nizamiye_avatar( $t->display_name ); // phpcs:ignore ?><strong><?php echo esc_html( $t->display_name ); ?></strong><?php echo nizamiye_is_class_teacher( (int) $t->ID ) ? ' <span class="sms-badge sms-badge-green">Sınıf Öğretmeni</span>' : ''; ?></td>
+							<td class="sms-name-cell"><?php echo wp_kses_post( nizamiye_avatar( $t->display_name ) ); ?><strong><?php echo esc_html( $t->display_name ); ?></strong><?php echo nizamiye_is_class_teacher( (int) $t->ID ) ? ' <span class="sms-badge sms-badge-green">Sınıf Öğretmeni</span>' : ''; ?></td>
 							<td class="sms-muted"><?php echo esc_html( $t->user_email ); ?></td>
 							<td><?php echo (int) Nizamiye_Classes::count_for_term( $term_id, (int) $t->ID ); ?></td>
 							<td class="sms-actions-cell">
-								<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-teachers&user=' . (int) $t->ID ) ); ?>">Düzenle</a>
-								<?php nizamiye_form_open( 'nizamiye_delete_user', 'sms-inline sms-confirm' ); nizamiye_back_url_field( admin_url( 'admin.php?page=sms-teachers' ) ); ?>
+								<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-teachers&user=' . (int) $t->ID ) ); ?>">Düzenle</a>
+								<?php nizamiye_form_open( 'nizamiye_delete_user', 'sms-inline sms-confirm' ); nizamiye_back_url_field( admin_url( 'admin.php?page=nizamiye-teachers' ) ); ?>
 									<input type="hidden" name="user_id" value="<?php echo (int) $t->ID; ?>">
 									<button type="submit" class="sms-btn sms-btn-danger-ghost sms-btn-sm" data-confirm="Öğretmen hesabı silinecek; derslikleri öğretmensiz kalır. Emin misiniz?">Sil</button>
 								</form>
@@ -47,7 +47,7 @@ $settings      = nizamiye_get_settings();
 		<div class="sms-card">
 			<div class="sms-card-head"><h2><?php echo $edit ? 'Öğretmeni Düzenle' : 'Yeni Öğretmen'; ?></h2></div>
 			<div class="sms-pad">
-				<?php nizamiye_form_open( 'nizamiye_save_user' ); nizamiye_back_url_field( admin_url( 'admin.php?page=sms-teachers' ) ); ?>
+				<?php nizamiye_form_open( 'nizamiye_save_user' ); nizamiye_back_url_field( admin_url( 'admin.php?page=nizamiye-teachers' ) ); ?>
 					<input type="hidden" name="nizamiye_role" value="nizamiye_teacher">
 					<input type="hidden" name="user_id" value="<?php echo $edit ? (int) $edit->ID : 0; ?>">
 					<div class="sms-field"><label>Ad Soyad *</label><input type="text" name="display_name" value="<?php echo esc_attr( $edit->display_name ?? '' ); ?>" required></div>
@@ -77,7 +77,7 @@ $settings      = nizamiye_get_settings();
 
 					<button type="submit" class="sms-btn sms-btn-primary sms-btn-block"><?php echo $edit ? 'Güncelle' : 'Öğretmen Ekle'; ?></button>
 					<?php if ( $edit ) : ?>
-						<a class="sms-btn sms-btn-ghost sms-btn-block sms-mt-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-teachers' ) ); ?>">Vazgeç</a>
+						<a class="sms-btn sms-btn-ghost sms-btn-block sms-mt-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-teachers' ) ); ?>">Vazgeç</a>
 					<?php endif; ?>
 				</form>
 			</div>

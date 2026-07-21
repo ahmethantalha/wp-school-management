@@ -33,9 +33,9 @@ $edit_grades  = $edit ? Nizamiye_Attendance_Types::get_grade_levels( (int) $edit
 							<?php endif; ?>
 						</h2>
 						<div class="sms-actions-cell">
-							<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-att-types&cat=' . (int) $cat->id ) ); ?>">Adı Düzenle</a>
+							<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-att-types&cat=' . (int) $cat->id ) ); ?>">Adı Düzenle</a>
 							<?php if ( ! $cat->is_system ) : ?>
-								<?php nizamiye_form_open( 'nizamiye_delete_category', 'sms-inline sms-confirm' ); nizamiye_back_url_field( admin_url( 'admin.php?page=sms-att-types' ) ); ?>
+								<?php nizamiye_form_open( 'nizamiye_delete_category', 'sms-inline sms-confirm' ); nizamiye_back_url_field( admin_url( 'admin.php?page=nizamiye-att-types' ) ); ?>
 									<input type="hidden" name="category_id" value="<?php echo (int) $cat->id; ?>">
 									<button type="submit" class="sms-btn sms-btn-danger-ghost sms-btn-sm" data-confirm="Bu kategori ve TÜM ilgili yoklama kayıtları silinecek. Emin misiniz?">Sil</button>
 								</form>
@@ -47,14 +47,14 @@ $edit_grades  = $edit ? Nizamiye_Attendance_Types::get_grade_levels( (int) $edit
 							<?php foreach ( $sessions as $s ) : ?>
 								<span class="sms-session-chip">
 									<?php echo esc_html( $s->name ); ?>
-									<?php nizamiye_form_open( 'nizamiye_delete_session', 'sms-inline sms-confirm' ); nizamiye_back_url_field( admin_url( 'admin.php?page=sms-att-types' ) ); ?>
+									<?php nizamiye_form_open( 'nizamiye_delete_session', 'sms-inline sms-confirm' ); nizamiye_back_url_field( admin_url( 'admin.php?page=nizamiye-att-types' ) ); ?>
 										<input type="hidden" name="session_id" value="<?php echo (int) $s->id; ?>">
 										<button type="submit" class="sms-chip-x" data-confirm="'<?php echo esc_attr( $s->name ); ?>' oturumu ve kayıtları silinsin mi?" title="Sil">×</button>
 									</form>
 								</span>
 							<?php endforeach; ?>
 						</div>
-						<?php nizamiye_form_open( 'nizamiye_add_session', 'sms-inline-form' ); nizamiye_back_url_field( admin_url( 'admin.php?page=sms-att-types' ) ); ?>
+						<?php nizamiye_form_open( 'nizamiye_add_session', 'sms-inline-form' ); nizamiye_back_url_field( admin_url( 'admin.php?page=nizamiye-att-types' ) ); ?>
 							<input type="hidden" name="category_id" value="<?php echo (int) $cat->id; ?>">
 							<input type="text" name="name" placeholder="Yeni oturum adı (örn. Sabah)" required>
 							<button type="submit" class="sms-btn sms-btn-ghost sms-btn-sm">+ Oturum Ekle</button>
@@ -67,7 +67,7 @@ $edit_grades  = $edit ? Nizamiye_Attendance_Types::get_grade_levels( (int) $edit
 		<div class="sms-card">
 			<div class="sms-card-head"><h2><?php echo $edit ? 'Kategoriyi Düzenle' : 'Yeni Kategori'; ?></h2></div>
 			<div class="sms-pad">
-				<?php nizamiye_form_open( 'nizamiye_save_category' ); nizamiye_back_url_field( admin_url( 'admin.php?page=sms-att-types' ) ); ?>
+				<?php nizamiye_form_open( 'nizamiye_save_category' ); nizamiye_back_url_field( admin_url( 'admin.php?page=nizamiye-att-types' ) ); ?>
 					<input type="hidden" name="category_id" value="<?php echo $edit ? (int) $edit->id : 0; ?>">
 					<div class="sms-field"><label>Kategori Adı *</label><input type="text" name="name" value="<?php echo esc_attr( $edit->name ?? '' ); ?>" placeholder="Örn. Etüt" required></div>
 
@@ -115,7 +115,7 @@ $edit_grades  = $edit ? Nizamiye_Attendance_Types::get_grade_levels( (int) $edit
 
 					<button type="submit" class="sms-btn sms-btn-primary sms-btn-block"><?php echo $edit ? 'Kaydet' : 'Kategori Oluştur'; ?></button>
 					<?php if ( $edit ) : ?>
-						<a class="sms-btn sms-btn-ghost sms-btn-block sms-mt-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-att-types' ) ); ?>">Vazgeç</a>
+						<a class="sms-btn sms-btn-ghost sms-btn-block sms-mt-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-att-types' ) ); ?>">Vazgeç</a>
 					<?php endif; ?>
 				</form>
 			</div>

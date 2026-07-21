@@ -26,7 +26,7 @@ $term_id  = nizamiye_current_term_id();
 				?>
 				<div class="sms-card sms-class-card">
 					<div class="sms-class-card-top">
-						<?php echo nizamiye_avatar( nizamiye_student_name( $c ), 'sms-avatar-lg' ); // phpcs:ignore ?>
+						<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $c ), 'sms-avatar-lg' ) ); ?>
 						<div>
 							<h3><?php echo esc_html( nizamiye_student_name( $c ) ); ?></h3>
 							<span class="sms-muted">
@@ -40,7 +40,7 @@ $term_id  = nizamiye_current_term_id();
 						<span><span class="dashicons dashicons-yes-alt"></span> Alışkanlık: <strong class="<?php echo esc_attr( nizamiye_rate_class( $habit_avg ) ); ?>"><?php echo null !== $habit_avg ? esc_html( $habit_avg . '%' ) : '—'; ?></strong></span>
 					</div>
 					<div class="sms-class-card-actions">
-						<a class="sms-btn sms-btn-primary sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=sms-reports&student=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>">Detaylı Karne</a>
+						<a class="sms-btn sms-btn-primary sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $c->id . '&nizamiye_term=' . $term_id ) ); ?>">Detaylı Karne</a>
 					</div>
 				</div>
 			<?php endforeach; ?>
