@@ -10,8 +10,10 @@ if ( ! current_user_can( 'nizamiye_teach' ) ) {
 $term_id = nizamiye_current_term_id();
 $teacher = nizamiye_is_teacher();
 $has_nonce = nizamiye_verify_view_nonce();
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
 $grade_f = $has_nonce && isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
 $search  = $has_nonce && isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+// phpcs:enable WordPress.Security.NonceVerification.Recommended
 $scores  = $term_id ? Nizamiye_Reports::student_scores( $term_id, $teacher ? nizamiye_teacher_student_ids() : null ) : array();
 
 // Sınıf ve arama filtreleri.

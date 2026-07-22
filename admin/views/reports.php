@@ -14,6 +14,7 @@ $term    = $term_id ? Nizamiye_Terms::get( $term_id ) : null;
 /* ---------- Filtre parametreleri ---------- */
 // Nonce eksik/geçersizse (ör. eski bir yer imi) filtreler yok sayılır, varsayılan görünüm yüklenir.
 $has_nonce = nizamiye_verify_view_nonce();
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
 $rtype  = $has_nonce && isset( $_GET['rtype'] ) ? sanitize_key( $_GET['rtype'] ) : 'yoklama';
 if ( ! in_array( $rtype, array( 'yoklama', 'aliskanlik', 'not', 'genel' ), true ) ) {
 	$rtype = 'yoklama';
@@ -32,6 +33,7 @@ $cat_id = $has_nonce && isset( $_GET['cat'] ) ? (int) $_GET['cat'] : ( $namaz ? 
 $cat_sessions   = $cat_id ? Nizamiye_Attendance_Types::sessions( $cat_id ) : array();
 $valid_sess_ids = array_map( function ( $s ) { return (int) $s->id; }, $cat_sessions );
 $sess_id        = $has_nonce && isset( $_GET['rsession'] ) ? (int) $_GET['rsession'] : 0;
+// phpcs:enable WordPress.Security.NonceVerification.Recommended
 if ( $sess_id && ! in_array( $sess_id, $valid_sess_ids, true ) ) {
 	$sess_id = 0; // kategoriye ait olmayan (bayat) oturum seçimini sıfırla.
 }

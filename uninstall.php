@@ -17,9 +17,9 @@ if ( ! defined( 'NIZAMIYE_REMOVE_DATA_ON_UNINSTALL' ) || ! NIZAMIYE_REMOVE_DATA_
 
 global $wpdb;
 
-$tables = array( 'terms', 'students', 'enrollments', 'classes', 'class_students', 'att_categories', 'att_sessions', 'attendance', 'habits', 'habit_students', 'habit_logs', 'grades' );
-foreach ( $tables as $table ) {
-	$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'nizamiye_' . $table ); // phpcs:ignore
+$nizamiye_tables = array( 'terms', 'students', 'enrollments', 'classes', 'class_students', 'att_categories', 'att_sessions', 'attendance', 'habits', 'habit_students', 'habit_logs', 'grades' );
+foreach ( $nizamiye_tables as $nizamiye_table ) {
+	$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'nizamiye_' . $nizamiye_table ); // phpcs:ignore
 }
 
 delete_option( 'nizamiye_settings' );
@@ -29,9 +29,9 @@ remove_role( 'nizamiye_teacher' );
 remove_role( 'nizamiye_parent' );
 remove_role( 'nizamiye_student' );
 
-$admin = get_role( 'administrator' );
-if ( $admin ) {
-	$admin->remove_cap( 'nizamiye_access' );
-	$admin->remove_cap( 'nizamiye_teach' );
-	$admin->remove_cap( 'nizamiye_manage' );
+$nizamiye_admin_role = get_role( 'administrator' );
+if ( $nizamiye_admin_role ) {
+	$nizamiye_admin_role->remove_cap( 'nizamiye_access' );
+	$nizamiye_admin_role->remove_cap( 'nizamiye_teach' );
+	$nizamiye_admin_role->remove_cap( 'nizamiye_manage' );
 }

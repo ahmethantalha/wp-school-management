@@ -3,9 +3,11 @@ defined( 'ABSPATH' ) || exit;
 
 $term_id = nizamiye_current_term_id();
 $has_nonce = nizamiye_verify_view_nonce();
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
 $gview   = $has_nonce && isset( $_GET['gview'] ) ? sanitize_key( $_GET['gview'] ) : '';
 $subject = $has_nonce && isset( $_GET['subject'] ) ? sanitize_text_field( wp_unslash( $_GET['subject'] ) ) : '';
 $class_id = $has_nonce && isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
+// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 // Eski bağlantı uyumu: class_id verilmiş ama görünüm seçilmemişse sınav listesine git.
 if ( $class_id && ! $gview ) {
@@ -126,9 +128,11 @@ if ( 'entry' === $gview && $class ) {
 
 /* ============================ SINAV DETAYI (öğrenci bazında) ============================ */
 if ( 'exam' === $gview && $class ) {
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
 	$title     = $has_nonce && isset( $_GET['title'] ) ? sanitize_text_field( wp_unslash( $_GET['title'] ) ) : '';
 	$exam_date = $has_nonce && isset( $_GET['exam_date'] ) ? sanitize_text_field( wp_unslash( $_GET['exam_date'] ) ) : '';
 	$exam_type = $has_nonce && isset( $_GET['exam_type'] ) ? sanitize_text_field( wp_unslash( $_GET['exam_type'] ) ) : '';
+	// phpcs:enable WordPress.Security.NonceVerification.Recommended
 	$scores    = $title ? Nizamiye_Grades::exam_scores( $class_id, $title, $exam_date, $exam_type ) : array();
 	$class_url = nizamiye_view_nonce_url( add_query_arg( array( 'page' => 'nizamiye-grades', 'gview' => 'class', 'class_id' => $class_id, 'nizamiye_term' => $term_id ), admin_url( 'admin.php' ) ) );
 

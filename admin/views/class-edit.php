@@ -1,6 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
 $class_id = nizamiye_verify_view_nonce() && isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
 $class    = $class_id ? Nizamiye_Classes::get( $class_id ) : null;
 $term_id  = $class ? (int) $class->term_id : nizamiye_current_term_id();

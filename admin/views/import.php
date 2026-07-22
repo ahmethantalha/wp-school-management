@@ -1,6 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
 $tab     = nizamiye_verify_view_nonce() && isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'students';
 $term_id = nizamiye_current_term_id();
 $tabs    = array(

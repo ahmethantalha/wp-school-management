@@ -113,6 +113,7 @@ class Nizamiye_Reports {
 
 		$student_id_list = array_map( function ( $s ) { return (int) $s->id; }, $students );
 		$id_placeholders = implode( ',', array_fill( 0, count( $student_id_list ), '%d' ) );
+		// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $id_placeholders sorguya count($student_id_list) kadar '%d' ekler; array_merge() sonucu toplamda 4+N değer taşır, sniff dinamik placeholder sayısını statik olarak göremiyor.
 		$raw = $wpdb->get_results( $wpdb->prepare(
 			"SELECT student_id, session_id, status, COUNT(*) AS cnt
 			 FROM {$wpdb->prefix}nizamiye_attendance

@@ -3,6 +3,7 @@ defined( 'ABSPATH' ) || exit;
 
 $parents = nizamiye_users_by_role( 'nizamiye_parent' );
 $term_id = nizamiye_current_term_id();
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
 $edit_id = nizamiye_verify_view_nonce() && isset( $_GET['user'] ) ? (int) $_GET['user'] : 0;
 $edit    = $edit_id ? get_userdata( $edit_id ) : null;
 if ( $edit && ! in_array( 'nizamiye_parent', (array) $edit->roles, true ) ) {

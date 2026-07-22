@@ -2,6 +2,7 @@
 defined( 'ABSPATH' ) || exit;
 
 $categories = Nizamiye_Attendance_Types::categories( false );
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
 $edit_id    = nizamiye_verify_view_nonce() && isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
 $edit       = $edit_id ? Nizamiye_Attendance_Types::get_category( $edit_id ) : null;
 

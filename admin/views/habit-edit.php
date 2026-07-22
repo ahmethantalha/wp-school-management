@@ -1,6 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
 $habit_id = nizamiye_verify_view_nonce() && isset( $_GET['habit_id'] ) ? (int) $_GET['habit_id'] : 0;
 $habit    = $habit_id ? Nizamiye_Habits::get( $habit_id ) : null;
 $term_id  = $habit ? (int) $habit->term_id : nizamiye_current_term_id();
