@@ -1,8 +1,8 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
-$habit_id = nizamiye_verify_view_nonce() && isset( $_GET['habit_id'] ) ? (int) $_GET['habit_id'] : 0;
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- $_GET okumaları yalnızca yukarıdaki wp_verify_nonce() doğrulaması geçerse kullanılır; aksi halde güvenli varsayılana düşülür.
+$habit_id = ( isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' ) ) && isset( $_GET['habit_id'] ) ? (int) $_GET['habit_id'] : 0;
 $habit    = $habit_id ? Nizamiye_Habits::get( $habit_id ) : null;
 $term_id  = $habit ? (int) $habit->term_id : nizamiye_current_term_id();
 $teacher  = nizamiye_is_teacher();

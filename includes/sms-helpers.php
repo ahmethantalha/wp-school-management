@@ -23,10 +23,6 @@ function nizamiye_view_nonce_field() {
 	wp_nonce_field( 'nizamiye_view', '_wpnonce', false );
 }
 
-function nizamiye_verify_view_nonce() {
-	return isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' );
-}
-
 /** Eklenti ayarlarını varsayılanlarla birlikte döndürür. */
 function nizamiye_get_settings() {
 	$defaults = array(
@@ -51,8 +47,8 @@ function nizamiye_active_term() {
  * Görüntülenen dönem: ?nizamiye_term=ID parametresi varsa o, yoksa aktif dönem.
  */
 function nizamiye_current_term_id() {
-	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
-	if ( nizamiye_verify_view_nonce() && isset( $_GET['nizamiye_term'] ) && (int) $_GET['nizamiye_term'] > 0 ) {
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- $_GET okumaları yalnızca yukarıdaki wp_verify_nonce() doğrulaması geçerse kullanılır; aksi halde güvenli varsayılana düşülür.
+	if ( isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' ) && isset( $_GET['nizamiye_term'] ) && (int) $_GET['nizamiye_term'] > 0 ) {
 		$term = Nizamiye_Terms::get( (int) $_GET['nizamiye_term'] );
 		if ( $term ) {
 			return (int) $term->id;
@@ -291,8 +287,8 @@ function nizamiye_month_names() {
  * filtresi sessizce sıfırlanırdı.
  */
 function nizamiye_resolve_report_dates( $default_from = '', $check_nonce = true ) {
-	// phpcs:disable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır (ya da çağıran taraf zaten kendi nonce'unu doğrulamıştır); ham tarih değerleri yalnızca regex biçim kontrolü için okunur, kullanılan değer sanitize_text_field(wp_unslash()) ile temizlenir.
-	$has_nonce = ! $check_nonce || nizamiye_verify_view_nonce();
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce yukarıda wp_verify_nonce() ile doğrulanır (ya da çağıran taraf zaten kendi nonce'unu doğrulamıştır); ham tarih değerleri yalnızca regex biçim kontrolü için okunur, kullanılan değer sanitize_text_field(wp_unslash()) ile temizlenir.
+	$has_nonce = ! $check_nonce || ( isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' ) );
 	$mode      = $has_nonce && isset( $_GET['datemode'] ) && 'month' === $_GET['datemode'] ? 'month' : 'range';
 	$cur_year  = (int) current_time( 'Y' );
 
@@ -393,10 +389,10 @@ function nizamiye_users_by_role( $role ) {
 
 /** Sayfa içi başarı/hata bildirimini yazdırır (?nizamiye_msg & ?nizamiye_err). */
 function nizamiye_render_notices() {
-	if ( ! nizamiye_verify_view_nonce() ) {
+	if ( ! ( isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' ) ) ) {
 		return;
 	}
-	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- yukarıda nizamiye_verify_view_nonce() ile zaten doğrulandı.
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- yukarıda wp_verify_nonce() ile zaten doğrulandı.
 	if ( ! empty( $_GET['nizamiye_msg'] ) ) {
 		echo '<div class="sms-notice sms-notice-success"><span class="dashicons dashicons-yes-alt"></span>' . esc_html( sanitize_text_field( wp_unslash( $_GET['nizamiye_msg'] ) ) ) . '</div>';
 	}
@@ -427,8 +423,8 @@ function nizamiye_view_header( $title, $subtitle = '', $show_term_picker = true 
 		}
 		// Diğer parametreler yalnızca geçerli bir görüntüleme nonce'u varsa korunur
 		// (aksi halde bu değerler zaten sayfanın kendisinde de yok sayılmış demektir).
-		if ( nizamiye_verify_view_nonce() ) {
-			// phpcs:disable WordPress.Security.NonceVerification.Recommended -- yukarıda nizamiye_verify_view_nonce() ile zaten doğrulandı.
+		if ( isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' ) ) {
+			// phpcs:disable WordPress.Security.NonceVerification.Recommended -- yukarıda wp_verify_nonce() ile zaten doğrulandı.
 			foreach ( array( 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'rsession', 'tab', 'rtype', 'group', 'grade', 'metric', 'from', 'to', 'datemode', 'rmonth', 'ryear', 'gview', 'subject', 'title', 'exam_date', 'exam_type' ) as $keep ) {
 				if ( isset( $_GET[ $keep ] ) ) {
 					echo '<input type="hidden" name="' . esc_attr( $keep ) . '" value="' . esc_attr( sanitize_text_field( wp_unslash( $_GET[ $keep ] ) ) ) . '">';

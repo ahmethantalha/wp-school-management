@@ -25,7 +25,7 @@ class Nizamiye_Grades {
 				COUNT(DISTINCT c.id) AS class_count,
 				COUNT(g.id) AS grade_count
 			 FROM {$wpdb->prefix}nizamiye_classes c
-			 LEFT JOIN " . self::table() . " g ON g.class_id = c.id
+			 LEFT JOIN {$wpdb->prefix}nizamiye_grades g ON g.class_id = c.id
 			 WHERE c.term_id = %d
 			 GROUP BY COALESCE(NULLIF(TRIM(c.subject), ''), 'Diğer')
 			 ORDER BY subject",
@@ -39,7 +39,7 @@ class Nizamiye_Grades {
 		return $wpdb->get_results( $wpdb->prepare(
 			"SELECT c.*,
 				(SELECT COUNT(*) FROM {$wpdb->prefix}nizamiye_class_students cs WHERE cs.class_id = c.id) AS student_count,
-				(SELECT COUNT(DISTINCT CONCAT(g.title,'|',COALESCE(g.exam_date,''),'|',COALESCE(g.exam_type,''))) FROM " . self::table() . " g WHERE g.class_id = c.id) AS exam_count
+				(SELECT COUNT(DISTINCT CONCAT(g.title,'|',COALESCE(g.exam_date,''),'|',COALESCE(g.exam_type,''))) FROM {$wpdb->prefix}nizamiye_grades g WHERE g.class_id = c.id) AS exam_count
 			 FROM {$wpdb->prefix}nizamiye_classes c
 			 WHERE c.term_id = %d AND COALESCE(NULLIF(TRIM(c.subject), ''), 'Diğer') = %s
 			 ORDER BY c.grade_level, c.name",
@@ -56,10 +56,10 @@ class Nizamiye_Grades {
 				ROUND(AVG(score), 1) AS avg_score,
 				MAX(max_score) AS max_score,
 				ROUND(AVG(score / max_score * 100)) AS avg_rate
-			 FROM " . self::table() . '
+			 FROM {$wpdb->prefix}nizamiye_grades
 			 WHERE class_id = %d AND max_score > 0
-			 GROUP BY title, COALESCE(exam_type,\'\'), exam_date
-			 ORDER BY exam_date DESC, title',
+			 GROUP BY title, COALESCE(exam_type,''), exam_date
+			 ORDER BY exam_date DESC, title",
 			$class_id
 		) );
 	}
@@ -67,7 +67,7 @@ class Nizamiye_Grades {
 	/** Tek sınavın öğrenci bazında puanları. */
 	public static function exam_scores( $class_id, $title, $exam_date, $exam_type ) {
 		global $wpdb;
-		$sql    = 'SELECT g.*, s.first_name, s.last_name FROM ' . self::table() . " g
+		$sql    = "SELECT g.*, s.first_name, s.last_name FROM {$wpdb->prefix}nizamiye_grades g
 			 INNER JOIN {$wpdb->prefix}nizamiye_students s ON s.id = g.student_id
 			 WHERE g.class_id = %d AND g.title = %s AND COALESCE(g.exam_type,'') = %s";
 		$params = array( (int) $class_id, $title, (string) $exam_type );
@@ -85,7 +85,7 @@ class Nizamiye_Grades {
 	public static function for_class( $class_id ) {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare(
-			'SELECT g.*, s.first_name, s.last_name FROM ' . self::table() . " g
+			"SELECT g.*, s.first_name, s.last_name FROM {$wpdb->prefix}nizamiye_grades g
 			 INNER JOIN {$wpdb->prefix}nizamiye_students s ON s.id = g.student_id
 			 WHERE g.class_id = %d ORDER BY g.exam_date DESC, g.title, s.first_name",
 			$class_id
@@ -96,7 +96,7 @@ class Nizamiye_Grades {
 	public static function for_student( $student_id, $term_id ) {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare(
-			'SELECT g.*, c.name AS class_name, c.subject FROM ' . self::table() . " g
+			"SELECT g.*, c.name AS class_name, c.subject FROM {$wpdb->prefix}nizamiye_grades g
 			 INNER JOIN {$wpdb->prefix}nizamiye_classes c ON c.id = g.class_id
 			 WHERE g.student_id = %d AND c.term_id = %d
 			 ORDER BY g.exam_date DESC, g.id DESC",
@@ -135,7 +135,7 @@ class Nizamiye_Grades {
 
 	public static function get( $id ) {
 		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::table() . ' WHERE id = %d', $id ) );
+		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}nizamiye_grades WHERE id = %d", $id ) );
 	}
 
 	/** Öğrenci bazında dönem not ortalaması (yüzde): student_id => yüzde. Tek istek içinde memoize edilir. */
@@ -147,8 +147,8 @@ class Nizamiye_Grades {
 		}
 		global $wpdb;
 		$rows = $wpdb->get_results( $wpdb->prepare(
-			'SELECT g.student_id, ROUND(AVG(g.score / g.max_score * 100)) AS rate
-			 FROM ' . self::table() . " g
+			"SELECT g.student_id, ROUND(AVG(g.score / g.max_score * 100)) AS rate
+			 FROM {$wpdb->prefix}nizamiye_grades g
 			 INNER JOIN {$wpdb->prefix}nizamiye_classes c ON c.id = g.class_id
 			 WHERE c.term_id = %d AND g.max_score > 0 GROUP BY g.student_id",
 			$term_id
@@ -165,9 +165,9 @@ class Nizamiye_Grades {
 	public static function student_class_averages( $student_id, $term_id ) {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare(
-			'SELECT c.name AS class_name, c.subject, COUNT(g.id) AS exam_count,
+			"SELECT c.name AS class_name, c.subject, COUNT(g.id) AS exam_count,
 				ROUND(AVG(g.score / g.max_score * 100)) AS avg_rate
-			 FROM ' . self::table() . " g
+			 FROM {$wpdb->prefix}nizamiye_grades g
 			 INNER JOIN {$wpdb->prefix}nizamiye_classes c ON c.id = g.class_id
 			 WHERE g.student_id = %d AND c.term_id = %d AND g.max_score > 0
 			 GROUP BY c.id, c.name, c.subject ORDER BY c.name",

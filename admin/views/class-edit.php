@@ -1,8 +1,8 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
-$class_id = nizamiye_verify_view_nonce() && isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- $_GET okumaları yalnızca yukarıdaki wp_verify_nonce() doğrulaması geçerse kullanılır; aksi halde güvenli varsayılana düşülür.
+$class_id = ( isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' ) ) && isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
 $class    = $class_id ? Nizamiye_Classes::get( $class_id ) : null;
 $term_id  = $class ? (int) $class->term_id : nizamiye_current_term_id();
 $settings = nizamiye_get_settings();

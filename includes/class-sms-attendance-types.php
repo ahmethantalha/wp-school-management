@@ -29,7 +29,7 @@ class Nizamiye_Attendance_Types {
 	/** Tüm kategoriler. */
 	public static function categories( $only_active = true ) {
 		global $wpdb;
-		$sql = 'SELECT * FROM ' . self::ct();
+		$sql = "SELECT * FROM {$wpdb->prefix}nizamiye_att_categories";
 		if ( $only_active ) {
 			$sql .= ' WHERE is_active = 1';
 		}
@@ -39,32 +39,32 @@ class Nizamiye_Attendance_Types {
 
 	public static function get_category( $id ) {
 		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::ct() . ' WHERE id = %d', $id ) );
+		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}nizamiye_att_categories WHERE id = %d", $id ) );
 	}
 
 	public static function get_category_by_slug( $slug ) {
 		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::ct() . ' WHERE slug = %s', $slug ) );
+		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}nizamiye_att_categories WHERE slug = %s", $slug ) );
 	}
 
 	/** Bir kategorinin oturumları. */
 	public static function sessions( $category_id ) {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare(
-			'SELECT * FROM ' . self::st() . ' WHERE category_id = %d ORDER BY sort_order, id',
+			"SELECT * FROM {$wpdb->prefix}nizamiye_att_sessions WHERE category_id = %d ORDER BY sort_order, id",
 			$category_id
 		) );
 	}
 
 	public static function get_session( $id ) {
 		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::st() . ' WHERE id = %d', $id ) );
+		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}nizamiye_att_sessions WHERE id = %d", $id ) );
 	}
 
 	public static function session_count( $category_id ) {
 		global $wpdb;
 		return (int) $wpdb->get_var( $wpdb->prepare(
-			'SELECT COUNT(*) FROM ' . self::st() . ' WHERE category_id = %d', $category_id
+			"SELECT COUNT(*) FROM {$wpdb->prefix}nizamiye_att_sessions WHERE category_id = %d", $category_id
 		) );
 	}
 
@@ -77,7 +77,7 @@ class Nizamiye_Attendance_Types {
 		}
 		$slug = $base;
 		$i    = 2;
-		while ( $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . self::ct() . ' WHERE slug = %s', $slug ) ) ) {
+		while ( $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}nizamiye_att_categories WHERE slug = %s", $slug ) ) ) {
 			$slug = $base . '-' . $i++;
 		}
 		return $slug;
@@ -86,7 +86,7 @@ class Nizamiye_Attendance_Types {
 	public static function create_category( $name, $scope, $icon = '' ) {
 		global $wpdb;
 		$scope = 'class' === $scope ? 'class' : 'general';
-		$order = (int) $wpdb->get_var( 'SELECT COALESCE(MAX(sort_order),0)+1 FROM ' . self::ct() );
+		$order = (int) $wpdb->get_var( "SELECT COALESCE(MAX(sort_order),0)+1 FROM {$wpdb->prefix}nizamiye_att_categories" );
 		$wpdb->insert( self::ct(), array(
 			'name'       => $name,
 			'slug'       => self::unique_category_slug( $name ),
@@ -111,7 +111,7 @@ class Nizamiye_Attendance_Types {
 	/** Kategorinin bu yoklamada görünecek sınıf seviyeleri (boş dizi = tüm sınıflar). */
 	public static function get_grade_levels( $category_id ) {
 		global $wpdb;
-		$raw = $wpdb->get_var( $wpdb->prepare( 'SELECT grade_levels FROM ' . self::ct() . ' WHERE id = %d', (int) $category_id ) );
+		$raw = $wpdb->get_var( $wpdb->prepare( "SELECT grade_levels FROM {$wpdb->prefix}nizamiye_att_categories WHERE id = %d", (int) $category_id ) );
 		if ( ! $raw ) {
 			return array();
 		}
@@ -153,7 +153,7 @@ class Nizamiye_Attendance_Types {
 		$slug = $base;
 		$i    = 2;
 		while ( $wpdb->get_var( $wpdb->prepare(
-			'SELECT id FROM ' . self::st() . ' WHERE category_id = %d AND slug = %s', $category_id, $slug
+			"SELECT id FROM {$wpdb->prefix}nizamiye_att_sessions WHERE category_id = %d AND slug = %s", $category_id, $slug
 		) ) ) {
 			$slug = $base . '-' . $i++;
 		}
@@ -163,7 +163,7 @@ class Nizamiye_Attendance_Types {
 	public static function add_session( $category_id, $name ) {
 		global $wpdb;
 		$order = (int) $wpdb->get_var( $wpdb->prepare(
-			'SELECT COALESCE(MAX(sort_order),0)+1 FROM ' . self::st() . ' WHERE category_id = %d', $category_id
+			"SELECT COALESCE(MAX(sort_order),0)+1 FROM {$wpdb->prefix}nizamiye_att_sessions WHERE category_id = %d", $category_id
 		) );
 		$wpdb->insert( self::st(), array(
 			'category_id' => (int) $category_id,

@@ -3,8 +3,8 @@ defined( 'ABSPATH' ) || exit;
 
 $teachers = nizamiye_users_by_role( 'nizamiye_teacher' );
 $term_id  = nizamiye_current_term_id();
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
-$edit_id  = nizamiye_verify_view_nonce() && isset( $_GET['user'] ) ? (int) $_GET['user'] : 0;
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- $_GET okumaları yalnızca yukarıdaki wp_verify_nonce() doğrulaması geçerse kullanılır; aksi halde güvenli varsayılana düşülür.
+$edit_id  = ( isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' ) ) && isset( $_GET['user'] ) ? (int) $_GET['user'] : 0;
 $edit     = $edit_id ? get_userdata( $edit_id ) : null;
 if ( $edit && ! in_array( 'nizamiye_teacher', (array) $edit->roles, true ) ) {
 	$edit = null;

@@ -1,8 +1,8 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-$has_nonce = nizamiye_verify_view_nonce();
-// phpcs:disable WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
+$has_nonce = isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' );
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- $_GET okumaları yalnızca yukarıdaki wp_verify_nonce() doğrulaması geçerse kullanılır; aksi halde güvenli varsayılana düşülür.
 $habit_id = $has_nonce && isset( $_GET['habit_id'] ) ? (int) $_GET['habit_id'] : 0;
 // phpcs:enable WordPress.Security.NonceVerification.Recommended
 $habit    = $habit_id ? Nizamiye_Habits::get( $habit_id ) : null;
@@ -11,7 +11,7 @@ if ( ! $habit ) {
 	return;
 }
 $term_id = (int) $habit->term_id;
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nizamiye_verify_view_nonce() ile doğrulanır; ham değer yalnızca regex biçim kontrolü için okunur, kullanılan değer sanitize_text_field(wp_unslash()) ile temizlenir.
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- yukarıdaki wp_verify_nonce() ile doğrulanır; ham değer yalnızca regex biçim kontrolü için okunur, kullanılan değer sanitize_text_field(wp_unslash()) ile temizlenir.
 $date    = $has_nonce && isset( $_GET['log_date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['log_date'] ) ) ? sanitize_text_field( wp_unslash( $_GET['log_date'] ) ) : current_time( 'Y-m-d' );
 
 $students = Nizamiye_Habits::students( $habit_id );

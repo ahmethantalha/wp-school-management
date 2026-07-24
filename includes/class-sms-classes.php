@@ -19,13 +19,13 @@ class Nizamiye_Classes {
 
 	public static function get( $id ) {
 		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::table() . ' WHERE id = %d', $id ) );
+		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}nizamiye_classes WHERE id = %d", $id ) );
 	}
 
 	/** Dönemin derslikleri; $teacher_id verilirse yalnızca o öğretmeninkiler. */
 	public static function for_term( $term_id, $teacher_id = 0 ) {
 		global $wpdb;
-		$sql    = 'SELECT c.*, (SELECT COUNT(*) FROM ' . $wpdb->prefix . 'nizamiye_class_students cs WHERE cs.class_id = c.id) AS student_count FROM ' . self::table() . ' c WHERE c.term_id = %d';
+		$sql    = "SELECT c.*, (SELECT COUNT(*) FROM {$wpdb->prefix}nizamiye_class_students cs WHERE cs.class_id = c.id) AS student_count FROM {$wpdb->prefix}nizamiye_classes c WHERE c.term_id = %d";
 		$params = array( (int) $term_id );
 		if ( $teacher_id ) {
 			$sql     .= ' AND c.teacher_id = %d';
@@ -102,7 +102,7 @@ class Nizamiye_Classes {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare(
 			"SELECT c.* FROM {$wpdb->prefix}nizamiye_class_students cs
-			 INNER JOIN " . self::table() . " c ON c.id = cs.class_id
+			 INNER JOIN {$wpdb->prefix}nizamiye_classes c ON c.id = cs.class_id
 			 WHERE cs.student_id = %d AND c.term_id = %d ORDER BY c.name",
 			$student_id, $term_id
 		) );
@@ -112,12 +112,12 @@ class Nizamiye_Classes {
 		global $wpdb;
 		if ( $teacher_id ) {
 			return (int) $wpdb->get_var( $wpdb->prepare(
-				'SELECT COUNT(*) FROM ' . self::table() . ' WHERE term_id = %d AND teacher_id = %d',
+				"SELECT COUNT(*) FROM {$wpdb->prefix}nizamiye_classes WHERE term_id = %d AND teacher_id = %d",
 				$term_id, $teacher_id
 			) );
 		}
 		return (int) $wpdb->get_var( $wpdb->prepare(
-			'SELECT COUNT(*) FROM ' . self::table() . ' WHERE term_id = %d', $term_id
+			"SELECT COUNT(*) FROM {$wpdb->prefix}nizamiye_classes WHERE term_id = %d", $term_id
 		) );
 	}
 }

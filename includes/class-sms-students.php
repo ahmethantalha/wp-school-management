@@ -19,7 +19,7 @@ class Nizamiye_Students {
 
 	public static function get( $id ) {
 		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::table() . ' WHERE id = %d', $id ) );
+		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}nizamiye_students WHERE id = %d", $id ) );
 	}
 
 	/**
@@ -67,10 +67,10 @@ class Nizamiye_Students {
 				$where[]  = 'e.grade_level = %d';
 				$params[] = (int) $args['grade'];
 			}
-			$sql = 'SELECT s.*, e.grade_level, e.status AS enrollment_status FROM ' . self::table() . " s $join WHERE " . implode( ' AND ', $where ) . ' ORDER BY e.grade_level ASC, s.first_name ASC';
+			$sql = "SELECT s.*, e.grade_level, e.status AS enrollment_status FROM {$wpdb->prefix}nizamiye_students s $join WHERE " . implode( ' AND ', $where ) . ' ORDER BY e.grade_level ASC, s.first_name ASC';
 			$params = array_merge( $params_j, $params );
 		} else {
-			$sql = 'SELECT s.* FROM ' . self::table() . ' s WHERE ' . implode( ' AND ', $where ) . ' ORDER BY s.first_name ASC';
+			$sql = "SELECT s.* FROM {$wpdb->prefix}nizamiye_students s WHERE " . implode( ' AND ', $where ) . ' ORDER BY s.first_name ASC';
 		}
 
 		return $params ? $wpdb->get_results( $wpdb->prepare( $sql, $params ) ) : $wpdb->get_results( $sql );
@@ -163,7 +163,7 @@ class Nizamiye_Students {
 	public static function children_of( $parent_user_id ) {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare(
-			'SELECT * FROM ' . self::table() . ' WHERE parent_user_id = %d ORDER BY first_name',
+			"SELECT * FROM {$wpdb->prefix}nizamiye_students WHERE parent_user_id = %d ORDER BY first_name",
 			$parent_user_id
 		) );
 	}
@@ -172,7 +172,7 @@ class Nizamiye_Students {
 	public static function by_user( $user_id ) {
 		global $wpdb;
 		return $wpdb->get_row( $wpdb->prepare(
-			'SELECT * FROM ' . self::table() . ' WHERE user_id = %d', $user_id
+			"SELECT * FROM {$wpdb->prefix}nizamiye_students WHERE user_id = %d", $user_id
 		) );
 	}
 
@@ -181,7 +181,7 @@ class Nizamiye_Students {
 		global $wpdb;
 		return (int) $wpdb->get_var( $wpdb->prepare(
 			"SELECT COUNT(*) FROM {$wpdb->prefix}nizamiye_enrollments e
-			 INNER JOIN " . self::table() . " s ON s.id = e.student_id
+			 INNER JOIN {$wpdb->prefix}nizamiye_students s ON s.id = e.student_id
 			 WHERE e.term_id = %d AND e.status = 'active' AND s.status = 'active'",
 			$term_id
 		) );

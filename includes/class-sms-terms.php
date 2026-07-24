@@ -19,17 +19,17 @@ class Nizamiye_Terms {
 
 	public static function all() {
 		global $wpdb;
-		return $wpdb->get_results( 'SELECT * FROM ' . self::table() . ' ORDER BY is_active DESC, id DESC' );
+		return $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}nizamiye_terms ORDER BY is_active DESC, id DESC" );
 	}
 
 	public static function get( $id ) {
 		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::table() . ' WHERE id = %d', $id ) );
+		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}nizamiye_terms WHERE id = %d", $id ) );
 	}
 
 	public static function active() {
 		global $wpdb;
-		return $wpdb->get_row( 'SELECT * FROM ' . self::table() . ' WHERE is_active = 1 ORDER BY id DESC LIMIT 1' );
+		return $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}nizamiye_terms WHERE is_active = 1 ORDER BY id DESC LIMIT 1" );
 	}
 
 	public static function create( $name, $start_date = null, $end_date = null, $activate = true ) {
@@ -50,7 +50,7 @@ class Nizamiye_Terms {
 
 	public static function set_active( $id ) {
 		global $wpdb;
-		$wpdb->query( 'UPDATE ' . self::table() . ' SET is_active = 0' );
+		$wpdb->query( "UPDATE {$wpdb->prefix}nizamiye_terms SET is_active = 0" );
 		$wpdb->update( self::table(), array( 'is_active' => 1 ), array( 'id' => (int) $id ) );
 	}
 

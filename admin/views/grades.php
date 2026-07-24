@@ -2,8 +2,8 @@
 defined( 'ABSPATH' ) || exit;
 
 $term_id = nizamiye_current_term_id();
-$has_nonce = nizamiye_verify_view_nonce();
-// phpcs:disable WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
+$has_nonce = isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' );
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- $_GET okumaları yalnızca yukarıdaki wp_verify_nonce() doğrulaması geçerse kullanılır; aksi halde güvenli varsayılana düşülür.
 $gview   = $has_nonce && isset( $_GET['gview'] ) ? sanitize_key( $_GET['gview'] ) : '';
 $subject = $has_nonce && isset( $_GET['subject'] ) ? sanitize_text_field( wp_unslash( $_GET['subject'] ) ) : '';
 $class_id = $has_nonce && isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
@@ -128,7 +128,7 @@ if ( 'entry' === $gview && $class ) {
 
 /* ============================ SINAV DETAYI (öğrenci bazında) ============================ */
 if ( 'exam' === $gview && $class ) {
-	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- $_GET okumaları yalnızca yukarıdaki wp_verify_nonce() doğrulaması geçerse kullanılır; aksi halde güvenli varsayılana düşülür.
 	$title     = $has_nonce && isset( $_GET['title'] ) ? sanitize_text_field( wp_unslash( $_GET['title'] ) ) : '';
 	$exam_date = $has_nonce && isset( $_GET['exam_date'] ) ? sanitize_text_field( wp_unslash( $_GET['exam_date'] ) ) : '';
 	$exam_type = $has_nonce && isset( $_GET['exam_type'] ) ? sanitize_text_field( wp_unslash( $_GET['exam_type'] ) ) : '';

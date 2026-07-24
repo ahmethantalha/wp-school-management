@@ -24,7 +24,7 @@ class Nizamiye_Attendance {
 	public static function sheet( $category_id, $session_id, $class_id, $date ) {
 		global $wpdb;
 		$rows = $wpdb->get_results( $wpdb->prepare(
-			'SELECT * FROM ' . self::table() . ' WHERE category_id = %d AND session_id = %d AND class_id = %d AND att_date = %s',
+			"SELECT * FROM {$wpdb->prefix}nizamiye_attendance WHERE category_id = %d AND session_id = %d AND class_id = %d AND att_date = %s",
 			$category_id, $session_id, $class_id, $date
 		) );
 		$map = array();
@@ -73,7 +73,7 @@ class Nizamiye_Attendance {
 	/** Öğrencinin dönem devam özeti. $category_id verilirse o kategoriyle sınırlar. */
 	public static function student_summary( $student_id, $term_id, $category_id = 0 ) {
 		global $wpdb;
-		$sql    = 'SELECT status, COUNT(*) AS cnt FROM ' . self::table() . ' WHERE student_id = %d AND term_id = %d';
+		$sql    = "SELECT status, COUNT(*) AS cnt FROM {$wpdb->prefix}nizamiye_attendance WHERE student_id = %d AND term_id = %d";
 		$params = array( $student_id, $term_id );
 		if ( $category_id ) {
 			$sql     .= ' AND category_id = %d';
@@ -105,13 +105,13 @@ class Nizamiye_Attendance {
 	public static function student_category_breakdown( $student_id, $term_id ) {
 		global $wpdb;
 		$rows = $wpdb->get_results( $wpdb->prepare(
-			'SELECT a.category_id, a.session_id,
+			"SELECT a.category_id, a.session_id,
 				SUM(CASE WHEN a.status = %s THEN 1 ELSE 0 END) AS present,
 				SUM(CASE WHEN a.status = %s THEN 1 ELSE 0 END) AS late,
 				COUNT(*) AS total
-			 FROM ' . self::table() . ' a
+			 FROM {$wpdb->prefix}nizamiye_attendance a
 			 WHERE a.student_id = %d AND a.term_id = %d
-			 GROUP BY a.category_id, a.session_id',
+			 GROUP BY a.category_id, a.session_id",
 			'present', 'late', $student_id, $term_id
 		) );
 
@@ -164,7 +164,7 @@ class Nizamiye_Attendance {
 	/** Dönem geneli durum dağılımı (halka grafik). $student_ids ile sınırlandırılabilir. */
 	public static function term_breakdown( $term_id, array $student_ids = null ) {
 		global $wpdb;
-		$sql    = 'SELECT status, COUNT(*) AS cnt FROM ' . self::table() . ' WHERE term_id = %d';
+		$sql    = "SELECT status, COUNT(*) AS cnt FROM {$wpdb->prefix}nizamiye_attendance WHERE term_id = %d";
 		$params = array( $term_id );
 		if ( null !== $student_ids ) {
 			if ( ! $student_ids ) {
@@ -189,10 +189,10 @@ class Nizamiye_Attendance {
 		global $wpdb;
 		$start = gmdate( 'Y-m-d', strtotime( '-' . ( $days - 1 ) . ' days', current_time( 'timestamp' ) ) );
 
-		$sql = 'SELECT att_date,
+		$sql = "SELECT att_date,
 				SUM(CASE WHEN status = %s THEN 1 WHEN status = %s THEN 0.5 ELSE 0 END) AS score,
 				COUNT(*) AS total
-			 FROM ' . self::table() . ' WHERE term_id = %d AND att_date >= %s';
+			 FROM {$wpdb->prefix}nizamiye_attendance WHERE term_id = %d AND att_date >= %s";
 		$rows   = null;
 		$params = array( 'present', 'late', $term_id, $start );
 		if ( null !== $student_ids ) {
@@ -235,10 +235,10 @@ class Nizamiye_Attendance {
 		}
 		global $wpdb;
 		$rows = $wpdb->get_results( $wpdb->prepare(
-			'SELECT student_id,
+			"SELECT student_id,
 				SUM(CASE WHEN status = %s THEN 1 WHEN status = %s THEN 0.5 ELSE 0 END) AS score,
 				COUNT(*) AS total
-			 FROM ' . self::table() . ' WHERE term_id = %d GROUP BY student_id',
+			 FROM {$wpdb->prefix}nizamiye_attendance WHERE term_id = %d GROUP BY student_id",
 			'present', 'late', $term_id
 		) );
 		$out = array();
@@ -255,8 +255,8 @@ class Nizamiye_Attendance {
 	public static function recent_for_student( $student_id, $term_id, $limit = 20 ) {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare(
-			'SELECT a.*, c.name AS class_name, cat.name AS category_name, s.name AS session_name
-			 FROM ' . self::table() . " a
+			"SELECT a.*, c.name AS class_name, cat.name AS category_name, s.name AS session_name
+			 FROM {$wpdb->prefix}nizamiye_attendance a
 			 LEFT JOIN {$wpdb->prefix}nizamiye_classes c ON c.id = a.class_id
 			 LEFT JOIN {$wpdb->prefix}nizamiye_att_categories cat ON cat.id = a.category_id
 			 LEFT JOIN {$wpdb->prefix}nizamiye_att_sessions s ON s.id = a.session_id

@@ -5,8 +5,8 @@ if ( ! nizamiye_is_manager() ) {
 	wp_die( 'Öğrenci düzenleme yetkiniz yok.' );
 }
 
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
-$student_id = nizamiye_verify_view_nonce() && isset( $_GET['student'] ) ? (int) $_GET['student'] : 0;
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- $_GET okumaları yalnızca yukarıdaki wp_verify_nonce() doğrulaması geçerse kullanılır; aksi halde güvenli varsayılana düşülür.
+$student_id = ( isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' ) ) && isset( $_GET['student'] ) ? (int) $_GET['student'] : 0;
 $student    = $student_id ? Nizamiye_Students::get( $student_id ) : null;
 $term_id    = nizamiye_current_term_id();
 $enrollment = $student ? Nizamiye_Students::enrollment( $student_id, $term_id ) : null;

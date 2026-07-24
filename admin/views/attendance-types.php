@@ -2,8 +2,8 @@
 defined( 'ABSPATH' ) || exit;
 
 $categories = Nizamiye_Attendance_Types::categories( false );
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
-$edit_id    = nizamiye_verify_view_nonce() && isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- $_GET okumaları yalnızca yukarıdaki wp_verify_nonce() doğrulaması geçerse kullanılır; aksi halde güvenli varsayılana düşülür.
+$edit_id    = ( isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' ) ) && isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
 $edit       = $edit_id ? Nizamiye_Attendance_Types::get_category( $edit_id ) : null;
 
 // Kullanılabilir dashicon seçenekleri.

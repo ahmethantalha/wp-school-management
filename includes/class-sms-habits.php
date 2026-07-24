@@ -21,7 +21,7 @@ class Nizamiye_Habits {
 
 	public static function get( $id ) {
 		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::table() . ' WHERE id = %d', $id ) );
+		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}nizamiye_habits WHERE id = %d", $id ) );
 	}
 
 	/**
@@ -30,9 +30,9 @@ class Nizamiye_Habits {
 	 */
 	public static function for_term( $term_id, $restrict_teacher_id = 0 ) {
 		global $wpdb;
-		$sql    = 'SELECT h.*,
-				(SELECT COUNT(*) FROM ' . $wpdb->prefix . 'nizamiye_habit_students hs WHERE hs.habit_id = h.id) AS student_count
-			 FROM ' . self::table() . ' h WHERE h.term_id = %d';
+		$sql    = "SELECT h.*,
+				(SELECT COUNT(*) FROM {$wpdb->prefix}nizamiye_habit_students hs WHERE hs.habit_id = h.id) AS student_count
+			 FROM {$wpdb->prefix}nizamiye_habits h WHERE h.term_id = %d";
 		$params = array( (int) $term_id );
 
 		if ( $restrict_teacher_id ) {
@@ -182,8 +182,8 @@ class Nizamiye_Habits {
 			"SELECT ROUND(AVG(CASE WHEN h.track_type IN ('binary','reading') THEN LEAST(l.value,1) * 100
 				ELSE l.value / h.scale_max * 100 END))
 			 FROM {$wpdb->prefix}nizamiye_habit_logs l
-			 INNER JOIN " . self::table() . ' h ON h.id = l.habit_id
-			 WHERE l.habit_id = %d',
+			 INNER JOIN {$wpdb->prefix}nizamiye_habits h ON h.id = l.habit_id
+			 WHERE l.habit_id = %d",
 			$habit_id
 		) );
 	}
@@ -201,8 +201,8 @@ class Nizamiye_Habits {
 				ROUND(AVG(CASE WHEN h.track_type IN ('binary','reading') THEN LEAST(l.value,1) * 100
 					ELSE l.value / h.scale_max * 100 END)) AS rate
 			 FROM {$wpdb->prefix}nizamiye_habit_logs l
-			 INNER JOIN " . self::table() . ' h ON h.id = l.habit_id
-			 WHERE h.term_id = %d GROUP BY l.student_id',
+			 INNER JOIN {$wpdb->prefix}nizamiye_habits h ON h.id = l.habit_id
+			 WHERE h.term_id = %d GROUP BY l.student_id",
 			$term_id
 		) );
 		$out = array();
@@ -222,8 +222,8 @@ class Nizamiye_Habits {
 				ROUND(AVG(CASE WHEN h.track_type IN ('binary','reading') THEN LEAST(l.value,1) * 100
 					ELSE l.value / h.scale_max * 100 END)) AS rate
 			 FROM {$wpdb->prefix}nizamiye_habit_logs l
-			 INNER JOIN " . self::table() . ' h ON h.id = l.habit_id
-			 WHERE h.term_id = %d AND l.log_date >= %s';
+			 INNER JOIN {$wpdb->prefix}nizamiye_habits h ON h.id = l.habit_id
+			 WHERE h.term_id = %d AND l.log_date >= %s";
 		$params = array( $term_id, $start );
 		if ( null !== $student_ids ) {
 			if ( ! $student_ids ) {
@@ -262,7 +262,7 @@ class Nizamiye_Habits {
 				ROUND(AVG(CASE WHEN h.track_type IN ('binary','reading') THEN LEAST(l.value,1) * 100
 					ELSE l.value / h.scale_max * 100 END)) AS rate
 			 FROM {$wpdb->prefix}nizamiye_habit_students hs
-			 INNER JOIN " . self::table() . " h ON h.id = hs.habit_id
+			 INNER JOIN {$wpdb->prefix}nizamiye_habits h ON h.id = hs.habit_id
 			 LEFT JOIN {$wpdb->prefix}nizamiye_habit_logs l ON l.habit_id = h.id AND l.student_id = hs.student_id
 			 WHERE hs.student_id = %d AND h.term_id = %d
 			 GROUP BY h.id, h.name, h.track_type, h.scale_max
@@ -299,7 +299,7 @@ class Nizamiye_Habits {
 				COALESCE(NULLIF(TRIM(l.note),''), '(İsimsiz kitap)') AS book,
 				SUM(l.value) AS pages, COUNT(*) AS days, MAX(l.log_date) AS last_date
 			 FROM {$wpdb->prefix}nizamiye_habit_logs l
-			 INNER JOIN " . self::table() . " h ON h.id = l.habit_id
+			 INNER JOIN {$wpdb->prefix}nizamiye_habits h ON h.id = l.habit_id
 			 WHERE l.student_id = %d AND h.term_id = %d AND h.track_type = 'reading'
 			 GROUP BY h.id, h.name, book
 			 ORDER BY h.name, last_date DESC",

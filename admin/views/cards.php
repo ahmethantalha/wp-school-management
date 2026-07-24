@@ -9,8 +9,8 @@ if ( ! current_user_can( 'nizamiye_teach' ) ) {
 
 $term_id = nizamiye_current_term_id();
 $teacher = nizamiye_is_teacher();
-$has_nonce = nizamiye_verify_view_nonce();
-// phpcs:disable WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
+$has_nonce = isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' );
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- $_GET okumaları yalnızca yukarıdaki wp_verify_nonce() doğrulaması geçerse kullanılır; aksi halde güvenli varsayılana düşülür.
 $grade_f = $has_nonce && isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
 $search  = $has_nonce && isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
 // phpcs:enable WordPress.Security.NonceVerification.Recommended

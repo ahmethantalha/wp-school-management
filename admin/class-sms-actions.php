@@ -34,12 +34,11 @@ class Nizamiye_Actions {
 			'nizamiye_import'          => 'nizamiye_manage',
 			'nizamiye_grade_import'    => 'nizamiye_teach',
 		);
-		foreach ( $actions as $action => $cap ) {
-			add_action( 'admin_post_' . $action, function () use ( $action, $cap ) {
-				self::guard( $action, $cap );
-				$method = 'handle_' . substr( $action, 4 );
-				self::$method();
-			} );
+		// Her handle_* metodu kendi nonce (check_admin_referer) ve yetki (current_user_can)
+		// kontrolünü kendi içinde, ilk satır olarak yapar (bkz. ilgili metotlar).
+		foreach ( array_keys( $actions ) as $action ) {
+			// 'nizamiye_save_term' -> 'handle_save_term'
+			add_action( 'admin_post_' . $action, array( __CLASS__, 'handle_' . substr( $action, strlen( 'nizamiye_' ) ) ) );
 		}
 
 		// CSV şablon indirme (GET, nonce URL ile).
@@ -71,11 +70,14 @@ class Nizamiye_Actions {
 	}
 
 	public static function handle_print_report() {
+		// Nonce action'i ogrenciye ozeldir; id once okunur, ardindan kosulsuz dogrulanir.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- hemen asagida check_admin_referer() ile dogrulanir.
 		$student_id = isset( $_GET['student'] ) ? (int) $_GET['student'] : 0;
-		if ( ! $student_id || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'nizamiye_print_report_' . $student_id ) ) {
-			wp_die( 'Geçersiz istek.' );
+		check_admin_referer( 'nizamiye_print_report_' . $student_id );
+		if ( ! current_user_can( 'nizamiye_access' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
 		}
-		if ( ! nizamiye_can_access_student( $student_id ) ) {
+		if ( ! $student_id || ! nizamiye_can_access_student( $student_id ) ) {
 			wp_die( 'Bu öğrencinin karnesine erişim yetkiniz yok.' );
 		}
 		$term_id = isset( $_GET['nizamiye_term'] ) ? (int) $_GET['nizamiye_term'] : nizamiye_current_term_id();
@@ -97,8 +99,9 @@ class Nizamiye_Actions {
 	 * POST edilir; erişimi olmayan öğrenci id'leri sessizce elenir.
 	 */
 	public static function handle_print_report_bulk() {
-		if ( ! current_user_can( 'nizamiye_teach' ) || ! wp_verify_nonce( sanitize_key( $_POST['_nizamiye_nonce'] ?? '' ), 'nizamiye_print_report_bulk' ) ) {
-			wp_die( 'Geçersiz istek.' );
+		check_admin_referer( 'nizamiye_print_report_bulk', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_teach' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
 		}
 		$term_id = isset( $_POST['nizamiye_term'] ) ? (int) $_POST['nizamiye_term'] : nizamiye_current_term_id();
 		if ( ! $term_id ) {
@@ -185,8 +188,9 @@ class Nizamiye_Actions {
 
 	/** Raporlar sayfasındaki analiz tablolarını CSV olarak dışa aktarır. */
 	public static function handle_export_report() {
-		if ( ! current_user_can( 'nizamiye_teach' ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'nizamiye_export_report' ) ) {
-			wp_die( 'Yetkisiz istek.' );
+		check_admin_referer( 'nizamiye_export_report' );
+		if ( ! current_user_can( 'nizamiye_teach' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
 		}
 
 		$term_id = nizamiye_current_term_id();
@@ -469,23 +473,13 @@ class Nizamiye_Actions {
 		self::send_csv( 'rapor-' . $rtype . '-' . $group . '-' . current_time( 'Y-m-d' ) . '.csv', $lines );
 	}
 
-	/** guard() tarafından doğrulanan action; post() içinde yeniden kontrol için saklanır. */
+	/** Doğrulanmış action adı; post() içinde nonce'un yeniden kontrolü için saklanır. */
 	private static $verified_action = '';
 
-	private static function guard( $action, $cap ) {
-		if ( ! isset( $_POST['_nizamiye_nonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['_nizamiye_nonce'] ), $action ) ) {
-			wp_die( 'Güvenlik doğrulaması başarısız. Lütfen sayfayı yenileyip tekrar deneyin.' );
-		}
-		if ( ! current_user_can( $cap ) ) {
-			wp_die( 'Bu işlem için yetkiniz yok.' );
-		}
-		self::$verified_action = $action;
-	}
-
 	// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
-	// Aşağıdaki private handle_* metotları yalnızca init()'teki dispatcher üzerinden çağrılır;
-	// dispatcher her çağrıdan önce self::guard() ile nonce + yetenek kontrolü yapar (bkz. yukarısı).
-	// public handle_grade_template()/handle_import_template() kendi GET nonce kontrolünü içeride yapar.
+	// Aşağıdaki handle_* metotlarının HER BİRİ, ilk satırında check_admin_referer() ile
+	// nonce'unu ve current_user_can() ile yetkisini kendi içinde doğrular; bu noktadan
+	// sonraki $_POST okumaları doğrulanmış istek bağlamındadır.
 
 	private static function back( $msg = '', $err = '', $override_url = '' ) {
 		$url = $override_url;
@@ -508,17 +502,24 @@ class Nizamiye_Actions {
 	}
 
 	private static function post( $key, $default = '' ) {
-		// Ek doğrulama: bu yardımcı yalnızca self::guard() tarafından nonce'u zaten
-		// onaylanmış bir action bağlamında çağrılabilir (bkz. init() dispatcher'ı).
-		if ( ! self::$verified_action || ! isset( $_POST['_nizamiye_nonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['_nizamiye_nonce'] ), self::$verified_action ) ) {
+		// Ek doğrulama: bu yardımcı yalnızca nonce'u check_admin_referer() ile zaten
+		// doğrulanmış bir handle_* metodunun içinden çağrılabilir. Kontroller kasıtlı
+		// olarak ayrı ayrı yazılmıştır; nonce doğrulaması hiçbir koşula bağlı değildir.
+		if ( ! self::$verified_action ) {
 			wp_die( 'Güvenlik doğrulaması başarısız. Lütfen sayfayı yenileyip tekrar deneyin.' );
 		}
+		check_admin_referer( self::$verified_action, '_nizamiye_nonce' );
 		return isset( $_POST[ $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) : $default;
 	}
 
 	/* ---------- Dönemler ---------- */
 
-	private static function handle_save_term() {
+	public static function handle_save_term() {
+		check_admin_referer( 'nizamiye_save_term', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_save_term';
 		$name = self::post( 'name' );
 		if ( ! $name ) {
 			self::back( '', 'Dönem adı gerekli.' );
@@ -527,12 +528,22 @@ class Nizamiye_Actions {
 		self::back( 'Dönem oluşturuldu.' );
 	}
 
-	private static function handle_activate_term() {
+	public static function handle_activate_term() {
+		check_admin_referer( 'nizamiye_activate_term', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_activate_term';
 		Nizamiye_Terms::set_active( (int) self::post( 'term_id' ) );
 		self::back( 'Aktif dönem değiştirildi.' );
 	}
 
-	private static function handle_delete_term() {
+	public static function handle_delete_term() {
+		check_admin_referer( 'nizamiye_delete_term', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_delete_term';
 		$result = Nizamiye_Terms::delete( (int) self::post( 'term_id' ) );
 		if ( is_wp_error( $result ) ) {
 			self::back( '', $result->get_error_message() );
@@ -541,7 +552,12 @@ class Nizamiye_Actions {
 	}
 
 	/** Yeni dönem + otomatik terfi/mezuniyet. */
-	private static function handle_open_term() {
+	public static function handle_open_term() {
+		check_admin_referer( 'nizamiye_open_term', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_open_term';
 		$name = self::post( 'name' );
 		if ( ! $name ) {
 			self::back( '', 'Dönem adı gerekli.' );
@@ -561,7 +577,12 @@ class Nizamiye_Actions {
 
 	/* ---------- Öğrenciler ---------- */
 
-	private static function handle_save_student() {
+	public static function handle_save_student() {
+		check_admin_referer( 'nizamiye_save_student', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_save_student';
 		$id      = (int) self::post( 'student_id' );
 		$term_id = (int) self::post( 'term_id' );
 		$grade   = (int) self::post( 'grade_level' );
@@ -615,14 +636,24 @@ class Nizamiye_Actions {
 		self::back( 'Öğrenci kaydedildi.', '', nizamiye_view_nonce_url_raw( admin_url( 'admin.php?page=nizamiye-students&view=edit&student=' . $id ) ) );
 	}
 
-	private static function handle_delete_student() {
+	public static function handle_delete_student() {
+		check_admin_referer( 'nizamiye_delete_student', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_delete_student';
 		Nizamiye_Students::delete( (int) self::post( 'student_id' ) );
 		self::back( 'Öğrenci ve bağlı tüm kayıtları silindi.', '', admin_url( 'admin.php?page=nizamiye-students' ) );
 	}
 
 	/* ---------- Kullanıcılar (öğretmen/veli) ---------- */
 
-	private static function handle_save_user() {
+	public static function handle_save_user() {
+		check_admin_referer( 'nizamiye_save_user', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_save_user';
 		$role = self::post( 'nizamiye_role' );
 		if ( ! in_array( $role, array( 'nizamiye_teacher', 'nizamiye_parent' ), true ) ) {
 			self::back( '', 'Geçersiz rol.' );
@@ -681,7 +712,12 @@ class Nizamiye_Actions {
 		self::back( 'nizamiye_teacher' === $role ? 'Öğretmen kaydedildi.' : 'Veli kaydedildi.' );
 	}
 
-	private static function handle_delete_user() {
+	public static function handle_delete_user() {
+		check_admin_referer( 'nizamiye_delete_user', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_delete_user';
 		require_once ABSPATH . 'wp-admin/includes/user.php';
 		$user_id = (int) self::post( 'user_id' );
 		$user    = get_userdata( $user_id );
@@ -701,7 +737,12 @@ class Nizamiye_Actions {
 
 	/* ---------- Derslikler ---------- */
 
-	private static function handle_save_class() {
+	public static function handle_save_class() {
+		check_admin_referer( 'nizamiye_save_class', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_save_class';
 		$id   = (int) self::post( 'class_id' );
 		$name = self::post( 'name' );
 		if ( ! $name ) {
@@ -717,12 +758,22 @@ class Nizamiye_Actions {
 		self::back( 'Derslik kaydedildi.', '', nizamiye_view_nonce_url_raw( admin_url( 'admin.php?page=nizamiye-classes&view=edit&class_id=' . $id ) ) );
 	}
 
-	private static function handle_delete_class() {
+	public static function handle_delete_class() {
+		check_admin_referer( 'nizamiye_delete_class', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_delete_class';
 		Nizamiye_Classes::delete( (int) self::post( 'class_id' ) );
 		self::back( 'Derslik silindi.', '', admin_url( 'admin.php?page=nizamiye-classes' ) );
 	}
 
-	private static function handle_class_roster() {
+	public static function handle_class_roster() {
+		check_admin_referer( 'nizamiye_class_roster', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_teach' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_class_roster';
 		$class_id = (int) self::post( 'class_id' );
 		if ( ! nizamiye_can_manage_class( $class_id ) ) {
 			wp_die( 'Bu dersliği yönetme yetkiniz yok.' );
@@ -734,7 +785,12 @@ class Nizamiye_Actions {
 
 	/* ---------- Yoklama ---------- */
 
-	private static function handle_save_attendance() {
+	public static function handle_save_attendance() {
+		check_admin_referer( 'nizamiye_save_attendance', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_teach' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_save_attendance';
 		$category_id = (int) self::post( 'category_id' );
 		$session_id  = (int) self::post( 'session_id' );
 		$class_id    = (int) self::post( 'class_id' );
@@ -787,7 +843,12 @@ class Nizamiye_Actions {
 
 	/* ---------- Alışkanlıklar ---------- */
 
-	private static function handle_save_habit() {
+	public static function handle_save_habit() {
+		check_admin_referer( 'nizamiye_save_habit', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_teach' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_save_habit';
 		$id = (int) self::post( 'habit_id' );
 
 		if ( $id && ! self::can_manage_habit( $id ) ) {
@@ -818,7 +879,12 @@ class Nizamiye_Actions {
 		self::back( 'Alışkanlık kaydedildi.', '', nizamiye_view_nonce_url_raw( admin_url( 'admin.php?page=nizamiye-habits&view=edit&habit_id=' . $id ) ) );
 	}
 
-	private static function handle_delete_habit() {
+	public static function handle_delete_habit() {
+		check_admin_referer( 'nizamiye_delete_habit', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_teach' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_delete_habit';
 		$id = (int) self::post( 'habit_id' );
 		if ( ! self::can_manage_habit( $id ) ) {
 			wp_die( 'Bu alışkanlığı silme yetkiniz yok.' );
@@ -835,7 +901,12 @@ class Nizamiye_Actions {
 		return $habit && (int) $habit->created_by === get_current_user_id();
 	}
 
-	private static function handle_save_habit_logs() {
+	public static function handle_save_habit_logs() {
+		check_admin_referer( 'nizamiye_save_habit_logs', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_teach' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_save_habit_logs';
 		$habit_id = (int) self::post( 'habit_id' );
 		$date     = self::post( 'log_date' );
 		$habit    = Nizamiye_Habits::get( $habit_id );
@@ -871,7 +942,12 @@ class Nizamiye_Actions {
 
 	/* ---------- Notlar ---------- */
 
-	private static function handle_save_grades() {
+	public static function handle_save_grades() {
+		check_admin_referer( 'nizamiye_save_grades', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_teach' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_save_grades';
 		$class_id = (int) self::post( 'class_id' );
 		if ( ! nizamiye_can_manage_class( $class_id ) ) {
 			wp_die( 'Bu dersliğe not girme yetkiniz yok.' );
@@ -893,7 +969,12 @@ class Nizamiye_Actions {
 		self::back( $count . ' öğrenci için not kaydedildi.' );
 	}
 
-	private static function handle_delete_grade() {
+	public static function handle_delete_grade() {
+		check_admin_referer( 'nizamiye_delete_grade', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_teach' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_delete_grade';
 		$grade = Nizamiye_Grades::get( (int) self::post( 'grade_id' ) );
 		if ( ! $grade || ! nizamiye_can_manage_class( (int) $grade->class_id ) ) {
 			wp_die( 'Bu notu silme yetkiniz yok.' );
@@ -904,7 +985,12 @@ class Nizamiye_Actions {
 
 	/* ---------- Ayarlar ---------- */
 
-	private static function handle_save_settings() {
+	public static function handle_save_settings() {
+		check_admin_referer( 'nizamiye_save_settings', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_save_settings';
 		nizamiye_update_settings( array(
 			'school_name' => self::post( 'school_name' ),
 			'final_grade' => max( 1, (int) self::post( 'final_grade', '8' ) ),
@@ -916,7 +1002,12 @@ class Nizamiye_Actions {
 
 	/* ---------- Yoklama türleri (kategori/oturum) ---------- */
 
-	private static function handle_save_category() {
+	public static function handle_save_category() {
+		check_admin_referer( 'nizamiye_save_category', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_save_category';
 		$id   = (int) self::post( 'category_id' );
 		$name = self::post( 'name' );
 		$icon = self::post( 'icon' );
@@ -943,7 +1034,12 @@ class Nizamiye_Actions {
 		self::back( 'Yoklama kategorisi oluşturuldu.' );
 	}
 
-	private static function handle_delete_category() {
+	public static function handle_delete_category() {
+		check_admin_referer( 'nizamiye_delete_category', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_delete_category';
 		$result = Nizamiye_Attendance_Types::delete_category( (int) self::post( 'category_id' ) );
 		if ( is_wp_error( $result ) ) {
 			self::back( '', $result->get_error_message() );
@@ -951,7 +1047,12 @@ class Nizamiye_Actions {
 		self::back( 'Kategori silindi.' );
 	}
 
-	private static function handle_add_session() {
+	public static function handle_add_session() {
+		check_admin_referer( 'nizamiye_add_session', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_add_session';
 		$cat_id = (int) self::post( 'category_id' );
 		$name   = self::post( 'name' );
 		if ( ! $name || ! Nizamiye_Attendance_Types::get_category( $cat_id ) ) {
@@ -961,7 +1062,12 @@ class Nizamiye_Actions {
 		self::back( 'Oturum eklendi.' );
 	}
 
-	private static function handle_delete_session() {
+	public static function handle_delete_session() {
+		check_admin_referer( 'nizamiye_delete_session', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_delete_session';
 		$result = Nizamiye_Attendance_Types::delete_session( (int) self::post( 'session_id' ) );
 		if ( is_wp_error( $result ) ) {
 			self::back( '', $result->get_error_message() );
@@ -971,7 +1077,12 @@ class Nizamiye_Actions {
 
 	/* ---------- İçe aktarma ---------- */
 
-	private static function handle_import() {
+	public static function handle_import() {
+		check_admin_referer( 'nizamiye_import', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_import';
 		$type    = self::post( 'import_type' );
 		$term_id = (int) self::post( 'term_id' );
 
@@ -1009,8 +1120,9 @@ class Nizamiye_Actions {
 
 	/** Seçili derslik için önceden doldurulmuş not listesi indirir (GET + nonce). */
 	public static function handle_grade_template() {
-		if ( ! current_user_can( 'nizamiye_teach' ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'nizamiye_grade_template' ) ) {
-			wp_die( 'Yetkisiz istek.' );
+		check_admin_referer( 'nizamiye_grade_template' );
+		if ( ! current_user_can( 'nizamiye_teach' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
 		}
 		$class_id = isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
 		if ( ! nizamiye_can_manage_class( $class_id ) ) {
@@ -1033,7 +1145,12 @@ class Nizamiye_Actions {
 	}
 
 	/** Doldurulmuş not listesini yükler. */
-	private static function handle_grade_import() {
+	public static function handle_grade_import() {
+		check_admin_referer( 'nizamiye_grade_import', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_teach' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_grade_import';
 		if ( empty( $_FILES['grade_file']['name'] ) || ! empty( $_FILES['grade_file']['error'] ) ) {
 			self::back( '', 'Lütfen doldurulmuş not listesini (.csv veya .xlsx) seçin.' );
 		}
@@ -1055,10 +1172,11 @@ class Nizamiye_Actions {
 	}
 
 	public static function handle_import_template() {
-		$type = isset( $_GET['type'] ) ? sanitize_key( $_GET['type'] ) : '';
-		if ( ! current_user_can( 'nizamiye_manage' ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ?? '' ), 'nizamiye_template' ) ) {
-			wp_die( 'Yetkisiz istek.' );
+		check_admin_referer( 'nizamiye_template' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
 		}
+		$type = isset( $_GET['type'] ) ? sanitize_key( $_GET['type'] ) : '';
 		$content = Nizamiye_Import::template( $type );
 		if ( ! $content ) {
 			wp_die( 'Geçersiz şablon.' );

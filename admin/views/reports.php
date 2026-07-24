@@ -13,8 +13,8 @@ $term    = $term_id ? Nizamiye_Terms::get( $term_id ) : null;
 
 /* ---------- Filtre parametreleri ---------- */
 // Nonce eksik/geçersizse (ör. eski bir yer imi) filtreler yok sayılır, varsayılan görünüm yüklenir.
-$has_nonce = nizamiye_verify_view_nonce();
-// phpcs:disable WordPress.Security.NonceVerification.Recommended -- nizamiye_verify_view_nonce() dahilinde wp_verify_nonce() ile gerçek doğrulama yapılır.
+$has_nonce = isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' );
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- $_GET okumaları yalnızca yukarıdaki wp_verify_nonce() doğrulaması geçerse kullanılır; aksi halde güvenli varsayılana düşülür.
 $rtype  = $has_nonce && isset( $_GET['rtype'] ) ? sanitize_key( $_GET['rtype'] ) : 'yoklama';
 if ( ! in_array( $rtype, array( 'yoklama', 'aliskanlik', 'not', 'genel' ), true ) ) {
 	$rtype = 'yoklama';
