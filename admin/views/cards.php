@@ -7,30 +7,30 @@ if ( ! current_user_can( 'nizamiye_teach' ) ) {
 	return;
 }
 
-$term_id = nizamiye_current_term_id();
-$teacher = nizamiye_is_teacher();
-$has_nonce = isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' );
+$nizamiye_term_id = nizamiye_current_term_id();
+$nizamiye_teacher = nizamiye_is_teacher();
+$nizamiye_has_nonce = isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' );
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- $_GET okumaları yalnızca yukarıdaki wp_verify_nonce() doğrulaması geçerse kullanılır; aksi halde güvenli varsayılana düşülür.
-$grade_f = $has_nonce && isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
-$search  = $has_nonce && isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+$nizamiye_grade_f = $nizamiye_has_nonce && isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
+$nizamiye_search  = $nizamiye_has_nonce && isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
 // phpcs:enable WordPress.Security.NonceVerification.Recommended
-$scores  = $term_id ? Nizamiye_Reports::student_scores( $term_id, $teacher ? nizamiye_teacher_student_ids() : null ) : array();
+$nizamiye_scores  = $nizamiye_term_id ? Nizamiye_Reports::student_scores( $nizamiye_term_id, $nizamiye_teacher ? nizamiye_teacher_student_ids() : null ) : array();
 
 // Sınıf ve arama filtreleri.
-if ( $grade_f || $search ) {
-	$needle = $search ? Nizamiye_Import::normalize_name( $search ) : '';
-	$scores = array_values( array_filter( $scores, function ( $row ) use ( $grade_f, $needle ) {
-		$s = $row['student'];
-		if ( $grade_f && (int) ( $s->grade_level ?? 0 ) !== $grade_f ) {
+if ( $nizamiye_grade_f || $nizamiye_search ) {
+	$nizamiye_needle = $nizamiye_search ? Nizamiye_Import::normalize_name( $nizamiye_search ) : '';
+	$nizamiye_scores = array_values( array_filter( $nizamiye_scores, function ( $nizamiye_row ) use ( $nizamiye_grade_f, $nizamiye_needle ) {
+		$nizamiye_s = $nizamiye_row['student'];
+		if ( $nizamiye_grade_f && (int) ( $nizamiye_s->grade_level ?? 0 ) !== $nizamiye_grade_f ) {
 			return false;
 		}
-		if ( $needle && false === strpos( Nizamiye_Import::normalize_name( nizamiye_student_name( $s ) ), $needle ) ) {
+		if ( $nizamiye_needle && false === strpos( Nizamiye_Import::normalize_name( nizamiye_student_name( $nizamiye_s ) ), $nizamiye_needle ) ) {
 			return false;
 		}
 		return true;
 	} ) );
 }
-$grades = $term_id ? Nizamiye_Students::grades_in_term( $term_id ) : array();
+$nizamiye_grades = $nizamiye_term_id ? Nizamiye_Students::grades_in_term( $nizamiye_term_id ) : array();
 ?>
 <div class="wrap sms-wrap">
 	<?php nizamiye_view_header( 'Karneler', 'Öğrenci seçerek detaylı karnesini görüntüleyin.' ); ?>
@@ -39,12 +39,12 @@ $grades = $term_id ? Nizamiye_Students::grades_in_term( $term_id ) : array();
 		<form method="get" class="sms-filters">
 			<?php nizamiye_view_nonce_field(); ?>
 			<input type="hidden" name="page" value="nizamiye-cards">
-			<?php if ( $term_id ) : ?><input type="hidden" name="nizamiye_term" value="<?php echo (int) $term_id; ?>"><?php endif; ?>
-			<input type="search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="Öğrenci ara…">
+			<?php if ( $nizamiye_term_id ) : ?><input type="hidden" name="nizamiye_term" value="<?php echo (int) $nizamiye_term_id; ?>"><?php endif; ?>
+			<input type="search" name="s" value="<?php echo esc_attr( $nizamiye_search ); ?>" placeholder="Öğrenci ara…">
 			<select name="grade">
 				<option value="0">Tüm sınıflar</option>
-				<?php foreach ( $grades as $g ) : ?>
-					<option value="<?php echo (int) $g; ?>" <?php selected( $grade_f, $g ); ?>><?php echo esc_html( nizamiye_grade_label( $g ) ); ?></option>
+				<?php foreach ( $nizamiye_grades as $nizamiye_g ) : ?>
+					<option value="<?php echo (int) $nizamiye_g; ?>" <?php selected( $nizamiye_grade_f, $nizamiye_g ); ?>><?php echo esc_html( nizamiye_grade_label( $nizamiye_g ) ); ?></option>
 				<?php endforeach; ?>
 			</select>
 			<button type="submit" class="sms-btn sms-btn-ghost">Filtrele</button>
@@ -52,11 +52,11 @@ $grades = $term_id ? Nizamiye_Students::grades_in_term( $term_id ) : array();
 	</div>
 
 	<div class="sms-card">
-		<?php if ( $scores ) : ?>
+		<?php if ( $nizamiye_scores ) : ?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" target="_blank" rel="noopener" data-sms-bulk-print-form>
 				<input type="hidden" name="action" value="nizamiye_print_report_bulk">
 				<?php wp_nonce_field( 'nizamiye_print_report_bulk', '_nizamiye_nonce' ); ?>
-				<input type="hidden" name="nizamiye_term" value="<?php echo (int) $term_id; ?>">
+				<input type="hidden" name="nizamiye_term" value="<?php echo (int) $nizamiye_term_id; ?>">
 
 				<div class="sms-toolbar">
 					<span class="sms-muted"><span data-sms-bulk-count>0</span> öğrenci seçili</span>
@@ -72,17 +72,17 @@ $grades = $term_id ? Nizamiye_Students::grades_in_term( $term_id ) : array();
 						<th>#</th><th>Öğrenci</th><th>Sınıf</th><th>Devam</th><th>Alışkanlık</th><th>Not Ort.</th><th>Bileşik Skor</th><th></th>
 					</tr></thead>
 					<tbody>
-					<?php foreach ( $scores as $i => $row ) : $s = $row['student']; ?>
+					<?php foreach ( $nizamiye_scores as $nizamiye_i => $nizamiye_row ) : $nizamiye_s = $nizamiye_row['student']; ?>
 						<tr>
-							<td class="sms-check-col"><input type="checkbox" name="student_ids[]" value="<?php echo (int) $s->id; ?>" data-sms-bulk-item></td>
-							<td class="sms-muted">#<?php echo (int) $i + 1; ?></td>
-							<td class="sms-name-cell"><?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $s ) ) ); ?><strong><?php echo esc_html( nizamiye_student_name( $s ) ); ?></strong></td>
-							<td><?php echo isset( $s->grade_level ) ? esc_html( nizamiye_grade_label( $s->grade_level ) ) : '—'; ?></td>
-							<td><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['attendance'] ) ); ?>"><?php echo null !== $row['attendance'] ? (int) $row['attendance'] . '%' : '—'; ?></span></td>
-							<td><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['habit'] ) ); ?>"><?php echo null !== $row['habit'] ? (int) $row['habit'] . '%' : '—'; ?></span></td>
-							<td><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $row['grade'] ) ); ?>"><?php echo null !== $row['grade'] ? (int) $row['grade'] . '%' : '—'; ?></span></td>
-							<td><span class="sms-score sms-score-big <?php echo esc_attr( nizamiye_rate_class( $row['score'] ) ); ?>"><?php echo (int) $row['score']; ?></span></td>
-							<td class="sms-actions-cell"><a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $s->id . '&nizamiye_term=' . $term_id ) ) ); ?>">Karne</a></td>
+							<td class="sms-check-col"><input type="checkbox" name="student_ids[]" value="<?php echo (int) $nizamiye_s->id; ?>" data-sms-bulk-item></td>
+							<td class="sms-muted">#<?php echo (int) $nizamiye_i + 1; ?></td>
+							<td class="sms-name-cell"><?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $nizamiye_s ) ) ); ?><strong><?php echo esc_html( nizamiye_student_name( $nizamiye_s ) ); ?></strong></td>
+							<td><?php echo isset( $nizamiye_s->grade_level ) ? esc_html( nizamiye_grade_label( $nizamiye_s->grade_level ) ) : '—'; ?></td>
+							<td><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $nizamiye_row['attendance'] ) ); ?>"><?php echo null !== $nizamiye_row['attendance'] ? (int) $nizamiye_row['attendance'] . '%' : '—'; ?></span></td>
+							<td><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $nizamiye_row['habit'] ) ); ?>"><?php echo null !== $nizamiye_row['habit'] ? (int) $nizamiye_row['habit'] . '%' : '—'; ?></span></td>
+							<td><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $nizamiye_row['grade'] ) ); ?>"><?php echo null !== $nizamiye_row['grade'] ? (int) $nizamiye_row['grade'] . '%' : '—'; ?></span></td>
+							<td><span class="sms-score sms-score-big <?php echo esc_attr( nizamiye_rate_class( $nizamiye_row['score'] ) ); ?>"><?php echo (int) $nizamiye_row['score']; ?></span></td>
+							<td class="sms-actions-cell"><a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $nizamiye_s->id . '&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">Karne</a></td>
 						</tr>
 					<?php endforeach; ?>
 					</tbody>

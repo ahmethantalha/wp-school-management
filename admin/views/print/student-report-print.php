@@ -4,7 +4,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Tek öğrenci karnesinin tam HTML belgesi. Dompdf ile sunucu tarafında gerçek bir
  * PDF dosyasına dönüştürülmek üzere üretilir (Nizamiye_Actions::handle_print_report /
- * handle_print_report_bulk). $student_id / $term_id çağıran yerde tanımlı olmalı.
+ * handle_print_report_bulk). $nizamiye_student_id / $nizamiye_term_id çağıran yerde tanımlı olmalı.
  */
 ?>
 <!DOCTYPE html>

@@ -55,6 +55,9 @@ class Nizamiye_Actions {
 	 */
 	/** Bir öğrencinin karne HTML'ini (dompdf'e verilecek) üretir. */
 	private static function render_report_html( $student_id, $term_id ) {
+		// Şablon dosyaları önekli değişken adları bekler (WordPress.NamingConventions.PrefixAllGlobals).
+		$nizamiye_student_id = (int) $student_id;
+		$nizamiye_term_id    = (int) $term_id;
 		ob_start();
 		include NIZAMIYE_DIR . 'admin/views/print/student-report-print.php';
 		return ob_get_clean();
