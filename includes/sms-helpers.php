@@ -88,17 +88,17 @@ function nizamiye_teacher_student_ids( $user_id = 0, $term_id = 0 ) {
 	$user_id = $user_id ? (int) $user_id : get_current_user_id();
 	$term_id = $term_id ? (int) $term_id : nizamiye_current_term_id();
 
-	$ids       = array();
-	$class_ids = nizamiye_teacher_class_ids( $user_id, $term_id );
-	if ( $class_ids ) {
-		$class_id_list    = array_map( 'intval', $class_ids );
-		$id_placeholders  = implode( ',', array_fill( 0, count( $class_id_list ), '%d' ) );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- özel eklenti tablosu; $id_placeholders yalnızca count($class_id_list) kadar '%d' içerir, gerçek bir prepare() placeholder listesidir, sniff bunu statik olarak çözemiyor.
-		$ids = array_map( 'intval', $wpdb->get_col( $wpdb->prepare(
-			"SELECT DISTINCT student_id FROM {$wpdb->prefix}nizamiye_class_students WHERE class_id IN ($id_placeholders)",
-			$class_id_list
-		) ) );
-	}
+	// Derslikler doğrudan JOIN ile daraltılır; böylece dinamik bir IN(...) placeholder
+	// listesi kurmaya gerek kalmaz ve sorgu tamamen sabit %d yer tutucularıyla hazırlanır.
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- özel eklenti tablosu, parametreler $wpdb->prepare() ile bağlanır.
+	$ids = array_map( 'intval', $wpdb->get_col( $wpdb->prepare(
+		"SELECT DISTINCT cs.student_id
+		 FROM {$wpdb->prefix}nizamiye_class_students cs
+		 INNER JOIN {$wpdb->prefix}nizamiye_classes c ON c.id = cs.class_id
+		 WHERE c.teacher_id = %d AND c.term_id = %d",
+		$user_id,
+		$term_id
+	) ) );
 
 	// Sınıf öğretmeni: sorumlu sınıf seviyelerindeki (veya tüm) aktif öğrenciler.
 	if ( nizamiye_is_class_teacher( $user_id ) ) {
@@ -417,9 +417,11 @@ function nizamiye_view_header( $title, $subtitle = '', $show_term_picker = true 
 		echo '<form method="get" class="sms-term-picker">';
 		nizamiye_view_nonce_field();
 		// 'page' WordPress'in kendi menü yönlendirmesidir (nonce taşımaz), her zaman korunur.
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- WP çekirdek menü yönlendirmesi, durum değişikliği yok.
-		if ( isset( $_GET['page'] ) ) {
-			echo '<input type="hidden" name="page" value="' . esc_attr( sanitize_key( $_GET['page'] ) ) . '">';
+		// Değeri $_GET yerine WordPress'in bu ekran için hazırladığı $plugin_page
+		// global'inden alıyoruz; böylece hiçbir form verisi doğrudan okunmuyor.
+		global $plugin_page;
+		if ( $plugin_page ) {
+			echo '<input type="hidden" name="page" value="' . esc_attr( $plugin_page ) . '">';
 		}
 		// Diğer parametreler yalnızca geçerli bir görüntüleme nonce'u varsa korunur
 		// (aksi halde bu değerler zaten sayfanın kendisinde de yok sayılmış demektir).
