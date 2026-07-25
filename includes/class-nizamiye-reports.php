@@ -44,7 +44,7 @@ class Nizamiye_Reports {
 	 *
 	 * @return array [ ['student' => satır, 'score' =>, 'attendance' =>, 'habit' =>, 'grade' =>], ... ] skora göre azalan.
 	 */
-	public static function student_scores( $term_id, array $limit_student_ids = null ) {
+	public static function student_scores( $term_id, ?array $limit_student_ids = null ) {
 		$att    = Nizamiye_Attendance::rates_by_student( $term_id );
 		$habit  = Nizamiye_Habits::rates_by_student( $term_id );
 		$grade  = Nizamiye_Grades::rates_by_student( $term_id );
@@ -98,7 +98,7 @@ class Nizamiye_Reports {
 	 *   'totals'   => [ session_id => counts, 'overall' => counts ]
 	 * ]  counts = [present, absent, late, excused, total, rate]
 	 */
-	public static function attendance_matrix( $term_id, $category_id, $date_from, $date_to, $grade = 0, array $student_ids = null ) {
+	public static function attendance_matrix( $term_id, $category_id, $date_from, $date_to, $grade = 0, ?array $student_ids = null ) {
 		global $wpdb;
 
 		$students = Nizamiye_Students::query( array(
@@ -178,7 +178,7 @@ class Nizamiye_Reports {
 	}
 
 	/** Alışkanlık analizi: öğrenci × alışkanlık tamamlama yüzdesi. */
-	public static function habit_matrix( $term_id, $grade = 0, array $student_ids = null ) {
+	public static function habit_matrix( $term_id, $grade = 0, ?array $student_ids = null ) {
 		global $wpdb;
 
 		$students = Nizamiye_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'grade' => $grade, 'ids' => $student_ids ) );
@@ -242,7 +242,7 @@ class Nizamiye_Reports {
 	}
 
 	/** Not analizi: öğrenci × derslik ortalaması. */
-	public static function grade_matrix( $term_id, $grade = 0, array $student_ids = null ) {
+	public static function grade_matrix( $term_id, $grade = 0, ?array $student_ids = null ) {
 		global $wpdb;
 
 		$students = Nizamiye_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'grade' => $grade, 'ids' => $student_ids ) );
@@ -309,7 +309,7 @@ class Nizamiye_Reports {
 	}
 
 	/** Sınıf seviyesi bazında özet: öğrenci sayısı, devam, alışkanlık, not ortalamaları. */
-	public static function grade_level_summary( $term_id, array $student_ids = null ) {
+	public static function grade_level_summary( $term_id, ?array $student_ids = null ) {
 		$students = Nizamiye_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'ids' => $student_ids ) );
 		if ( ! $students ) {
 			return array();
@@ -356,7 +356,7 @@ class Nizamiye_Reports {
 	}
 
 	/** Yoklama türü (kategori) bazında dönem özeti. */
-	public static function category_summary( $term_id, array $student_ids = null ) {
+	public static function category_summary( $term_id, ?array $student_ids = null ) {
 		global $wpdb;
 		$sql    = "SELECT category_id, status, COUNT(*) AS cnt FROM {$wpdb->prefix}nizamiye_attendance WHERE term_id = %d";
 		$params = array( $term_id );

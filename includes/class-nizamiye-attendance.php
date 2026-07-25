@@ -162,7 +162,7 @@ class Nizamiye_Attendance {
 	}
 
 	/** Dönem geneli durum dağılımı (halka grafik). $student_ids ile sınırlandırılabilir. */
-	public static function term_breakdown( $term_id, array $student_ids = null ) {
+	public static function term_breakdown( $term_id, ?array $student_ids = null ) {
 		global $wpdb;
 		$sql    = "SELECT status, COUNT(*) AS cnt FROM {$wpdb->prefix}nizamiye_attendance WHERE term_id = %d";
 		$params = array( $term_id );
@@ -185,7 +185,7 @@ class Nizamiye_Attendance {
 	}
 
 	/** Son N günün günlük devam yüzdesi: [tarih => yüzde|null]. */
-	public static function daily_rates( $term_id, $days = 14, array $student_ids = null ) {
+	public static function daily_rates( $term_id, $days = 14, ?array $student_ids = null ) {
 		global $wpdb;
 		$start = gmdate( 'Y-m-d', strtotime( '-' . ( $days - 1 ) . ' days', current_time( 'timestamp' ) ) );
 

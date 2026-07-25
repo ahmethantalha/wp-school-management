@@ -214,7 +214,7 @@ class Nizamiye_Habits {
 	}
 
 	/** Son N günün günlük genel tamamlama yüzdesi: [tarih => yüzde|null]. */
-	public static function daily_rates( $term_id, $days = 14, array $student_ids = null ) {
+	public static function daily_rates( $term_id, $days = 14, ?array $student_ids = null ) {
 		global $wpdb;
 		$start = gmdate( 'Y-m-d', strtotime( '-' . ( $days - 1 ) . ' days', current_time( 'timestamp' ) ) );
 
