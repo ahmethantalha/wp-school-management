@@ -88,6 +88,8 @@ and download a single ZIP file containing a separate PDF for each student.
 2. Attendance entry screen — category/session cards.
 3. Reports — attendance/habit/grade analysis tabs.
 4. Student report card — attendance summary, habits and grade averages.
+5. Bulk import — add students, teachers or parents from a CSV/Excel file.
+6. Terms page — manage academic terms and switch the active one.
 
 == Changelog ==
 
