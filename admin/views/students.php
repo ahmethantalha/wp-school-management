@@ -49,7 +49,7 @@ foreach ( $nizamiye_parents as $nizamiye_p ) {
 			<button type="submit" class="sms-btn sms-btn-ghost">Filtrele</button>
 		</form>
 		<?php if ( nizamiye_is_manager() ) : ?>
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-students&view=edit&nizamiye_term=' . $nizamiye_term_id ) ); ?>" class="sms-btn sms-btn-primary"><span class="dashicons dashicons-plus-alt2"></span> Yeni Öğrenci</a>
+			<a href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-students&view=edit&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>" class="sms-btn sms-btn-primary"><span class="dashicons dashicons-plus-alt2"></span> Yeni Öğrenci</a>
 		<?php endif; ?>
 	</div>
 

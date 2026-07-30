@@ -34,7 +34,7 @@ $nizamiye_hints = array(
 
 	<div class="sms-tabs">
 		<?php foreach ( $nizamiye_tabs as $nizamiye_key => $nizamiye_t ) : ?>
-			<a class="sms-tab <?php echo $nizamiye_tab === $nizamiye_key ? 'is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-import&tab=' . $nizamiye_key ) ); ?>">
+			<a class="sms-tab <?php echo $nizamiye_tab === $nizamiye_key ? 'is-active' : ''; ?>" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-import&tab=' . $nizamiye_key ) ) ); ?>">
 				<span class="dashicons <?php echo esc_attr( $nizamiye_t[1] ); ?>"></span> <?php echo esc_html( $nizamiye_t[0] ); ?>
 			</a>
 		<?php endforeach; ?>

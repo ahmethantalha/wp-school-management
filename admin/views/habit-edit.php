@@ -23,7 +23,7 @@ $nizamiye_grades = Nizamiye_Students::grades_in_term( $nizamiye_term_id );
 <div class="wrap sms-wrap">
 	<?php nizamiye_view_header( $nizamiye_habit ? 'Alışkanlık: ' . $nizamiye_habit->name : 'Yeni Alışkanlık', 'Takip tipini seçin ve öğrencileri atayın.' ); ?>
 
-	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-habits&nizamiye_term=' . $nizamiye_term_id ) ); ?>">← Alışkanlık listesine dön</a></p>
+	<p><a class="sms-back-link" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-habits&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">← Alışkanlık listesine dön</a></p>
 
 	<?php nizamiye_form_open( 'nizamiye_save_habit' ); nizamiye_back_url_field(); ?>
 		<input type="hidden" name="habit_id" value="<?php echo (int) $nizamiye_habit_id; ?>">

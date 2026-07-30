@@ -16,7 +16,7 @@ foreach ( nizamiye_users_by_role( 'nizamiye_teacher' ) as $nizamiye_t ) {
 	<?php if ( nizamiye_is_manager() && $nizamiye_term_id ) : ?>
 		<div class="sms-toolbar">
 			<span></span>
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-classes&view=edit&nizamiye_term=' . $nizamiye_term_id ) ); ?>" class="sms-btn sms-btn-primary"><span class="dashicons dashicons-plus-alt2"></span> Yeni Derslik</a>
+			<a href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-classes&view=edit&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>" class="sms-btn sms-btn-primary"><span class="dashicons dashicons-plus-alt2"></span> Yeni Derslik</a>
 		</div>
 	<?php endif; ?>
 

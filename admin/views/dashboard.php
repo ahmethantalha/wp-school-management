@@ -127,7 +127,7 @@ $nizamiye_settings = nizamiye_get_settings();
 		<div class="sms-card">
 			<div class="sms-card-head">
 				<h2>Sınıf Bazında Özet</h2>
-				<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&rtype=genel&group=sinif&nizamiye_term=' . $nizamiye_term_id ) ); ?>">Detaylı Analiz →</a>
+				<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-reports&rtype=genel&group=sinif&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">Detaylı Analiz →</a>
 			</div>
 			<?php if ( $nizamiye_grade_sum ) : ?>
 				<table class="sms-table">
@@ -152,7 +152,7 @@ $nizamiye_settings = nizamiye_get_settings();
 		<div class="sms-card">
 			<div class="sms-card-head">
 				<h2>Yoklama Türlerine Göre</h2>
-				<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&rtype=yoklama&nizamiye_term=' . $nizamiye_term_id ) ); ?>">Detaylı Analiz →</a>
+				<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-reports&rtype=yoklama&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">Detaylı Analiz →</a>
 			</div>
 			<?php if ( $nizamiye_cat_sum ) : ?>
 				<table class="sms-table">

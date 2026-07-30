@@ -46,7 +46,7 @@ $nizamiye_print_url = wp_nonce_url( add_query_arg( array(
 
 	<div class="sms-toolbar">
 		<?php if ( current_user_can( 'nizamiye_teach' ) ) : ?>
-			<a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-cards&nizamiye_term=' . $nizamiye_term_id ) ); ?>">← Karnelere dön</a>
+			<a class="sms-back-link" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-cards&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">← Karnelere dön</a>
 		<?php else : ?>
 			<span></span>
 		<?php endif; ?>

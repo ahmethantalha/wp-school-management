@@ -22,7 +22,7 @@ $nizamiye_grades      = Nizamiye_Students::grades_in_term( $nizamiye_term_id );
 <div class="wrap sms-wrap">
 	<?php nizamiye_view_header( $nizamiye_class ? 'Derslik: ' . $nizamiye_class->name : 'Yeni Derslik', 'Derslik bilgileri ve öğrenci kadrosu' ); ?>
 
-	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-classes&nizamiye_term=' . $nizamiye_term_id ) ); ?>">← Derslik listesine dön</a></p>
+	<p><a class="sms-back-link" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-classes&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">← Derslik listesine dön</a></p>
 
 	<div class="sms-grid-2 sms-grid-uneven">
 		<div>

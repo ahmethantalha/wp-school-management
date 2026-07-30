@@ -115,7 +115,7 @@ $nizamiye_export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . es
 
 	<div class="sms-tabs">
 		<?php foreach ( $nizamiye_tabs as $nizamiye_key => $nizamiye_t ) : ?>
-			<a class="sms-tab <?php echo $nizamiye_rtype === $nizamiye_key ? 'is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-reports&rtype=' . $nizamiye_key . '&nizamiye_term=' . $nizamiye_term_id ) ); ?>">
+			<a class="sms-tab <?php echo $nizamiye_rtype === $nizamiye_key ? 'is-active' : ''; ?>" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-reports&rtype=' . $nizamiye_key . '&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">
 				<span class="dashicons <?php echo esc_attr( $nizamiye_t[1] ); ?>"></span> <?php echo esc_html( $nizamiye_t[0] ); ?>
 			</a>
 		<?php endforeach; ?>

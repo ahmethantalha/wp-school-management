@@ -54,7 +54,7 @@ if ( 'class' === $nizamiye_category->scope && ! $nizamiye_class_id ) {
 	?>
 	<div class="wrap sms-wrap">
 		<?php nizamiye_view_header( $nizamiye_category->name . ' Yoklaması', 'Yoklama alacağınız dersliği seçin.' ); ?>
-		<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-attendance&nizamiye_term=' . $nizamiye_term_id ) ); ?>">← Yoklama türlerine dön</a></p>
+		<p><a class="sms-back-link" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-attendance&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">← Yoklama türlerine dön</a></p>
 		<?php if ( $nizamiye_classes ) : ?>
 			<div class="sms-cat-grid">
 				<?php $nizamiye_sess = Nizamiye_Attendance_Types::sessions( (int) $nizamiye_category->id ); $nizamiye_sid = $nizamiye_sess ? (int) $nizamiye_sess[0]->id : 0; ?>
@@ -80,7 +80,7 @@ if ( 'general' === $nizamiye_category->scope && count( $nizamiye_sessions ) > 1 
 	?>
 	<div class="wrap sms-wrap">
 		<?php nizamiye_view_header( $nizamiye_category->name . ' Yoklaması', 'Hangi oturumun yoklamasını alacaksınız?' ); ?>
-		<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-attendance&nizamiye_term=' . $nizamiye_term_id ) ); ?>">← Yoklama türlerine dön</a></p>
+		<p><a class="sms-back-link" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-attendance&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">← Yoklama türlerine dön</a></p>
 		<div class="sms-cat-grid">
 			<?php foreach ( $nizamiye_sessions as $nizamiye_s ) : ?>
 				<a class="sms-cat-card sms-session-card" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-attendance&cat=' . (int) $nizamiye_category->id . '&session=' . (int) $nizamiye_s->id . '&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">

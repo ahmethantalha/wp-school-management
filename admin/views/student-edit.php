@@ -18,7 +18,7 @@ $nizamiye_linked_user = $nizamiye_student && $nizamiye_student->user_id ? get_us
 <div class="wrap sms-wrap">
 	<?php nizamiye_view_header( $nizamiye_student ? 'Öğrenciyi Düzenle' : 'Yeni Öğrenci', $nizamiye_student ? nizamiye_student_name( $nizamiye_student ) : 'Yeni öğrenci kaydı oluşturun' ); ?>
 
-	<p><a class="sms-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-students&nizamiye_term=' . $nizamiye_term_id ) ); ?>">← Öğrenci listesine dön</a></p>
+	<p><a class="sms-back-link" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-students&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">← Öğrenci listesine dön</a></p>
 
 	<div class="sms-grid-2 sms-grid-uneven">
 		<div class="sms-card">
@@ -99,7 +99,7 @@ $nizamiye_linked_user = $nizamiye_student && $nizamiye_student->user_id ? get_us
 								<?php endforeach; ?>
 							</ul>
 						<?php else : ?>
-							<p class="sms-muted">Henüz bir dersliğe eklenmemiş. Atama <a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-classes&nizamiye_term=' . $nizamiye_term_id ) ); ?>">Derslikler</a> sayfasındaki kadro yönetiminden yapılır.</p>
+							<p class="sms-muted">Henüz bir dersliğe eklenmemiş. Atama <a href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-classes&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">Derslikler</a> sayfasındaki kadro yönetiminden yapılır.</p>
 						<?php endif; ?>
 					</div>
 				</div>

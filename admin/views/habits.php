@@ -11,7 +11,7 @@ $nizamiye_habits  = $nizamiye_term_id ? Nizamiye_Habits::for_term( $nizamiye_ter
 	<?php if ( $nizamiye_term_id ) : ?>
 		<div class="sms-toolbar">
 			<span></span>
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=nizamiye-habits&view=edit&nizamiye_term=' . $nizamiye_term_id ) ); ?>" class="sms-btn sms-btn-primary"><span class="dashicons dashicons-plus-alt2"></span> Yeni Alışkanlık</a>
+			<a href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-habits&view=edit&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>" class="sms-btn sms-btn-primary"><span class="dashicons dashicons-plus-alt2"></span> Yeni Alışkanlık</a>
 		</div>
 	<?php endif; ?>
 
