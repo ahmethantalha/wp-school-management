@@ -2,9 +2,9 @@
 Contributors: ahmethantalha
 Tags: education, attendance, gradebook, student management, reports
 Requires at least: 6.0
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.5
+Stable tag: 1.3.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,35 @@ and download a single ZIP file containing a separate PDF for each student.
 
 == Changelog ==
 
+= 1.3.6 =
+* Verified against WordPress 7.1 and raised "Tested up to" to 7.1. No code changes were
+  needed: the plugin lives entirely in the classic admin, registers no block editor
+  assets, does not integrate with the media modal and carries no jQuery or jQuery UI
+  dependency, so the 7.1 always-iframed post editor, client-side media processing and
+  jQuery UI 1.14.2 changes do not affect it.
+* Added the changelog entries for 1.3.2 - 1.3.5, which were missing from earlier releases.
+* Added a Turkish translation of this readme as `readme-tr_TR.txt`.
+
+= 1.3.5 =
+* Fixed tab and term switching links. The nonce validation added to the plugin's GET
+  parameters was not carried by some of the links the plugin generated itself, so
+  clicking a tab (for example "Teachers" on the Import page), a term selector or a
+  "back" / "add new" / "detailed analysis" link silently fell back to the first tab or
+  to the active term instead of the one that was clicked.
+
+= 1.3.4 =
+* Fixed a fatal error on activation. After the rename to Nizamiye the main plugin file
+  required nine `includes/class-nizamiye-*.php` files that had not been renamed yet, so
+  the plugin failed to load with a "Failed opening required" error and could not be
+  activated at all.
+
+= 1.3.3 =
+* Resolved the last remaining Plugin Check warnings in the shared helper functions file.
+
+= 1.3.2 =
+* Prefixed every variable used in the view files with `nizamiye_`, so the plugin can no
+  longer collide with global variables coming from the theme or from other plugins.
+
 = 1.3.1 =
 * The report card's "Attendance Summary" now shows a separate percentage for each attendance
   category (previously all categories were shown mixed into one total); multi-session categories
@@ -130,6 +159,10 @@ and download a single ZIP file containing a separate PDF for each student.
 
 == Upgrade Notice ==
 
-= 1.3.1 =
-Report card PDF generation now happens server-side and bulk ZIP download is supported; no extra
-steps are required after updating.
+= 1.3.6 =
+Compatibility with WordPress 7.1 has been verified and the readme changelog completed.
+This release contains no code changes; no action is required after updating.
+
+= 1.3.4 =
+Fixes a fatal error that prevented the plugin from activating. Updating is required if
+you are on 1.3.2 or 1.3.3.
