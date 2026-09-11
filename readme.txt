@@ -4,7 +4,7 @@ Tags: education, attendance, gradebook, student management, reports
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.6
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,7 @@ an institution needs in a single panel.
 * **Habit tracking** — Done/Not done, graded (1 to N), or book/page tracking (daily book title + pages read) methods.
 * **Grade entry and bulk upload** — classroom-based exam grades; CSV template download and bulk upload support.
 * **Reports** — analysis tabs for attendance, habits, grades and overall performance, grouped by student or class; date-range or month/year filtering.
+* **Parent notification lists** — daily, weekly or monthly single-page roster reports for a habit or an attendance type, showing every student by name (for book reading: the books read and the page total). Downloadable as PDF, PNG or JPG so it can be sent to parents directly.
 * **PDF Report Cards** — generates a real, downloadable `.pdf` report card for every student; from the Report Cards page you can select multiple students and download their report cards in bulk as a **single ZIP file** (one PDF per student).
 * **Bulk import** — import student/teacher/parent lists via Excel (.xlsx) or CSV, with sample templates.
 * **Term transition** — when a new term opens, all students are automatically promoted to the next grade; those at the graduation level are marked as graduated and archived.
@@ -39,10 +40,15 @@ an institution needs in a single panel.
 
 = Third-Party Library =
 
-PDF report card generation is done server-side using the [Dompdf](https://github.com/dompdf/dompdf)
-library (LGPL licensed, GPL compatible), which is bundled with the plugin. Dompdf is configured
-so it never makes requests to remote servers (`isRemoteEnabled` is disabled); the plugin does not
-send any data to external services.
+PDF generation (report cards and roster reports) is done server-side using the
+[Dompdf](https://github.com/dompdf/dompdf) library (LGPL licensed, GPL compatible), which is
+bundled with the plugin. Dompdf is configured so it never makes requests to remote servers
+(`isRemoteEnabled` is disabled); the plugin does not send any data to external services.
+
+PNG/JPG download of roster reports is done in the browser with
+[html2canvas](https://github.com/niklasvh/html2canvas) 1.4.1 (MIT licensed), bundled unminified
+under `assets/vendor/`. It only runs on the roster report screens, works entirely client-side and
+makes no network requests.
 
 == Installation ==
 
@@ -92,6 +98,26 @@ and download a single ZIP file containing a separate PDF for each student.
 6. Terms page — manage academic terms and switch the active one.
 
 == Changelog ==
+
+= 1.4.0 =
+* Added daily / weekly / monthly roster reports for habits and attendance, intended to be sent
+  to parents. Each report is a single-page list of every student by name: for a book reading
+  habit it shows the book title and page count for the day, or the books read and the page total
+  for the week/month; for attendance it shows the status for the day, or the present/absent/late/
+  excused counts and the participation rate for the week/month.
+* The period filter offers Daily / Weekly / Monthly. In weekly mode, picking a month lists that
+  month's Monday-Sunday weeks; a week that crosses a month boundary keeps its real date span and
+  is labelled accordingly (for example "31 August - 6 September").
+* Each report can be downloaded as PDF (server-side, Dompdf), or as PNG/JPG (in the browser,
+  html2canvas). The on-screen preview, the PDF and the image all come from the same template and
+  the same stylesheet, so the three cannot drift apart. Row density adapts to the number of
+  students and A4 orientation can be switched to landscape so long lists still fit one page.
+* Reports are reachable from the "Report" button on each habit card, from the habit tracking
+  screen and from the attendance sheet.
+* The habit analysis tab on the Reports page now honours the date filter. Previously it always
+  covered the whole term because the underlying query did not filter by log date; the CSV export
+  of that tab was affected in the same way. Habit column headers now link to that habit's roster
+  report for the selected range.
 
 = 1.3.6 =
 * Verified against WordPress 7.1 and raised "Tested up to" to 7.1. No code changes were

@@ -23,9 +23,12 @@ class Nizamiye_Pdf {
 	/**
 	 * HTML'i A4 PDF baytlarına çevirir.
 	 *
+	 * @param string $html
+	 * @param string $orientation 'portrait' (varsayılan) veya 'landscape'.
+	 *                            Uzun isim listelerinin tek sayfaya sığması için.
 	 * @return string|WP_Error PDF içeriği (ham bayt) veya hata.
 	 */
-	public static function render( $html ) {
+	public static function render( $html, $orientation = 'portrait' ) {
 		if ( ! self::ensure_loaded() ) {
 			return new WP_Error( 'nizamiye_pdf_missing', 'PDF motoru (Dompdf) bulunamadı. Eklenti dosyalarının eksiksiz yüklendiğinden emin olun.' );
 		}
@@ -38,7 +41,7 @@ class Nizamiye_Pdf {
 			$options->set( 'isPhpEnabled', false );
 
 			$dompdf = new \Dompdf\Dompdf( $options );
-			$dompdf->setPaper( 'A4', 'portrait' );
+			$dompdf->setPaper( 'A4', 'landscape' === $orientation ? 'landscape' : 'portrait' );
 			$dompdf->loadHtml( $html, 'UTF-8' );
 			$dompdf->render();
 			return $dompdf->output();
@@ -48,8 +51,8 @@ class Nizamiye_Pdf {
 	}
 
 	/** PDF'i doğrudan indirme yanıtı olarak gönderir ve betiği sonlandırır. */
-	public static function stream( $html, $filename ) {
-		$pdf = self::render( $html );
+	public static function stream( $html, $filename, $orientation = 'portrait' ) {
+		$pdf = self::render( $html, $orientation );
 		if ( is_wp_error( $pdf ) ) {
 			wp_die( esc_html( $pdf->get_error_message() ) );
 		}

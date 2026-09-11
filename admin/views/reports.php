@@ -167,7 +167,10 @@ $nizamiye_export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . es
 					<?php else : ?>
 						<input type="hidden" name="metric" value="<?php echo esc_attr( $nizamiye_metric ); ?>">
 					<?php endif; ?>
+				<?php endif; ?>
 
+				<?php // Tarih filtresi yoklama ve alışkanlık analizinde ortaktır; not/genel sekmeleri dönem bütününde çalışır. ?>
+				<?php if ( in_array( $nizamiye_rtype, array( 'yoklama', 'aliskanlik' ), true ) ) : ?>
 					<select name="datemode" data-sms-datemode-toggle>
 						<option value="range" <?php selected( $nizamiye_date_mode, 'range' ); ?>>Tarih Aralığı</option>
 						<option value="month" <?php selected( $nizamiye_date_mode, 'month' ); ?>>Ay / Yıl</option>
@@ -362,7 +365,7 @@ $nizamiye_export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . es
 	<?php
 	/* ================= ALIŞKANLIK ANALİZİ ================= */
 	elseif ( 'aliskanlik' === $nizamiye_rtype ) :
-		$nizamiye_matrix = Nizamiye_Reports::habit_matrix( $nizamiye_term_id, 'sinif' === $nizamiye_group ? 0 : $nizamiye_grade, $nizamiye_student_ids );
+		$nizamiye_matrix = Nizamiye_Reports::habit_matrix( $nizamiye_term_id, 'sinif' === $nizamiye_group ? 0 : $nizamiye_grade, $nizamiye_student_ids, $nizamiye_from, $nizamiye_to );
 		$nizamiye_habits = $nizamiye_matrix['habits'];
 
 		$nizamiye_grade_rows = array();
@@ -385,14 +388,28 @@ $nizamiye_export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . es
 		}
 		?>
 		<div class="sms-card sms-mt">
-			<div class="sms-card-head"><h2>Alışkanlık Tamamlama Oranları</h2><div class="sms-head-tools"><span class="sms-muted">Dönem geneli</span><?php echo wp_kses_post( ( $nizamiye_matrix['rows'] && $nizamiye_habits ) ? $nizamiye_export_btn : '' ); ?></div></div>
+			<div class="sms-card-head"><h2>Alışkanlık Tamamlama Oranları</h2><div class="sms-head-tools"><span class="sms-muted"><?php echo esc_html( nizamiye_date_span_label( strtotime( $nizamiye_from ), strtotime( $nizamiye_to ) ) ); ?></span><?php echo wp_kses_post( ( $nizamiye_matrix['rows'] && $nizamiye_habits ) ? $nizamiye_export_btn : '' ); ?></div></div>
 			<?php if ( $nizamiye_matrix['rows'] && $nizamiye_habits ) : ?>
 				<div class="sms-table-scroll">
 				<table class="sms-table sms-matrix">
 					<thead>
 						<tr>
 							<th><?php echo 'sinif' === $nizamiye_group ? 'Sınıf' : 'Öğrenci'; ?></th>
-							<?php foreach ( $nizamiye_habits as $nizamiye_h ) : ?><th class="sms-center"><?php echo esc_html( $nizamiye_h->name ); ?></th><?php endforeach; ?>
+							<?php foreach ( $nizamiye_habits as $nizamiye_h ) : ?>
+								<th class="sms-center">
+									<?php // Aynı tarih aralığını taşıyarak o alışkanlığın indirilebilir liste raporuna geçiş. ?>
+									<a href="<?php echo esc_url( nizamiye_view_nonce_url( add_query_arg( array(
+										'page'          => 'nizamiye-habits',
+										'view'          => 'report',
+										'habit_id'      => (int) $nizamiye_h->id,
+										'pmode'         => 'month' === $nizamiye_date_mode && $nizamiye_sel_month ? 'month' : 'day',
+										'pmonth'        => (int) $nizamiye_sel_month,
+										'pyear'         => (int) $nizamiye_sel_year,
+										'pdate'         => $nizamiye_to,
+										'nizamiye_term' => $nizamiye_term_id,
+									), admin_url( 'admin.php' ) ) ) ); ?>" title="<?php echo esc_attr( $nizamiye_h->name . ' — liste raporu' ); ?>"><?php echo esc_html( $nizamiye_h->name ); ?></a>
+								</th>
+							<?php endforeach; ?>
 							<th class="sms-center">Genel</th>
 						</tr>
 					</thead>

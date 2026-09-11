@@ -84,13 +84,15 @@ class Nizamiye_Menu {
 				self::load_view( 'edit' === $view ? 'class-edit' : 'classes' );
 				break;
 			case 'nizamiye-attendance':
-				self::load_view( 'attendance' );
+				self::load_view( 'report' === $view ? 'attendance-report' : 'attendance' );
 				break;
 			case 'nizamiye-habits':
 				if ( 'edit' === $view ) {
 					self::load_view( 'habit-edit' );
 				} elseif ( 'track' === $view ) {
 					self::load_view( 'habit-track' );
+				} elseif ( 'report' === $view ) {
+					self::load_view( 'habit-report' );
 				} else {
 					self::load_view( 'habits' );
 				}
@@ -135,5 +137,19 @@ class Nizamiye_Menu {
 		wp_enqueue_style( 'sms-admin', NIZAMIYE_URL . 'assets/css/admin.css', array(), NIZAMIYE_VERSION );
 		wp_enqueue_script( 'sms-charts', NIZAMIYE_URL . 'assets/js/sms-charts.js', array(), NIZAMIYE_VERSION, true );
 		wp_enqueue_script( 'sms-admin', NIZAMIYE_URL . 'assets/js/admin.js', array( 'sms-charts' ), NIZAMIYE_VERSION, true );
+
+		// html2canvas yalnızca toplu liste rapor ekranlarında gerekir (PNG/JPG
+		// indirme). Diğer sayfalara bu boyutu yüklememek için koşullu enqueue.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt sayfa yönlendirme (GET), durum değişikliği yok.
+		$page = sanitize_key( $_GET['page'] );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- salt sayfa yönlendirme (GET), durum değişikliği yok.
+		$view = isset( $_GET['view'] ) ? sanitize_key( $_GET['view'] ) : '';
+		if ( 'report' === $view && in_array( $page, array( 'nizamiye-habits', 'nizamiye-attendance' ), true ) ) {
+			wp_enqueue_script( 'sms-html2canvas', NIZAMIYE_URL . 'assets/vendor/html2canvas.js', array(), '1.4.1', true );
+			wp_enqueue_script( 'sms-sheet-export', NIZAMIYE_URL . 'assets/js/sheet-export.js', array( 'sms-html2canvas' ), NIZAMIYE_VERSION, true );
+			// Rapor sayfasının .sheet stilleri dompdf ile ortaktır (bkz.
+			// nizamiye_print_sheet_css); önizlemenin PDF'e birebir benzemesi buna dayanır.
+			wp_add_inline_style( 'sms-admin', nizamiye_print_sheet_css() );
+		}
 	}
 }

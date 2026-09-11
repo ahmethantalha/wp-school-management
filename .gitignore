@@ -7,3 +7,6 @@ Thumbs.db
 
 # Composer geliştirme dosyaları (vendor/ dağıtım için kasıtlı olarak repoda tutulur)
 composer.phar
+
+# AI araç dizinleri (pakete girmemeli)
+.claude/

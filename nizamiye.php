@@ -3,7 +3,7 @@
  * Plugin Name:       Nizamiye
  * Plugin URI:        https://github.com/ahmethantalha/wp-school-management
  * Description:       Öğrenci yurtları, okullar ve eğitim kurumları için dönem bazlı öğrenci takip sistemi: öğrenci/öğretmen/veli yönetimi, derslikler, yoklama, not ve alışkanlık takibi, raporlar.
- * Version:           1.3.6
+ * Version:           1.4.0
  * Author:            Ahmethan T. Gültekin
  * Author URI:        https://github.com/ahmethantalha
  * License:           GPL-2.0-or-later
@@ -15,7 +15,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'NIZAMIYE_VERSION', '1.3.6' );
+define( 'NIZAMIYE_VERSION', '1.4.0' );
 define( 'NIZAMIYE_FILE', __FILE__ );
 define( 'NIZAMIYE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'NIZAMIYE_URL', plugin_dir_url( __FILE__ ) );
@@ -33,6 +33,7 @@ require_once NIZAMIYE_DIR . 'includes/class-nizamiye-habits.php';
 require_once NIZAMIYE_DIR . 'includes/class-nizamiye-grades.php';
 require_once NIZAMIYE_DIR . 'includes/class-nizamiye-reports.php';
 require_once NIZAMIYE_DIR . 'includes/class-nizamiye-pdf.php';
+require_once NIZAMIYE_DIR . 'includes/class-nizamiye-sheet.php';
 
 if ( is_admin() ) {
 	require_once NIZAMIYE_DIR . 'admin/class-nizamiye-menu.php';

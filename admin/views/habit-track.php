@@ -37,7 +37,10 @@ if ( $nizamiye_is_scale ) {
 <div class="wrap sms-wrap">
 	<?php nizamiye_view_header( 'Takip: ' . $nizamiye_habit->name, $nizamiye_subtitle ); ?>
 
-	<p><a class="sms-back-link" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-habits&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">← Alışkanlık listesine dön</a></p>
+	<p>
+		<a class="sms-back-link" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-habits&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">← Alışkanlık listesine dön</a>
+		&nbsp; <a href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-habits&view=report&habit_id=' . (int) $nizamiye_habit_id . '&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">Rapor al →</a>
+	</p>
 
 	<div class="sms-card">
 		<div class="sms-pad">

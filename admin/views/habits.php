@@ -42,6 +42,7 @@ $nizamiye_habits  = $nizamiye_term_id ? Nizamiye_Habits::for_term( $nizamiye_ter
 					</div>
 					<div class="sms-class-card-actions">
 						<a class="sms-btn sms-btn-primary sms-btn-sm" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-habits&view=track&habit_id=' . (int) $nizamiye_h->id . '&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">Takip Doldur</a>
+						<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-habits&view=report&habit_id=' . (int) $nizamiye_h->id . '&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">Rapor</a>
 						<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-habits&view=edit&habit_id=' . (int) $nizamiye_h->id . '&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>">Düzenle</a>
 					</div>
 				</div>
