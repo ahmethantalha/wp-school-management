@@ -272,6 +272,100 @@ class Nizamiye_Habits {
 	}
 
 	/**
+	 * Belirli bir tarih aralığındaki takip kayıtlarını öğrenci bazında özetler —
+	 * velilere gönderilen günlük/haftalık/aylık toplu liste raporunun veri kaynağı.
+	 *
+	 * Tek sorgu çekilip toplama PHP tarafında yapılır: hacim küçüktür (öğrenci ×
+	 * gün) ve 'reading' türünde kitap adları serbest metin olduğu için gruplama
+	 * zaten PHP'de normalize edilmek zorundadır.
+	 *
+	 * @param int   $habit_id    Alışkanlık.
+	 * @param string $from       Başlangıç (Y-m-d, dahil).
+	 * @param string $to         Bitiş (Y-m-d, dahil).
+	 * @param array $student_ids Rapora girecek öğrenciler (yetki daraltması çağıran tarafta yapılır).
+	 *
+	 * @return array{students:array<int,array>,tracked_days:int}
+	 *         students: student_id => ['days','done','total','avg','books','entries']
+	 *         tracked_days: aralıkta herhangi bir öğrenciye kayıt girilmiş farklı gün sayısı.
+	 *         Haftalık/aylık raporda "5/6 gün" gibi bir paydaya ihtiyaç var; takvim
+	 *         günü sayısı yanıltıcı olurdu (hafta sonu / tatil / takip yapılmayan gün).
+	 */
+	public static function report_rows( $habit_id, $from, $to, array $student_ids ) {
+		global $wpdb;
+
+		$empty = array( 'students' => array(), 'tracked_days' => 0 );
+		$ids   = array_values( array_unique( array_map( 'intval', $student_ids ) ) );
+		if ( ! $ids ) {
+			return $empty;
+		}
+
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		$params       = array_merge( array( (int) $habit_id, $from, $to ), $ids );
+
+		// SQL önce değişkene alınır (bkz. daily_rates()): yer tutucu sayısı IN(...)
+		// listesiyle çalışma anında belirlendiğinden, sorgu doğrudan prepare()'e
+		// dizge olarak verilseydi statik analiz yer tutucuları sayamayıp yanlış
+		// alarm üretirdi. Tüm parametreler yine prepare() ile bağlanır.
+		$sql  = "SELECT student_id, log_date, value, note
+			 FROM {$wpdb->prefix}nizamiye_habit_logs
+			 WHERE habit_id = %d AND log_date >= %s AND log_date <= %s
+			   AND student_id IN ($placeholders)
+			 ORDER BY student_id, log_date";
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
+
+		$students     = array();
+		$tracked_days = array();
+
+		foreach ( $rows as $r ) {
+			$sid  = (int) $r->student_id;
+			$val  = (int) $r->value;
+			$note = trim( (string) $r->note );
+
+			if ( ! isset( $students[ $sid ] ) ) {
+				$students[ $sid ] = array(
+					'days'    => 0,
+					'done'    => 0,
+					'total'   => 0,
+					'avg'     => null,
+					'books'   => array(),
+					'entries' => array(),
+				);
+			}
+
+			$students[ $sid ]['days']++;
+			$students[ $sid ]['total'] += $val;
+			if ( $val > 0 ) {
+				$students[ $sid ]['done']++;
+			}
+			$students[ $sid ]['entries'][] = array(
+				'date'  => $r->log_date,
+				'value' => $val,
+				'note'  => $note,
+			);
+
+			// Kitap adları serbest metin; reading_summary() ile aynı normalizasyon.
+			$book = '' !== $note ? $note : '(İsimsiz kitap)';
+			if ( ! isset( $students[ $sid ]['books'][ $book ] ) ) {
+				$students[ $sid ]['books'][ $book ] = 0;
+			}
+			$students[ $sid ]['books'][ $book ] += $val;
+
+			$tracked_days[ $r->log_date ] = true;
+		}
+
+		foreach ( $students as $sid => $data ) {
+			$students[ $sid ]['avg'] = $data['days'] > 0 ? round( $data['total'] / $data['days'], 1 ) : null;
+			// Çok okunan kitap önce; veli listede önce asıl kitabı görsün.
+			arsort( $students[ $sid ]['books'] );
+		}
+
+		return array(
+			'students'     => $students,
+			'tracked_days' => count( $tracked_days ),
+		);
+	}
+
+	/**
 	 * Öğrencinin bu alışkanlıkta daha önce girdiği kitap adları (en son girilen önce),
 	 * takip doldurma ekranında öneri (dropdown/datalist) olarak kullanılır.
 	 */

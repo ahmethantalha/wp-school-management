@@ -47,6 +47,7 @@ class Nizamiye_Actions {
 		add_action( 'admin_post_nizamiye_export_report', array( __CLASS__, 'handle_export_report' ) );
 		add_action( 'admin_post_nizamiye_print_report', array( __CLASS__, 'handle_print_report' ) );
 		add_action( 'admin_post_nizamiye_print_report_bulk', array( __CLASS__, 'handle_print_report_bulk' ) );
+		add_action( 'admin_post_nizamiye_print_roster', array( __CLASS__, 'handle_print_roster' ) );
 	}
 
 	/**
@@ -94,6 +95,60 @@ class Nizamiye_Actions {
 
 		$html = self::render_report_html( $student_id, $term_id );
 		Nizamiye_Pdf::stream( $html, self::report_filename( $student ) );
+	}
+
+	/**
+	 * Toplu liste raporunu (alışkanlık / yoklama) PDF olarak indirir.
+	 *
+	 * Veriyi ve yetki kontrolünü Nizamiye_Sheet üstlenir — ekrandaki önizleme de
+	 * aynı metotları çağırdığı için PDF ile önizleme birbirinden ayrışamaz.
+	 */
+	public static function handle_print_roster() {
+		check_admin_referer( 'nizamiye_print_roster' );
+		if ( ! current_user_can( 'nizamiye_teach' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+
+		// nizamiye_resolve_period( false ): bu istek kendi (daha dar kapsamlı)
+		// nonce'uyla zaten doğrulandı; 'nizamiye_view' nonce'u burada bulunmaz.
+		$period = nizamiye_resolve_period( false );
+
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- yukarıda check_admin_referer() ile doğrulandı.
+		$kind    = isset( $_GET['kind'] ) ? sanitize_key( wp_unslash( $_GET['kind'] ) ) : '';
+		$term_id = isset( $_GET['nizamiye_term'] ) ? (int) $_GET['nizamiye_term'] : nizamiye_current_term_id();
+		$grade   = isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
+		$orient  = isset( $_GET['orient'] ) && 'landscape' === $_GET['orient'] ? 'landscape' : 'portrait';
+
+		if ( ! $term_id ) {
+			wp_die( 'Dönem bulunamadı.' );
+		}
+
+		if ( 'habit' === $kind ) {
+			$habit_id = isset( $_GET['habit_id'] ) ? (int) $_GET['habit_id'] : 0;
+			$sheet    = Nizamiye_Sheet::habit_sheet( $habit_id, $period, $grade, $term_id );
+		} elseif ( 'attendance' === $kind ) {
+			$sheet = Nizamiye_Sheet::attendance_sheet(
+				$term_id,
+				isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0,
+				isset( $_GET['session'] ) ? (int) $_GET['session'] : 0,
+				isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0,
+				$period,
+				$grade
+			);
+		} else {
+			wp_die( 'Geçersiz rapor türü.' );
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		if ( is_wp_error( $sheet ) ) {
+			wp_die( esc_html( $sheet->get_error_message() ) );
+		}
+
+		Nizamiye_Pdf::stream(
+			Nizamiye_Sheet::render_html( $sheet ),
+			Nizamiye_Sheet::filename( $sheet, 'pdf' ),
+			$orient
+		);
 	}
 
 	/**
@@ -361,7 +416,7 @@ class Nizamiye_Actions {
 		} elseif ( 'aliskanlik' === $rtype || 'not' === $rtype ) {
 			$is_habit = 'aliskanlik' === $rtype;
 			$matrix   = $is_habit
-				? Nizamiye_Reports::habit_matrix( $term_id, 'sinif' === $group ? 0 : $grade, $student_ids )
+				? Nizamiye_Reports::habit_matrix( $term_id, 'sinif' === $group ? 0 : $grade, $student_ids, $from, $to )
 				: Nizamiye_Reports::grade_matrix( $term_id, 'sinif' === $group ? 0 : $grade, $student_ids );
 			$cols = $is_habit ? $matrix['habits'] : $matrix['classes'];
 

@@ -251,6 +251,88 @@ class Nizamiye_Attendance {
 		return $out;
 	}
 
+	/**
+	 * Belirli bir tarih aralığındaki yoklama kayıtlarını öğrenci bazında özetler —
+	 * velilere gönderilen günlük/haftalık/aylık toplu liste raporunun veri kaynağı.
+	 *
+	 * @param int    $term_id
+	 * @param int    $category_id Yoklama türü (zorunlu).
+	 * @param int    $session_id  0 → kategorinin tüm oturumları (örn. Namaz'ın 5 vakti birlikte).
+	 * @param int    $class_id    0 → derslik kısıtı yok ('general' scope kategorilerde her zaman 0).
+	 * @param string $from        Başlangıç (Y-m-d, dahil).
+	 * @param string $to          Bitiş (Y-m-d, dahil).
+	 * @param array  $student_ids Rapora girecek öğrenciler (yetki daraltması çağıran tarafta yapılır).
+	 *
+	 * @return array{students:array<int,array>,tracked_days:int}
+	 *         students: student_id => ['present','absent','late','excused','total','rate','entries']
+	 */
+	public static function roster_report( $term_id, $category_id, $session_id, $class_id, $from, $to, array $student_ids ) {
+		global $wpdb;
+
+		$ids = array_values( array_unique( array_map( 'intval', $student_ids ) ) );
+		if ( ! $ids ) {
+			return array( 'students' => array(), 'tracked_days' => 0 );
+		}
+
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		$sql          = "SELECT student_id, att_date, session_id, status, note
+			 FROM {$wpdb->prefix}nizamiye_attendance
+			 WHERE term_id = %d AND category_id = %d AND att_date >= %s AND att_date <= %s
+			   AND student_id IN ($placeholders)";
+		$params       = array_merge( array( (int) $term_id, (int) $category_id, $from, $to ), $ids );
+
+		if ( $session_id ) {
+			$sql     .= ' AND session_id = %d';
+			$params[] = (int) $session_id;
+		}
+		if ( $class_id ) {
+			$sql     .= ' AND class_id = %d';
+			$params[] = (int) $class_id;
+		}
+		$sql .= ' ORDER BY student_id, att_date, session_id';
+
+		$rows         = $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
+		$students     = array();
+		$tracked_days = array();
+		$statuses     = nizamiye_attendance_statuses();
+
+		foreach ( $rows as $r ) {
+			$sid    = (int) $r->student_id;
+			$status = isset( $statuses[ $r->status ] ) ? $r->status : 'present';
+
+			if ( ! isset( $students[ $sid ] ) ) {
+				$students[ $sid ] = array(
+					'present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0,
+					'total'   => 0, 'rate'   => null, 'entries' => array(),
+				);
+			}
+
+			$students[ $sid ][ $status ]++;
+			$students[ $sid ]['total']++;
+			$students[ $sid ]['entries'][] = array(
+				'date'       => $r->att_date,
+				'session_id' => (int) $r->session_id,
+				'status'     => $status,
+				'note'       => trim( (string) $r->note ),
+			);
+
+			$tracked_days[ $r->att_date ] = true;
+		}
+
+		// Oran formülü student_summary() ile birebir aynı tutulur (geç kalma yarım sayılır);
+		// aksi halde karne ile bu rapor farklı yüzdeler gösterirdi.
+		foreach ( $students as $sid => $data ) {
+			if ( $data['total'] > 0 ) {
+				$students[ $sid ]['rate'] = round( ( $data['present'] + 0.5 * $data['late'] ) / $data['total'] * 100 );
+			}
+		}
+
+		return array(
+			'students'     => $students,
+			'tracked_days' => count( $tracked_days ),
+		);
+	}
+
 	/** Öğrencinin son yoklama kayıtları (kategori/oturum/derslik adlarıyla). */
 	public static function recent_for_student( $student_id, $term_id, $limit = 20 ) {
 		global $wpdb;

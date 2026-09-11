@@ -165,7 +165,10 @@ $nizamiye_back_url = $nizamiye_multi_session
 	<div class="sms-card sms-mt">
 		<div class="sms-card-head">
 			<h2><?php echo esc_html( nizamiye_format_date( $nizamiye_date ) ); ?><?php echo $nizamiye_multi_session ? ' — ' . esc_html( $nizamiye_session->name ) : ''; ?></h2>
-			<button type="button" class="sms-btn sms-btn-ghost sms-btn-sm" data-sms-all-present>Tümünü "Var" işaretle</button>
+			<span>
+				<a class="sms-btn sms-btn-ghost sms-btn-sm" href="<?php echo esc_url( nizamiye_view_nonce_url( add_query_arg( array( 'page' => 'nizamiye-attendance', 'view' => 'report', 'cat' => (int) $nizamiye_category->id, 'session' => (int) $nizamiye_session->id, 'class_id' => (int) $nizamiye_class_id, 'nizamiye_term' => $nizamiye_term_id ), admin_url( 'admin.php' ) ) ) ); ?>"><span class="dashicons dashicons-media-spreadsheet"></span> Rapor</a>
+				<button type="button" class="sms-btn sms-btn-ghost sms-btn-sm" data-sms-all-present>Tümünü "Var" işaretle</button>
+			</span>
 		</div>
 		<?php if ( $nizamiye_students ) : ?>
 			<?php nizamiye_form_open( 'nizamiye_save_attendance' ); nizamiye_back_url_field(); ?>

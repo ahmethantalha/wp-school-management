@@ -316,6 +316,169 @@ function nizamiye_resolve_report_dates( $default_from = '', $check_nonce = true 
 	// phpcs:enable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 }
 
+/** Rapor filtrelerinde kullanılan Türkçe gün adları ('N' biçimi: 1=Pazartesi … 7=Pazar). */
+function nizamiye_day_names() {
+	return array(
+		1 => 'Pazartesi', 2 => 'Salı', 3 => 'Çarşamba', 4 => 'Perşembe',
+		5 => 'Cuma', 6 => 'Cumartesi', 7 => 'Pazar',
+	);
+}
+
+/**
+ * İki tarih arasını Türkçe olarak etiketler: "1 – 7 Eylül", ay değişiyorsa
+ * "31 Ağustos – 6 Eylül", yıl da değişiyorsa "29 Aralık 2026 – 4 Ocak 2027".
+ *
+ * @param int $start_ts Aralığın ilk gününün zaman damgası.
+ * @param int $end_ts   Aralığın son gününün zaman damgası.
+ */
+function nizamiye_date_span_label( $start_ts, $end_ts ) {
+	$months = nizamiye_month_names();
+	$sd     = (int) gmdate( 'j', $start_ts );
+	$sm     = (int) gmdate( 'n', $start_ts );
+	$sy     = (int) gmdate( 'Y', $start_ts );
+	$ed     = (int) gmdate( 'j', $end_ts );
+	$em     = (int) gmdate( 'n', $end_ts );
+	$ey     = (int) gmdate( 'Y', $end_ts );
+
+	if ( $sy !== $ey ) {
+		return sprintf( '%d %s %d – %d %s %d', $sd, $months[ $sm ], $sy, $ed, $months[ $em ], $ey );
+	}
+	if ( $sm !== $em ) {
+		return sprintf( '%d %s – %d %s', $sd, $months[ $sm ], $ed, $months[ $em ] );
+	}
+	return sprintf( '%d – %d %s', $sd, $ed, $months[ $sm ] );
+}
+
+/**
+ * Bir ayla kesişen ISO haftalarını (Pazartesi–Pazar) döndürür. Rapor
+ * filtresindeki "ay seç → o ayın haftaları gelsin → hafta seç" akışını besler.
+ *
+ * Ayın 1'ini içeren haftadan başlanır ve hafta ay sınırını aşsa bile gerçek
+ * Pazartesi–Pazar aralığı korunur (kırpılmaz); etiket bu durumda iki ay adını
+ * da yazar, böylece kullanıcı hangi günleri seçtiğini tam görür.
+ *
+ * @return array<int,array{start:string,end:string,label:string}>
+ */
+function nizamiye_month_weeks( $year, $month ) {
+	$year  = max( 2000, min( 2100, (int) $year ) );
+	$month = max( 1, min( 12, (int) $month ) );
+	$first = strtotime( sprintf( '%04d-%02d-01', $year, $month ) );
+	$last  = strtotime( gmdate( 'Y-m-t', $first ) );
+
+	// Ayın ilk gününü içeren haftanın Pazartesi'si. Göreli ifade ayrıştırması
+	// ("monday this week") yerine aritmetik kullanılır; 'N' her zaman ISO gün
+	// numarasıdır (1=Pazartesi), dolayısıyla sonuç locale'den bağımsızdır.
+	$cursor = $first - ( (int) gmdate( 'N', $first ) - 1 ) * DAY_IN_SECONDS;
+
+	$weeks = array();
+	while ( $cursor <= $last ) {
+		$end     = $cursor + 6 * DAY_IN_SECONDS;
+		$weeks[] = array(
+			'start' => gmdate( 'Y-m-d', $cursor ),
+			'end'   => gmdate( 'Y-m-d', $end ),
+			'label' => nizamiye_date_span_label( $cursor, $end ),
+		);
+		$cursor += 7 * DAY_IN_SECONDS;
+	}
+	return $weeks;
+}
+
+/**
+ * Veli raporlarının gün / hafta / ay dönem çözümü.
+ *
+ * nizamiye_resolve_report_dates() ile aynı deseni izler ama farklı GET
+ * parametreleri kullanır (pmode/pdate/pweek/pmonth/pyear); ikisi ayrı tutulur
+ * çünkü Raporlar sayfasının serbest tarih aralığı (datemode/from/to) ile bu
+ * ekranın sabit dönem mantığı farklı şeylerdir ve birbirine karışmamalıdır.
+ *
+ * $check_nonce=false, kendi (daha dar kapsamlı) nonce'uyla zaten doğrulanmış
+ * admin-post işleyicileri içindir — bkz. nizamiye_resolve_report_dates().
+ *
+ * @return array{mode:string,from:string,to:string,label:string,year:int,month:int,date:string,week_start:string}
+ */
+function nizamiye_resolve_period( $check_nonce = true ) {
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce yukarıda wp_verify_nonce() ile doğrulanır (ya da çağıran taraf zaten kendi nonce'unu doğrulamıştır); ham değerler yalnızca regex biçim kontrolü için okunur, kullanılan değer sanitize_text_field(wp_unslash()) ile temizlenir.
+	$has_nonce = ! $check_nonce || ( isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' ) );
+	$raw_mode  = $has_nonce && isset( $_GET['pmode'] ) ? sanitize_text_field( wp_unslash( $_GET['pmode'] ) ) : '';
+	$mode      = in_array( $raw_mode, array( 'week', 'month' ), true ) ? $raw_mode : 'day';
+	$months    = nizamiye_month_names();
+	$today     = current_time( 'Y-m-d' );
+
+	if ( 'day' === $mode ) {
+		$date = $has_nonce && isset( $_GET['pdate'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['pdate'] ) )
+			? sanitize_text_field( wp_unslash( $_GET['pdate'] ) )
+			: $today;
+		$ts   = strtotime( $date );
+		return array(
+			'mode'       => 'day',
+			'from'       => $date,
+			'to'         => $date,
+			'year'       => (int) gmdate( 'Y', $ts ),
+			'month'      => (int) gmdate( 'n', $ts ),
+			'date'       => $date,
+			'week_start' => '',
+			'label'      => sprintf(
+				'%d %s %d, %s',
+				(int) gmdate( 'j', $ts ),
+				$months[ (int) gmdate( 'n', $ts ) ],
+				(int) gmdate( 'Y', $ts ),
+				nizamiye_day_names()[ (int) gmdate( 'N', $ts ) ]
+			),
+		);
+	}
+
+	$year  = $has_nonce && isset( $_GET['pyear'] ) ? max( 2000, min( 2100, (int) $_GET['pyear'] ) ) : (int) current_time( 'Y' );
+	$month = $has_nonce && isset( $_GET['pmonth'] ) ? max( 1, min( 12, (int) $_GET['pmonth'] ) ) : (int) current_time( 'n' );
+
+	if ( 'month' === $mode ) {
+		$from = sprintf( '%04d-%02d-01', $year, $month );
+		return array(
+			'mode'       => 'month',
+			'from'       => $from,
+			'to'         => gmdate( 'Y-m-t', strtotime( $from ) ),
+			'year'       => $year,
+			'month'      => $month,
+			'date'       => '',
+			'week_start' => '',
+			'label'      => $months[ $month ] . ' ' . $year,
+		);
+	}
+
+	// Hafta modu: istenen hafta yalnızca seçili ayın hafta listesinde varsa
+	// kabul edilir (uydurma bir 'pweek' değeri sessizce varsayılana düşer).
+	$weeks   = nizamiye_month_weeks( $year, $month );
+	$wanted  = $has_nonce && isset( $_GET['pweek'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) wp_unslash( $_GET['pweek'] ) )
+		? sanitize_text_field( wp_unslash( $_GET['pweek'] ) )
+		: '';
+	$picked  = null;
+	$fallback = null;
+	foreach ( $weeks as $w ) {
+		if ( $w['start'] === $wanted ) {
+			$picked = $w;
+			break;
+		}
+		// Varsayılan: bugünü içeren hafta (yoksa aşağıda ilk haftaya düşülür).
+		if ( ! $fallback && $today >= $w['start'] && $today <= $w['end'] ) {
+			$fallback = $w;
+		}
+	}
+	if ( ! $picked ) {
+		$picked = $fallback ? $fallback : $weeks[0];
+	}
+
+	return array(
+		'mode'       => 'week',
+		'from'       => $picked['start'],
+		'to'         => $picked['end'],
+		'year'       => $year,
+		'month'      => $month,
+		'date'       => '',
+		'week_start' => $picked['start'],
+		'label'      => $picked['label'] . ' ' . gmdate( 'Y', strtotime( $picked['end'] ) ),
+	);
+	// phpcs:enable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+}
+
 /**
  * Karne PDF'lerinin paylaştığı CSS. Dompdf (sunucu taraflı PDF motoru) tarafından
  * işlendiğinden bilinçli olarak flexbox kullanılmaz — tablo/blok tabanlı, dompdf'in
@@ -366,6 +529,185 @@ function nizamiye_print_report_css() {
 	.chip { background: #f1f5f9; border-radius: 999px; padding: 1px 7px; margin-left: 4px; font-size: 9.5px; }
 
 	.foot { margin-top: 14px; padding-top: 6px; border-top: 1px solid #e2e8f0; font-size: 9px; color: #94a3b8; text-align: center; }
+	';
+}
+
+/**
+ * Rapor ekranlarındaki gün/hafta/ay filtre alanlarını basar (çağıranın kendi
+ * <form method="get"> öğesinin içine). İki rapor ekranı da aynı işaretlemeyi
+ * kullansın diye helper'a alınmıştır.
+ *
+ * Her seçim formu anında gönderir (eklentinin her yerindeki kalıp): ay
+ * değiştiğinde hafta listesi sunucuda yeniden üretilir, AJAX'a gerek kalmaz.
+ * Eski aya ait bir 'pweek' değeri yeni ayın listesinde bulunamayacağı için
+ * nizamiye_resolve_period() sessizce o ayın varsayılan haftasına düşer.
+ *
+ * @param array $period nizamiye_resolve_period() çıktısı.
+ */
+function nizamiye_period_filter_fields( array $period ) {
+	$months  = nizamiye_month_names();
+	$cur_y   = (int) current_time( 'Y' );
+	$modes   = array( 'day' => 'Günlük', 'week' => 'Haftalık', 'month' => 'Aylık' );
+
+	echo '<label class="sms-muted">Dönem</label>';
+	echo '<select name="pmode" onchange="this.form.submit()">';
+	foreach ( $modes as $value => $label ) {
+		printf(
+			'<option value="%s" %s>%s</option>',
+			esc_attr( $value ),
+			selected( $period['mode'], $value, false ),
+			esc_html( $label )
+		);
+	}
+	echo '</select>';
+
+	if ( 'day' === $period['mode'] ) {
+		echo '<input type="date" name="pdate" value="' . esc_attr( $period['date'] ) . '" onchange="this.form.submit()">';
+		return;
+	}
+
+	echo '<select name="pmonth" onchange="this.form.submit()">';
+	foreach ( $months as $num => $name ) {
+		printf(
+			'<option value="%d" %s>%s</option>',
+			(int) $num,
+			selected( $period['month'], (int) $num, false ),
+			esc_html( $name )
+		);
+	}
+	echo '</select>';
+
+	echo '<select name="pyear" onchange="this.form.submit()">';
+	for ( $y = $cur_y - 3; $y <= $cur_y + 1; $y++ ) {
+		printf(
+			'<option value="%d" %s>%s</option>',
+			(int) $y,
+			selected( $period['year'], $y, false ),
+			esc_html( $y )
+		);
+	}
+	echo '</select>';
+
+	if ( 'week' !== $period['mode'] ) {
+		return;
+	}
+
+	echo '<label class="sms-muted">Hafta</label>';
+	echo '<select name="pweek" onchange="this.form.submit()">';
+	foreach ( nizamiye_month_weeks( $period['year'], $period['month'] ) as $week ) {
+		printf(
+			'<option value="%s" %s>%s</option>',
+			esc_attr( $week['start'] ),
+			selected( $period['week_start'], $week['start'], false ),
+			esc_html( $week['label'] )
+		);
+	}
+	echo '</select>';
+}
+
+/**
+ * Rapor ekranlarındaki indirme çubuğu: PDF (sunucu taraflı dompdf) ve
+ * PNG/JPG (tarayıcıda html2canvas ile önizlemenin görüntüsü).
+ *
+ * @param string $pdf_url    Nonce'lu admin-post adresi.
+ * @param string $file_base  İndirilen görsel için dosya adı çekirdeği.
+ */
+function nizamiye_sheet_download_bar( $pdf_url, $file_base ) {
+	echo '<div class="sms-toolbar">';
+	echo '<span class="sms-muted">Velilere göndermek için indirin — PNG/JPG tek parça görüntüdür.</span>';
+	echo '<span>';
+	printf(
+		'<a class="sms-btn sms-btn-primary sms-btn-sm" href="%s" target="_blank" rel="noopener"><span class="dashicons dashicons-pdf"></span> PDF İndir</a> ',
+		esc_url( $pdf_url )
+	);
+	printf(
+		'<button type="button" class="sms-btn sms-btn-ghost sms-btn-sm" data-sms-sheet-export="png" data-sms-sheet-name="%s"><span class="dashicons dashicons-format-image"></span> PNG İndir</button> ',
+		esc_attr( $file_base )
+	);
+	printf(
+		'<button type="button" class="sms-btn sms-btn-ghost sms-btn-sm" data-sms-sheet-export="jpeg" data-sms-sheet-name="%s"><span class="dashicons dashicons-format-image"></span> JPG İndir</button>',
+		esc_attr( $file_base )
+	);
+	echo '</span>';
+	echo '</div>';
+}
+
+/**
+ * Toplu liste raporlarının (alışkanlık / yoklama) paylaştığı CSS.
+ *
+ * nizamiye_print_report_css()'ten iki farkı var:
+ *  1. Tüm kurallar `.sheet` altında kapsanmıştır — böylece aynı stil hem dompdf
+ *     belgesinde hem de WP admin ekranındaki önizlemede, admin.css ile
+ *     çakışmadan çalışır. Ekrandaki önizleme ile PDF'in birebir aynı görünmesi
+ *     (ve html2canvas'ın ürettiği PNG'nin ikisiyle eşleşmesi) buna dayanır.
+ *  2. Yoğunluk `.sheet` üzerindeki `is-compact` / `is-dense` sınıflarıyla
+ *     ayarlanır; uzun isim listelerinin tek sayfaya sığması içindir.
+ *
+ * Karne CSS'i gibi burada da bilinçli olarak flexbox/grid kullanılmaz —
+ * dompdf yalnızca tablo/blok düzenini güvenilir biçimde işler.
+ */
+function nizamiye_print_sheet_css() {
+	return '
+	.sheet, .sheet * { box-sizing: border-box; }
+	.sheet {
+		font-family: "DejaVu Sans", sans-serif;
+		font-size: 11px;
+		line-height: 1.35;
+		color: #1e293b;
+		background: #ffffff;
+		padding: 4px;
+	}
+
+	.sheet .sheet-head { width: 100%; border-bottom: 2px solid #4f46e5; padding-bottom: 7px; margin-bottom: 9px; border-collapse: collapse; }
+	.sheet .sheet-head td { border: none; padding: 0; vertical-align: bottom; }
+	.sheet .sheet-head h1 { font-size: 17px; margin: 0 0 2px; color: #4f46e5; }
+	.sheet .sheet-head .sub { font-size: 11.5px; color: #334155; font-weight: 700; }
+	.sheet .sheet-head .meta { text-align: right; font-size: 10px; color: #64748b; }
+	.sheet .sheet-head .meta .school { font-size: 11.5px; font-weight: 700; color: #1e293b; }
+
+	.sheet .sheet-tiles { width: 100%; margin-bottom: 9px; border-collapse: separate; border-spacing: 4px 0; }
+	.sheet .sheet-tiles td { border: none; padding: 0; }
+	.sheet .sheet-tiles .tile { background: #f8fafc; border-radius: 8px; padding: 7px 6px; text-align: center; }
+	.sheet .sheet-tiles .tile .v { display: block; font-size: 15px; font-weight: 800; }
+	.sheet .sheet-tiles .tile .l { font-size: 8.5px; color: #64748b; text-transform: uppercase; letter-spacing: .03em; }
+
+	.sheet .sheet-data { width: 100%; border-collapse: collapse; }
+	.sheet .sheet-data th, .sheet .sheet-data td { text-align: left; padding: 5px 7px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+	.sheet .sheet-data th {
+		color: #475569; font-weight: 700; font-size: 9px; text-transform: uppercase;
+		letter-spacing: .03em; background: #f1f5f9; border-bottom: 1px solid #cbd5e1;
+	}
+	.sheet .sheet-data tr.alt td { background: #f8fafc; }
+	.sheet .sheet-data .num { width: 26px; color: #94a3b8; text-align: right; }
+	.sheet .sheet-data .name { font-weight: 700; }
+	.sheet .sheet-data .name .grade { font-weight: 400; color: #94a3b8; font-size: 9px; }
+	.sheet .sheet-data .c { text-align: center; }
+	.sheet .sheet-data .r { text-align: right; }
+	.sheet .sheet-data .empty { color: #cbd5e1; }
+	.sheet .sheet-data .books { color: #334155; }
+	.sheet .sheet-data .books .pg { color: #94a3b8; }
+
+	.sheet .good { color: #16a34a; font-weight: 700; }
+	.sheet .mid  { color: #d97706; font-weight: 700; }
+	.sheet .low  { color: #dc2626; font-weight: 700; }
+
+	.sheet .sheet-note { margin-top: 8px; font-size: 9.5px; color: #64748b; }
+	.sheet .sheet-foot { margin-top: 10px; padding-top: 6px; border-top: 1px solid #e2e8f0; font-size: 9px; color: #94a3b8; text-align: center; }
+
+	.sheet.is-compact { font-size: 9.5px; }
+	.sheet.is-compact .sheet-head h1 { font-size: 15px; }
+	.sheet.is-compact .sheet-data th, .sheet.is-compact .sheet-data td { padding: 3px 6px; }
+	.sheet.is-compact .sheet-tiles .tile { padding: 5px 4px; }
+	.sheet.is-compact .sheet-tiles .tile .v { font-size: 13px; }
+
+	.sheet.is-dense { font-size: 8.5px; line-height: 1.25; }
+	.sheet.is-dense .sheet-head h1 { font-size: 14px; }
+	.sheet.is-dense .sheet-head { padding-bottom: 5px; margin-bottom: 6px; }
+	.sheet.is-dense .sheet-data th, .sheet.is-dense .sheet-data td { padding: 2px 5px; }
+	.sheet.is-dense .sheet-data .num { width: 20px; }
+	.sheet.is-dense .sheet-tiles { margin-bottom: 6px; }
+	.sheet.is-dense .sheet-tiles .tile { padding: 4px 3px; }
+	.sheet.is-dense .sheet-tiles .tile .v { font-size: 12px; }
 	';
 }
 
@@ -427,7 +769,7 @@ function nizamiye_view_header( $title, $subtitle = '', $show_term_picker = true 
 		// (aksi halde bu değerler zaten sayfanın kendisinde de yok sayılmış demektir).
 		if ( isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' ) ) {
 			// phpcs:disable WordPress.Security.NonceVerification.Recommended -- yukarıda wp_verify_nonce() ile zaten doğrulandı.
-			foreach ( array( 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'rsession', 'tab', 'rtype', 'group', 'grade', 'metric', 'from', 'to', 'datemode', 'rmonth', 'ryear', 'gview', 'subject', 'title', 'exam_date', 'exam_type' ) as $keep ) {
+			foreach ( array( 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'rsession', 'tab', 'rtype', 'group', 'grade', 'metric', 'from', 'to', 'datemode', 'rmonth', 'ryear', 'gview', 'subject', 'title', 'exam_date', 'exam_type', 'pmode', 'pdate', 'pweek', 'pmonth', 'pyear', 'orient' ) as $keep ) {
 				if ( isset( $_GET[ $keep ] ) ) {
 					echo '<input type="hidden" name="' . esc_attr( $keep ) . '" value="' . esc_attr( sanitize_text_field( wp_unslash( $_GET[ $keep ] ) ) ) . '">';
 				}

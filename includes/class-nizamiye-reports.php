@@ -177,8 +177,13 @@ class Nizamiye_Reports {
 		return array( 'sessions' => $sessions, 'rows' => $rows, 'totals' => $totals );
 	}
 
-	/** Alışkanlık analizi: öğrenci × alışkanlık tamamlama yüzdesi. */
-	public static function habit_matrix( $term_id, $grade = 0, ?array $student_ids = null ) {
+	/**
+	 * Alışkanlık analizi: öğrenci × alışkanlık tamamlama yüzdesi.
+	 *
+	 * $date_from / $date_to boş bırakılırsa dönemin tamamı kapsanır (eski davranış).
+	 * İkisi de verildiğinde yalnızca o aralıktaki takip kayıtları hesaba katılır.
+	 */
+	public static function habit_matrix( $term_id, $grade = 0, ?array $student_ids = null, $date_from = '', $date_to = '' ) {
 		global $wpdb;
 
 		$students = Nizamiye_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'grade' => $grade, 'ids' => $student_ids ) );
@@ -191,14 +196,22 @@ class Nizamiye_Reports {
 
 		$student_id_list = array_map( function ( $s ) { return (int) $s->id; }, $students );
 		$id_placeholders = implode( ',', array_fill( 0, count( $student_id_list ), '%d' ) );
+
+		$date_where  = '';
+		$date_params = array();
+		if ( $date_from && $date_to ) {
+			$date_where  = ' AND l.log_date >= %s AND l.log_date <= %s';
+			$date_params = array( $date_from, $date_to );
+		}
+
 		$raw = $wpdb->get_results( $wpdb->prepare(
 			"SELECT l.student_id, l.habit_id, COUNT(*) AS logs,
 				ROUND(AVG(CASE WHEN h.track_type IN ('binary','reading') THEN LEAST(l.value,1) * 100 ELSE l.value / h.scale_max * 100 END)) AS rate
 			 FROM {$wpdb->prefix}nizamiye_habit_logs l
 			 INNER JOIN {$wpdb->prefix}nizamiye_habits h ON h.id = l.habit_id
-			 WHERE h.term_id = %d AND l.student_id IN ($id_placeholders)
+			 WHERE h.term_id = %d AND l.student_id IN ($id_placeholders)$date_where
 			 GROUP BY l.student_id, l.habit_id",
-			array_merge( array( $term_id ), $student_id_list )
+			array_merge( array( $term_id ), $student_id_list, $date_params )
 		) );
 
 		$map = array();

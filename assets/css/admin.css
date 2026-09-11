@@ -618,3 +618,25 @@
 .sms-danger-zone { border-color: #fecaca; }
 .sms-help-list { margin: 0; padding-left: 18px; line-height: 1.8; }
 .sms-help-list li { margin-bottom: 8px; }
+
+/* ---------- Toplu liste raporu önizlemesi ---------- */
+/* .sheet'in kendi stilleri nizamiye_print_sheet_css() içinde tanımlıdır ve
+   dompdf ile ortaktır; buradaki kurallar yalnızca önizlemeyi çerçeveleyen
+   kaptır — html2canvas .sheet'i yakaladığı için bu kap görüntüye girmez. */
+.sms-sheet-wrap {
+	margin-top: 12px;
+	padding: 16px;
+	background: #f1f5f9;
+	border-radius: 10px;
+	overflow-x: auto;
+}
+.sms-sheet-wrap .sheet {
+	/* A4 dikey (10mm kenar boşluğuyla) yaklaşık genişliği — önizleme PDF'e benzesin. */
+	width: 760px;
+	max-width: 100%;
+	margin: 0 auto;
+	padding: 22px;
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+}

@@ -4,7 +4,7 @@ Tags: eğitim, yoklama, not defteri, öğrenci yönetimi, raporlar
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.6
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,7 @@ takip araçlarını tek bir panelde bir araya getirir.
 * **Alışkanlık takibi** — Yaptı/Yapmadı, puanlı (1'den N'e) veya kitap/sayfa takibi (günlük kitap adı + okunan sayfa) yöntemleri.
 * **Not girişi ve toplu yükleme** — derslik bazlı sınav notları; CSV şablonu indirme ve toplu yükleme desteği.
 * **Raporlar** — öğrenci veya sınıf bazında gruplanmış yoklama, alışkanlık, not ve genel performans analiz sekmeleri; tarih aralığı veya ay/yıl filtresi.
+* **Veli bilgilendirme listeleri** — bir alışkanlık ya da yoklama türü için günlük, haftalık veya aylık, tek sayfalık toplu isim listesi raporu (kitap okumada okunan kitaplar ve toplam sayfa). PDF, PNG veya JPG olarak indirilip velilere doğrudan gönderilebilir.
 * **PDF karneler** — her öğrenci için gerçek, indirilebilir bir `.pdf` karne üretir; Karneler sayfasından birden çok öğrenci seçip karnelerini **tek bir ZIP dosyası** halinde toplu indirebilirsiniz (öğrenci başına bir PDF).
 * **Toplu içe aktarma** — öğrenci/öğretmen/veli listelerini Excel (.xlsx) veya CSV ile içe aktarma, örnek şablonlarla birlikte.
 * **Dönem geçişi** — yeni dönem açıldığında tüm öğrenciler otomatik olarak bir üst sınıfa aktarılır; mezuniyet seviyesindekiler mezun olarak işaretlenip arşivlenir.
@@ -39,10 +40,15 @@ takip araçlarını tek bir panelde bir araya getirir.
 
 = Üçüncü Taraf Kütüphane =
 
-PDF karne üretimi, eklentiyle birlikte gelen [Dompdf](https://github.com/dompdf/dompdf)
-kütüphanesi (LGPL lisanslı, GPL uyumlu) kullanılarak sunucu tarafında yapılır. Dompdf, uzak
-sunuculara hiçbir istek göndermeyecek şekilde yapılandırılmıştır (`isRemoteEnabled` kapalıdır);
-eklenti harici hiçbir servise veri göndermez.
+PDF üretimi (karneler ve liste raporları), eklentiyle birlikte gelen
+[Dompdf](https://github.com/dompdf/dompdf) kütüphanesi (LGPL lisanslı, GPL uyumlu) kullanılarak
+sunucu tarafında yapılır. Dompdf, uzak sunuculara hiçbir istek göndermeyecek şekilde
+yapılandırılmıştır (`isRemoteEnabled` kapalıdır); eklenti harici hiçbir servise veri göndermez.
+
+Liste raporlarının PNG/JPG olarak indirilmesi tarayıcıda
+[html2canvas](https://github.com/niklasvh/html2canvas) 1.4.1 (MIT lisanslı) ile yapılır; kütüphane
+küçültülmemiş haliyle `assets/vendor/` altında paketlenmiştir. Yalnızca liste raporu ekranlarında
+yüklenir, tamamen istemci tarafında çalışır ve hiçbir ağ isteği yapmaz.
 
 == Kurulum ==
 
@@ -92,6 +98,26 @@ Evet. **Karneler** sayfasında öğrencileri onay kutularıyla seçip ("tümün�
 6. Dönemler sayfası — akademik dönemleri yönetme ve aktif dönemi değiştirme.
 
 == Değişiklik Günlüğü ==
+
+= 1.4.0 =
+* Alışkanlıklar ve yoklama için, velilere gönderilmek üzere günlük / haftalık / aylık toplu
+  liste raporu eklendi. Her rapor, tüm öğrencileri isim isim gösteren tek sayfalık bir listedir:
+  kitap okuma alışkanlığında günlük raporda o günkü kitap adı ve sayfa sayısı, haftalık/aylık
+  raporda okunan kitaplar ve toplam sayfa; yoklamada günlük raporda durum, haftalık/aylık
+  raporda Geldi/Gelmedi/Geç/İzinli sayıları ve katılım oranı yer alır.
+* Dönem filtresi Günlük / Haftalık / Aylık seçenekleri sunar. Haftalık modda ay seçildiğinde o
+  ayın Pazartesi-Pazar haftaları listelenir; ay sınırını aşan hafta gerçek tarih aralığını korur
+  ve buna göre etiketlenir (örneğin "31 Ağustos – 6 Eylül").
+* Her rapor PDF (sunucu tarafında Dompdf) ya da PNG/JPG (tarayıcıda html2canvas) olarak
+  indirilebilir. Ekrandaki önizleme, PDF ve görsel aynı şablondan ve aynı stil dosyasından
+  üretildiği için üçü birbirinden ayrışamaz. Satır yoğunluğu öğrenci sayısına göre kendini
+  ayarlar; uzun listelerin tek sayfaya sığması için A4 yönü yatay yapılabilir.
+* Raporlara alışkanlık kartındaki "Rapor" butonundan, alışkanlık takip ekranından ve yoklama
+  cetvelinden ulaşılır.
+* Raporlar sayfasındaki alışkanlık analizi sekmesi artık tarih filtresini dikkate alıyor.
+  Önceden, sorgu takip tarihine göre filtrelemediği için her zaman dönemin tamamını kapsıyordu;
+  aynı sekmenin CSV dışa aktarması da bundan etkileniyordu. Alışkanlık sütun başlıkları artık
+  seçili aralık için o alışkanlığın liste raporuna bağlanıyor.
 
 = 1.3.6 =
 * WordPress 7.1 ile uyumluluk doğrulandı ve "Tested up to" değeri 7.1'e yükseltildi. Kod
