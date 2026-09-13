@@ -21,6 +21,7 @@ if ( ! in_array( $nizamiye_rtype, array( 'yoklama', 'aliskanlik', 'not', 'genel'
 }
 $nizamiye_group  = $nizamiye_has_nonce && isset( $_GET['group'] ) && 'sinif' === $_GET['group'] ? 'sinif' : 'ogrenci';
 $nizamiye_grade  = $nizamiye_has_nonce && isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
+$nizamiye_sec_f  = $nizamiye_has_nonce && isset( $_GET['section'] ) ? nizamiye_normalize_section( wp_unslash( $_GET['section'] ) ) : '';
 $nizamiye_metric = $nizamiye_has_nonce && isset( $_GET['metric'] ) ? sanitize_key( $_GET['metric'] ) : 'rate';
 if ( ! in_array( $nizamiye_metric, array( 'rate', 'present', 'absent', 'late', 'excused' ), true ) ) {
 	$nizamiye_metric = 'rate';
@@ -60,6 +61,7 @@ $nizamiye_month_names  = nizamiye_month_names();
 // Öğretmenler yalnızca sorumlu oldukları öğrencileri analiz edebilir (kayıt düzeyi erişim).
 $nizamiye_student_ids = $nizamiye_teacher ? nizamiye_teacher_student_ids() : null;
 $nizamiye_grades_list = $nizamiye_term_id ? Nizamiye_Students::grades_in_term( $nizamiye_term_id ) : array();
+$nizamiye_sections_list = $nizamiye_term_id ? Nizamiye_Students::sections_in_term( $nizamiye_term_id ) : array();
 $nizamiye_categories  = Nizamiye_Attendance_Types::categories( true );
 
 $nizamiye_statuses      = nizamiye_attendance_statuses();
@@ -99,6 +101,7 @@ $nizamiye_export_url = wp_nonce_url( add_query_arg( array(
 	'group'    => $nizamiye_group,
 	'grade'    => $nizamiye_grade,
 	'cat'      => $nizamiye_cat_id,
+	'section'  => $nizamiye_sec_f,
 	'rsession' => $nizamiye_sess_id,
 	'metric'   => $nizamiye_metric,
 	'datemode' => $nizamiye_date_mode,
@@ -136,6 +139,14 @@ $nizamiye_export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . es
 				</select>
 
 				<?php if ( 'sinif' !== $nizamiye_group ) : ?>
+					<?php if ( $nizamiye_sections_list ) : ?>
+						<select name="section">
+							<option value="">Tüm şubeler</option>
+							<?php foreach ( $nizamiye_sections_list as $nizamiye_sec ) : ?>
+								<option value="<?php echo esc_attr( $nizamiye_sec ); ?>" <?php selected( $nizamiye_sec_f, $nizamiye_sec ); ?>><?php echo esc_html( $nizamiye_sec ); ?> şubesi</option>
+							<?php endforeach; ?>
+						</select>
+					<?php endif; ?>
 					<select name="grade">
 						<option value="0">Tüm sınıflar</option>
 						<?php foreach ( $nizamiye_grades_list as $nizamiye_g ) : ?>
@@ -208,7 +219,7 @@ $nizamiye_export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . es
 	/* ================= YOKLAMA ANALİZİ ================= */
 	if ( 'yoklama' === $nizamiye_rtype ) :
 		$nizamiye_category = $nizamiye_cat_id ? Nizamiye_Attendance_Types::get_category( $nizamiye_cat_id ) : null;
-		$nizamiye_matrix   = $nizamiye_category ? Nizamiye_Reports::attendance_matrix( $nizamiye_term_id, $nizamiye_cat_id, $nizamiye_from, $nizamiye_to, 'sinif' === $nizamiye_group ? 0 : $nizamiye_grade, $nizamiye_student_ids ) : array( 'sessions' => array(), 'rows' => array(), 'totals' => array() );
+		$nizamiye_matrix   = $nizamiye_category ? Nizamiye_Reports::attendance_matrix( $nizamiye_term_id, $nizamiye_cat_id, $nizamiye_from, $nizamiye_to, 'sinif' === $nizamiye_group ? 0 : $nizamiye_grade, $nizamiye_student_ids, 'sinif' === $nizamiye_group ? '' : $nizamiye_sec_f ) : array( 'sessions' => array(), 'rows' => array(), 'totals' => array() );
 		$nizamiye_sessions = $nizamiye_matrix['sessions'];
 
 		// Sınıf bazında gruplama: satırları sınıf seviyesine göre topla.
@@ -365,7 +376,7 @@ $nizamiye_export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . es
 	<?php
 	/* ================= ALIŞKANLIK ANALİZİ ================= */
 	elseif ( 'aliskanlik' === $nizamiye_rtype ) :
-		$nizamiye_matrix = Nizamiye_Reports::habit_matrix( $nizamiye_term_id, 'sinif' === $nizamiye_group ? 0 : $nizamiye_grade, $nizamiye_student_ids, $nizamiye_from, $nizamiye_to );
+		$nizamiye_matrix = Nizamiye_Reports::habit_matrix( $nizamiye_term_id, 'sinif' === $nizamiye_group ? 0 : $nizamiye_grade, $nizamiye_student_ids, $nizamiye_from, $nizamiye_to, 'sinif' === $nizamiye_group ? '' : $nizamiye_sec_f );
 		$nizamiye_habits = $nizamiye_matrix['habits'];
 
 		$nizamiye_grade_rows = array();
@@ -579,7 +590,7 @@ $nizamiye_export_btn = '<a class="sms-btn sms-btn-ghost sms-btn-sm" href="' . es
 						<tbody>
 						<?php foreach ( $nizamiye_summary as $nizamiye_row ) : ?>
 							<tr>
-								<td><strong><?php echo esc_html( nizamiye_grade_label( $nizamiye_row['grade'] ) ); ?></strong></td>
+								<td><strong><?php echo esc_html( nizamiye_section_label( $nizamiye_row['grade'], $nizamiye_row['section'] ?? '' ) ); ?></strong></td>
 								<td><?php echo (int) $nizamiye_row['count']; ?></td>
 								<td class="sms-center"><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $nizamiye_row['att'] ) ); ?>"><?php echo null !== $nizamiye_row['att'] ? esc_html( $nizamiye_row['att'] . '%' ) : '—'; ?></span></td>
 								<td class="sms-center"><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $nizamiye_row['habit'] ) ); ?>"><?php echo null !== $nizamiye_row['habit'] ? esc_html( $nizamiye_row['habit'] . '%' ) : '—'; ?></span></td>

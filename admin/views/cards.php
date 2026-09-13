@@ -77,7 +77,7 @@ $nizamiye_grades = $nizamiye_term_id ? Nizamiye_Students::grades_in_term( $nizam
 							<td class="sms-check-col"><input type="checkbox" name="student_ids[]" value="<?php echo (int) $nizamiye_s->id; ?>" data-sms-bulk-item></td>
 							<td class="sms-muted">#<?php echo (int) $nizamiye_i + 1; ?></td>
 							<td class="sms-name-cell"><?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $nizamiye_s ) ) ); ?><strong><?php echo esc_html( nizamiye_student_name( $nizamiye_s ) ); ?></strong></td>
-							<td><?php echo isset( $nizamiye_s->grade_level ) ? esc_html( nizamiye_grade_label( $nizamiye_s->grade_level ) ) : '—'; ?></td>
+							<td><?php echo isset( $nizamiye_s->grade_level ) ? esc_html( nizamiye_section_label( $nizamiye_s->grade_level, $nizamiye_s->section ?? '' ) ) : '—'; ?></td>
 							<td><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $nizamiye_row['attendance'] ) ); ?>"><?php echo null !== $nizamiye_row['attendance'] ? (int) $nizamiye_row['attendance'] . '%' : '—'; ?></span></td>
 							<td><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $nizamiye_row['habit'] ) ); ?>"><?php echo null !== $nizamiye_row['habit'] ? (int) $nizamiye_row['habit'] . '%' : '—'; ?></span></td>
 							<td><span class="sms-score <?php echo esc_attr( nizamiye_rate_class( $nizamiye_row['grade'] ) ); ?>"><?php echo null !== $nizamiye_row['grade'] ? (int) $nizamiye_row['grade'] . '%' : '—'; ?></span></td>

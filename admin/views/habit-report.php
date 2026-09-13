@@ -11,6 +11,7 @@ $nizamiye_has_nonce = isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_te
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- $_GET okumaları yalnızca yukarıdaki wp_verify_nonce() doğrulaması geçerse kullanılır; aksi halde güvenli varsayılana düşülür.
 $nizamiye_habit_id = $nizamiye_has_nonce && isset( $_GET['habit_id'] ) ? (int) $_GET['habit_id'] : 0;
 $nizamiye_grade    = $nizamiye_has_nonce && isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
+$nizamiye_sec_f    = $nizamiye_has_nonce && isset( $_GET['section'] ) ? nizamiye_normalize_section( wp_unslash( $_GET['section'] ) ) : '';
 $nizamiye_orient   = $nizamiye_has_nonce && isset( $_GET['orient'] ) && 'landscape' === $_GET['orient'] ? 'landscape' : 'portrait';
 // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
@@ -22,7 +23,7 @@ if ( ! $nizamiye_habit ) {
 
 $nizamiye_term_id = (int) $nizamiye_habit->term_id;
 $nizamiye_period  = nizamiye_resolve_period();
-$nizamiye_sheet   = Nizamiye_Sheet::habit_sheet( $nizamiye_habit_id, $nizamiye_period, $nizamiye_grade, $nizamiye_term_id );
+$nizamiye_sheet   = Nizamiye_Sheet::habit_sheet( $nizamiye_habit_id, $nizamiye_period, $nizamiye_grade, $nizamiye_term_id, $nizamiye_sec_f );
 
 if ( is_wp_error( $nizamiye_sheet ) ) {
 	echo '<div class="wrap sms-wrap"><div class="sms-card sms-empty"><h2>' . esc_html( $nizamiye_sheet->get_error_message() ) . '</h2></div></div>';
@@ -41,6 +42,7 @@ $nizamiye_pdf_url = wp_nonce_url(
 			'pmonth'        => $nizamiye_period['month'],
 			'pyear'         => $nizamiye_period['year'],
 			'grade'         => $nizamiye_grade,
+			'section'       => $nizamiye_sec_f,
 			'orient'        => $nizamiye_orient,
 			'nizamiye_term' => $nizamiye_term_id,
 		),
@@ -77,6 +79,13 @@ $nizamiye_pdf_url = wp_nonce_url(
 					<?php endforeach; ?>
 				</select>
 
+				<label class="sms-muted">Şube</label>
+				<select name="section" onchange="this.form.submit()">
+					<option value="">Tüm şubeler</option>
+					<?php foreach ( Nizamiye_Students::sections_in_term( $nizamiye_term_id ) as $nizamiye_sec ) : ?>
+						<option value="<?php echo esc_attr( $nizamiye_sec ); ?>" <?php selected( $nizamiye_sec_f, $nizamiye_sec ); ?>><?php echo esc_html( $nizamiye_sec ); ?></option>
+					<?php endforeach; ?>
+				</select>
 				<label class="sms-muted">PDF yönü</label>
 				<select name="orient" onchange="this.form.submit()">
 					<option value="portrait" <?php selected( $nizamiye_orient, 'portrait' ); ?>>Dikey</option>

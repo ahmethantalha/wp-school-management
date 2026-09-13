@@ -98,13 +98,14 @@ class Nizamiye_Reports {
 	 *   'totals'   => [ session_id => counts, 'overall' => counts ]
 	 * ]  counts = [present, absent, late, excused, total, rate]
 	 */
-	public static function attendance_matrix( $term_id, $category_id, $date_from, $date_to, $grade = 0, ?array $student_ids = null ) {
+	public static function attendance_matrix( $term_id, $category_id, $date_from, $date_to, $grade = 0, ?array $student_ids = null, $section = '' ) {
 		global $wpdb;
 
 		$students = Nizamiye_Students::query( array(
 			'term_id' => $term_id,
 			'status'  => 'active',
 			'grade'   => $grade,
+			'section' => nizamiye_normalize_section( $section ),
 			'ids'     => $student_ids,
 		) );
 		if ( ! $students ) {
@@ -183,10 +184,10 @@ class Nizamiye_Reports {
 	 * $date_from / $date_to boş bırakılırsa dönemin tamamı kapsanır (eski davranış).
 	 * İkisi de verildiğinde yalnızca o aralıktaki takip kayıtları hesaba katılır.
 	 */
-	public static function habit_matrix( $term_id, $grade = 0, ?array $student_ids = null, $date_from = '', $date_to = '' ) {
+	public static function habit_matrix( $term_id, $grade = 0, ?array $student_ids = null, $date_from = '', $date_to = '', $section = '' ) {
 		global $wpdb;
 
-		$students = Nizamiye_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'grade' => $grade, 'ids' => $student_ids ) );
+		$students = Nizamiye_Students::query( array( 'term_id' => $term_id, 'status' => 'active', 'grade' => $grade, 'section' => nizamiye_normalize_section( $section ), 'ids' => $student_ids ) );
 		$habits   = $wpdb->get_results( $wpdb->prepare(
 			"SELECT id, name, track_type, scale_max FROM {$wpdb->prefix}nizamiye_habits WHERE term_id = %d ORDER BY name", $term_id
 		) );
@@ -332,25 +333,29 @@ class Nizamiye_Reports {
 		$habit = Nizamiye_Habits::rates_by_student( $term_id );
 		$grade = Nizamiye_Grades::rates_by_student( $term_id );
 
+		// Gruplama sınıf + şube: "6-A" ve "6-B" ayrı satır olur. Şubesiz öğrenciler
+		// kendi sınıflarının şubesiz satırında toplanır.
 		$groups = array();
 		foreach ( $students as $s ) {
-			$g = (int) ( $s->grade_level ?? 0 );
-			if ( ! isset( $groups[ $g ] ) ) {
-				$groups[ $g ] = array( 'grade' => $g, 'count' => 0, 'att' => array(), 'habit' => array(), 'grade_avg' => array() );
+			$g   = (int) ( $s->grade_level ?? 0 );
+			$sec = nizamiye_normalize_section( $s->section ?? '' );
+			$key = $g . '-' . $sec;
+			if ( ! isset( $groups[ $key ] ) ) {
+				$groups[ $key ] = array( 'grade' => $g, 'section' => $sec, 'count' => 0, 'att' => array(), 'habit' => array(), 'grade_avg' => array() );
 			}
-			$groups[ $g ]['count']++;
+			$groups[ $key ]['count']++;
 			$sid = (int) $s->id;
 			if ( isset( $att[ $sid ] ) ) {
-				$groups[ $g ]['att'][] = $att[ $sid ];
+				$groups[ $key ]['att'][] = $att[ $sid ];
 			}
 			if ( isset( $habit[ $sid ] ) ) {
-				$groups[ $g ]['habit'][] = $habit[ $sid ];
+				$groups[ $key ]['habit'][] = $habit[ $sid ];
 			}
 			if ( isset( $grade[ $sid ] ) ) {
-				$groups[ $g ]['grade_avg'][] = $grade[ $sid ];
+				$groups[ $key ]['grade_avg'][] = $grade[ $sid ];
 			}
 		}
-		ksort( $groups );
+		uksort( $groups, 'strnatcmp' );
 
 		$avg = function ( $arr ) {
 			return $arr ? (int) round( array_sum( $arr ) / count( $arr ) ) : null;
@@ -359,6 +364,7 @@ class Nizamiye_Reports {
 		foreach ( $groups as $g ) {
 			$out[] = array(
 				'grade'     => $g['grade'],
+				'section'   => $g['section'],
 				'count'     => $g['count'],
 				'att'       => $avg( $g['att'] ),
 				'habit'     => $avg( $g['habit'] ),

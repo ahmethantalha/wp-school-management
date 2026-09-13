@@ -4,7 +4,7 @@ Tags: eğitim, yoklama, not defteri, öğrenci yönetimi, raporlar
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -99,6 +99,23 @@ Evet. **Karneler** sayfasında öğrencileri onay kutularıyla seçip ("tümün�
 6. Dönemler sayfası — akademik dönemleri yönetme ve aktif dönemi değiştirme.
 
 == Değişiklik Günlüğü ==
+
+= 1.6.0 =
+* Sınıf öğretmeni artık sınıf seviyesinin değil şubenin sorumlusu. Sorumluluk listesi sınıf/şube
+  çiftleri tutuyor ("6" sınıfın tamamı, "6-A" tek şube); böylece 6-A'nın sınıf öğretmeni namaz,
+  temizlik ve telefon yoklamasında yalnızca kendi şubesini görüyor. Mevcut atamalar aynen
+  çalışmaya devam ediyor, migration gerekmiyor.
+* Yoklama cetveline, veli liste raporlarına ve Raporlar sayfasına şube filtresi eklendi; sınıf
+  özeti artık şube bazında kırılıyor. Karne, veli sayfası ve öğrenci listesi şube atanmışsa
+  "6-A", atanmamışsa "6. Sınıf" gösteriyor.
+* Panelin en üstüne, mevcut analitik kartların yanına "bugün neye bakmam lazım" sorusunu
+  cevaplayan bir uyarı kartı eklendi: üst üste devamsız öğrenciler, son 7 günde hiç kitap
+  okumamış öğrenciler ve son sınavlarının ortalaması kendi önceki ortalamasının altına düşen
+  öğrenciler. Öğretmenler yalnızca kendi öğrencilerini görüyor.
+* Bir gün, ancak o yoklama türündeki bütün kayıtlar devamsızlık ise kayıp sayılıyor; böylece
+  günün beş vaktinden birine gelmemek devamsızlık olarak işlenmiyor. Ardışıklık kayıt bulunan
+  günler üzerinden sayıldığı için hafta sonu ve tatiller seriyi bölmüyor.
+* Devamsızlık ve not düşüşü eşikleri Ayarlar sayfasından değiştirilebiliyor.
 
 = 1.5.0 =
 * Şubeler (6-A, 6-B) artık gerçek veri: öğrenci döneme bir şubeyle kaydediliyor; şube eskisi gibi

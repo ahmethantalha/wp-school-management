@@ -120,6 +120,7 @@ class Nizamiye_Actions {
 		$kind    = isset( $_GET['kind'] ) ? sanitize_key( wp_unslash( $_GET['kind'] ) ) : '';
 		$term_id = isset( $_GET['nizamiye_term'] ) ? (int) $_GET['nizamiye_term'] : nizamiye_current_term_id();
 		$grade   = isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
+		$section = isset( $_GET['section'] ) ? nizamiye_normalize_section( wp_unslash( $_GET['section'] ) ) : '';
 		$orient  = isset( $_GET['orient'] ) && 'landscape' === $_GET['orient'] ? 'landscape' : 'portrait';
 
 		if ( ! $term_id ) {
@@ -128,7 +129,7 @@ class Nizamiye_Actions {
 
 		if ( 'habit' === $kind ) {
 			$habit_id = isset( $_GET['habit_id'] ) ? (int) $_GET['habit_id'] : 0;
-			$sheet    = Nizamiye_Sheet::habit_sheet( $habit_id, $period, $grade, $term_id );
+			$sheet    = Nizamiye_Sheet::habit_sheet( $habit_id, $period, $grade, $term_id, $section );
 		} elseif ( 'attendance' === $kind ) {
 			$sheet = Nizamiye_Sheet::attendance_sheet(
 				$term_id,
@@ -136,7 +137,8 @@ class Nizamiye_Actions {
 				isset( $_GET['session'] ) ? (int) $_GET['session'] : 0,
 				isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0,
 				$period,
-				$grade
+				$grade,
+				$section
 			);
 		} else {
 			wp_die( 'Geçersiz rapor türü.' );
@@ -267,6 +269,7 @@ class Nizamiye_Actions {
 			$metric = 'rate';
 		}
 		$cat_id  = isset( $_GET['cat'] ) ? (int) $_GET['cat'] : 0;
+		$section = isset( $_GET['section'] ) ? nizamiye_normalize_section( wp_unslash( $_GET['section'] ) ) : '';
 		// Bu işleyici zaten yukarıda kendi (nizamiye_export_report) nonce'uyla doğrulandı.
 		$dates   = nizamiye_resolve_report_dates( '', false );
 		$from    = $dates['from'];
@@ -301,7 +304,7 @@ class Nizamiye_Actions {
 			if ( ! $category ) {
 				wp_die( 'Geçersiz kategori.' );
 			}
-			$matrix   = Nizamiye_Reports::attendance_matrix( $term_id, $cat_id, $from, $to, 'sinif' === $group ? 0 : $grade, $student_ids );
+			$matrix   = Nizamiye_Reports::attendance_matrix( $term_id, $cat_id, $from, $to, 'sinif' === $group ? 0 : $grade, $student_ids, 'sinif' === $group ? '' : $section );
 			$sessions = $matrix['sessions'];
 
 			// Oturum odağı: geçerli tek bir vakit seçildiyse tam durum kırılımı dışa aktarılır.
@@ -419,7 +422,7 @@ class Nizamiye_Actions {
 		} elseif ( 'aliskanlik' === $rtype || 'not' === $rtype ) {
 			$is_habit = 'aliskanlik' === $rtype;
 			$matrix   = $is_habit
-				? Nizamiye_Reports::habit_matrix( $term_id, 'sinif' === $group ? 0 : $grade, $student_ids, $from, $to )
+				? Nizamiye_Reports::habit_matrix( $term_id, 'sinif' === $group ? 0 : $grade, $student_ids, $from, $to, 'sinif' === $group ? '' : $section )
 				: Nizamiye_Reports::grade_matrix( $term_id, 'sinif' === $group ? 0 : $grade, $student_ids );
 			$cols = $is_habit ? $matrix['habits'] : $matrix['classes'];
 
@@ -500,7 +503,7 @@ class Nizamiye_Actions {
 				$lines[] = array( 'Sınıf', 'Öğrenci Sayısı', 'Devam %', 'Alışkanlık %', 'Not Ort. %' );
 				foreach ( Nizamiye_Reports::grade_level_summary( $term_id, $student_ids ) as $row ) {
 					$lines[] = array(
-						nizamiye_grade_label( $row['grade'] ),
+						nizamiye_section_label( $row['grade'], $row['section'] ?? '' ),
 						$row['count'],
 						null !== $row['att'] ? $row['att'] : '',
 						null !== $row['habit'] ? $row['habit'] : '',
@@ -769,8 +772,24 @@ class Nizamiye_Actions {
 			$target = $user_id ?: (int) $result;
 			if ( ! empty( $_POST['is_class_teacher'] ) ) {
 				update_user_meta( $target, 'nizamiye_is_class_teacher', 1 );
-				$grades = isset( $_POST['ct_grades'] ) ? array_map( 'intval', (array) $_POST['ct_grades'] ) : array();
-				update_user_meta( $target, 'nizamiye_class_teacher_grades', array_values( array_filter( $grades ) ) );
+				// Kapsam girişleri "6" ya da "6-A" biçiminde; biçimi doğrulanıp normalize edilir.
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- handler başında check_admin_referer() ile doğrulandı.
+				$raw_scopes = isset( $_POST['ct_grades'] ) ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST['ct_grades'] ) ) : array();
+				$scopes     = array();
+				foreach ( $raw_scopes as $entry ) {
+					if ( ! preg_match( '/^(\\d{1,2})(?:-([A-Za-z]))?$/', trim( $entry ), $m ) ) {
+						continue;
+					}
+					$grade = (int) $m[1];
+					if ( $grade <= 0 ) {
+						continue;
+					}
+					$key = isset( $m[2] ) ? $grade . '-' . nizamiye_normalize_section( $m[2] ) : (string) $grade;
+					if ( ! in_array( $key, $scopes, true ) ) {
+						$scopes[] = $key;
+					}
+				}
+				update_user_meta( $target, 'nizamiye_class_teacher_grades', $scopes );
 			} else {
 				delete_user_meta( $target, 'nizamiye_is_class_teacher' );
 				delete_user_meta( $target, 'nizamiye_class_teacher_grades' );
@@ -1232,6 +1251,8 @@ class Nizamiye_Actions {
 			'final_grade' => max( 1, (int) self::post( 'final_grade', '8' ) ),
 			'min_grade'   => max( 1, (int) self::post( 'min_grade', '1' ) ),
 			'max_grade'   => max( 1, (int) self::post( 'max_grade', '12' ) ),
+			'alert_absence_days' => max( 2, min( 30, (int) self::post( 'alert_absence_days', '3' ) ) ),
+			'alert_grade_drop'   => max( 1, min( 100, (int) self::post( 'alert_grade_drop', '15' ) ) ),
 		) );
 		self::back( 'Ayarlar kaydedildi.' );
 	}

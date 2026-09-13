@@ -648,3 +648,49 @@
 	gap: 6px;
 	margin: 0 14px 6px 0;
 }
+
+/* Sınıf öğretmeni kapsamı: sınıf başına şube satırı */
+.sms-ct-row {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 6px;
+}
+.sms-ct-row-label {
+	min-width: 24px;
+	font-weight: 700;
+	color: #64748b;
+}
+
+/* ---------- Panel uyarı kartı ---------- */
+.sms-badge-red { background: #fee2e2; color: #b91c1c; }
+.sms-alert-title {
+	font-size: 13px;
+	margin: 0 0 8px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+.sms-alert-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.sms-alert-list li {
+	padding: 6px 0;
+	border-bottom: 1px solid #f1f5f9;
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.sms-alert-list li:last-child { border-bottom: none; }
+.sms-alert-ok {
+	margin: 0;
+	color: #16a34a;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}

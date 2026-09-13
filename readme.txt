@@ -4,7 +4,7 @@ Tags: education, attendance, gradebook, student management, reports
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -99,6 +99,23 @@ and download a single ZIP file containing a separate PDF for each student.
 6. Terms page — manage academic terms and switch the active one.
 
 == Changelog ==
+
+= 1.6.0 =
+* A homeroom teacher is now responsible for sections rather than whole grade levels. The
+  responsibility list holds grade/section pairs ("6" for a whole grade, "6-A" for one section),
+  so the homeroom teacher of 6-A only sees their own section when taking prayer, cleaning or
+  phone attendance. Existing assignments keep working unchanged and need no migration.
+* Section filters were added to the attendance sheet, the parent roster reports and the Reports
+  page; the class summary now breaks down by section. Report cards, the parent page and the
+  student list show "6-A" where a section is set, and fall back to "6. Sınıf" where none is.
+* Added an alerts card at the top of the dashboard answering "what needs attention today",
+  alongside the existing analytical cards: students absent several days running, students who
+  have not read a book in the last 7 days, and students whose recent exam average has dropped
+  against their own earlier average. Teachers only see their own students.
+* A day counts as missed only when every record for that attendance type is an absence, so
+  missing one of the five daily prayers is not treated as absence. Consecutive days are counted
+  over days that have records, so weekends and holidays do not break a streak.
+* The absence and grade-drop thresholds are configurable on the Settings page.
 
 = 1.5.0 =
 * Sections (6-A, 6-B) are now real data: a student is enrolled into a section for the term,

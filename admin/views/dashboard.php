@@ -28,6 +28,22 @@ $nizamiye_settings = nizamiye_get_settings();
 	$nizamiye_top          = array_slice( $nizamiye_scores, 0, 5 );
 	$nizamiye_bottom       = array_slice( array_reverse( array_slice( $nizamiye_scores, 5 ) ), 0, 5 );
 	$nizamiye_grade_sum    = Nizamiye_Reports::grade_level_summary( $nizamiye_term_id, $nizamiye_student_ids );
+$nizamiye_alerts       = Nizamiye_Alerts::summary( $nizamiye_term_id, $nizamiye_student_ids );
+// Uyarı satırlarındaki öğrenci adlarını tek sorguda çöz (isim başına sorgu atma).
+$nizamiye_alert_names  = array();
+if ( $nizamiye_alerts['total'] ) {
+	$nizamiye_alert_ids = array_unique( array_merge(
+		array_column( $nizamiye_alerts['absence'], 'student_id' ),
+		array_column( $nizamiye_alerts['reading'], 'student_id' ),
+		array_column( $nizamiye_alerts['grades'], 'student_id' )
+	) );
+	foreach ( Nizamiye_Students::query( array( 'term_id' => $nizamiye_term_id, 'ids' => array_values( $nizamiye_alert_ids ), 'status' => 'active' ) ) as $nizamiye_as ) {
+		$nizamiye_alert_names[ (int) $nizamiye_as->id ] = array(
+			'name'  => nizamiye_student_name( $nizamiye_as ),
+			'class' => nizamiye_section_label( $nizamiye_as->grade_level ?? 0, $nizamiye_as->section ?? '' ),
+		);
+	}
+}
 	$nizamiye_cat_sum      = Nizamiye_Reports::category_summary( $nizamiye_term_id, $nizamiye_student_ids );
 
 	$nizamiye_att_labels = nizamiye_attendance_statuses();
@@ -63,6 +79,85 @@ $nizamiye_settings = nizamiye_get_settings();
 		<div class="sms-stat-card">
 			<span class="sms-stat-icon" style="--c:#22c55e"><span class="dashicons dashicons-yes-alt"></span></span>
 			<div><span class="sms-stat-value"><?php echo (int) $nizamiye_counts['habits']; ?></span><span class="sms-stat-label">Alışkanlık</span></div>
+		</div>
+	</div>
+
+
+	<?php
+	// Operasyonel uyarı kartı: panelin geri kalanı analitiktir (dönem ortalamaları,
+	// trendler), bu kart "bugün neye bakmam lazım" sorusunu cevaplar. Eşikler Ayarlar'dan.
+	$nizamiye_alert_link = function ( $nizamiye_sid ) use ( $nizamiye_term_id, $nizamiye_alert_names ) {
+		$nizamiye_info = $nizamiye_alert_names[ $nizamiye_sid ] ?? null;
+		if ( ! $nizamiye_info ) {
+			return '';
+		}
+		return '<a href="' . esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-reports&student=' . (int) $nizamiye_sid . '&nizamiye_term=' . (int) $nizamiye_term_id ) ) ) . '">'
+			. esc_html( $nizamiye_info['name'] ) . '</a> <span class="sms-muted">' . esc_html( $nizamiye_info['class'] ) . '</span>';
+	};
+	?>
+	<div class="sms-card sms-mt">
+		<div class="sms-card-head">
+			<h2>Dikkat Gerektirenler</h2>
+			<span class="sms-muted"><?php echo (int) $nizamiye_alerts['total']; ?> uyarı</span>
+		</div>
+		<div class="sms-pad">
+			<?php if ( ! $nizamiye_alerts['total'] ) : ?>
+				<p class="sms-alert-ok"><span class="dashicons dashicons-yes-alt"></span> Şu an dikkat gerektiren bir durum yok.</p>
+			<?php else : ?>
+				<div class="sms-grid-3">
+					<div>
+						<h3 class="sms-alert-title">Üst üste devamsız <span class="sms-badge sms-badge-amber"><?php echo (int) count( $nizamiye_alerts['absence'] ); ?></span></h3>
+						<?php if ( $nizamiye_alerts['absence'] ) : ?>
+							<ul class="sms-alert-list">
+								<?php foreach ( array_slice( $nizamiye_alerts['absence'], 0, 5 ) as $nizamiye_a ) : ?>
+									<li>
+										<?php echo wp_kses_post( $nizamiye_alert_link( (int) $nizamiye_a['student_id'] ) ); ?>
+										<span class="sms-badge"><?php echo esc_html( $nizamiye_a['category'] ); ?> · <?php echo (int) $nizamiye_a['days']; ?> gün</span>
+									</li>
+								<?php endforeach; ?>
+							</ul>
+							<?php if ( count( $nizamiye_alerts['absence'] ) > 5 ) : ?>
+								<p class="sms-muted">+<?php echo (int) ( count( $nizamiye_alerts['absence'] ) - 5 ); ?> öğrenci daha</p>
+							<?php endif; ?>
+						<?php else : ?>
+							<p class="sms-muted">Yok</p>
+						<?php endif; ?>
+					</div>
+					<div>
+						<h3 class="sms-alert-title">Son 7 günde kitap okumayan <span class="sms-badge sms-badge-amber"><?php echo (int) count( $nizamiye_alerts['reading'] ); ?></span></h3>
+						<?php if ( $nizamiye_alerts['reading'] ) : ?>
+							<ul class="sms-alert-list">
+								<?php foreach ( array_slice( $nizamiye_alerts['reading'], 0, 5 ) as $nizamiye_a ) : ?>
+									<li><?php echo wp_kses_post( $nizamiye_alert_link( (int) $nizamiye_a['student_id'] ) ); ?></li>
+								<?php endforeach; ?>
+							</ul>
+							<?php if ( count( $nizamiye_alerts['reading'] ) > 5 ) : ?>
+								<p class="sms-muted">+<?php echo (int) ( count( $nizamiye_alerts['reading'] ) - 5 ); ?> öğrenci daha</p>
+							<?php endif; ?>
+						<?php else : ?>
+							<p class="sms-muted">Yok</p>
+						<?php endif; ?>
+					</div>
+					<div>
+						<h3 class="sms-alert-title">Notu düşen <span class="sms-badge sms-badge-amber"><?php echo (int) count( $nizamiye_alerts['grades'] ); ?></span></h3>
+						<?php if ( $nizamiye_alerts['grades'] ) : ?>
+							<ul class="sms-alert-list">
+								<?php foreach ( array_slice( $nizamiye_alerts['grades'], 0, 5 ) as $nizamiye_a ) : ?>
+									<li>
+										<?php echo wp_kses_post( $nizamiye_alert_link( (int) $nizamiye_a['student_id'] ) ); ?>
+										<span class="sms-badge sms-badge-red"><?php echo (int) $nizamiye_a['earlier']; ?>% → <?php echo (int) $nizamiye_a['recent']; ?>%</span>
+									</li>
+								<?php endforeach; ?>
+							</ul>
+							<?php if ( count( $nizamiye_alerts['grades'] ) > 5 ) : ?>
+								<p class="sms-muted">+<?php echo (int) ( count( $nizamiye_alerts['grades'] ) - 5 ); ?> öğrenci daha</p>
+							<?php endif; ?>
+						<?php else : ?>
+							<p class="sms-muted">Yok</p>
+						<?php endif; ?>
+					</div>
+				</div>
+			<?php endif; ?>
 		</div>
 	</div>
 

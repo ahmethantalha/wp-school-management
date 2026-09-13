@@ -13,6 +13,7 @@ $nizamiye_cat_id   = $nizamiye_has_nonce && isset( $_GET['cat'] ) ? (int) $_GET[
 $nizamiye_sess_id  = $nizamiye_has_nonce && isset( $_GET['session'] ) ? (int) $_GET['session'] : 0;
 $nizamiye_class_id = $nizamiye_has_nonce && isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0;
 $nizamiye_grade    = $nizamiye_has_nonce && isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
+$nizamiye_sec_f    = $nizamiye_has_nonce && isset( $_GET['section'] ) ? nizamiye_normalize_section( wp_unslash( $_GET['section'] ) ) : '';
 $nizamiye_orient   = $nizamiye_has_nonce && isset( $_GET['orient'] ) && 'landscape' === $_GET['orient'] ? 'landscape' : 'portrait';
 // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
@@ -32,7 +33,8 @@ $nizamiye_sheet    = Nizamiye_Sheet::attendance_sheet(
 	$nizamiye_sess_id,
 	$nizamiye_class_id,
 	$nizamiye_period,
-	$nizamiye_grade
+	$nizamiye_grade,
+	$nizamiye_sec_f
 );
 
 if ( is_wp_error( $nizamiye_sheet ) ) {
@@ -65,6 +67,7 @@ $nizamiye_pdf_url = wp_nonce_url(
 			'pmonth'        => $nizamiye_period['month'],
 			'pyear'         => $nizamiye_period['year'],
 			'grade'         => $nizamiye_grade,
+			'section'       => $nizamiye_sec_f,
 			'orient'        => $nizamiye_orient,
 			'nizamiye_term' => $nizamiye_term_id,
 		),
@@ -116,6 +119,13 @@ $nizamiye_pdf_url = wp_nonce_url(
 					</select>
 				<?php endif; ?>
 
+				<label class="sms-muted">Şube</label>
+				<select name="section" onchange="this.form.submit()">
+					<option value="">Tüm şubeler</option>
+					<?php foreach ( Nizamiye_Students::sections_in_term( $nizamiye_term_id ) as $nizamiye_sec ) : ?>
+						<option value="<?php echo esc_attr( $nizamiye_sec ); ?>" <?php selected( $nizamiye_sec_f, $nizamiye_sec ); ?>><?php echo esc_html( $nizamiye_sec ); ?></option>
+					<?php endforeach; ?>
+				</select>
 				<label class="sms-muted">PDF yönü</label>
 				<select name="orient" onchange="this.form.submit()">
 					<option value="portrait" <?php selected( $nizamiye_orient, 'portrait' ); ?>>Dikey</option>

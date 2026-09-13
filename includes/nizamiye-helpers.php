@@ -30,6 +30,10 @@ function nizamiye_get_settings() {
 		'final_grade' => 8,
 		'min_grade'   => 1,
 		'max_grade'   => 12,
+		// Panel uyarı eşikleri. wp_parse_args sayesinde mevcut kurulumlar bu
+		// varsayılanları kendiliğinden alır, ayrı bir migration gerekmez.
+		'alert_absence_days' => 3,
+		'alert_grade_drop'   => 15,
 	);
 	return wp_parse_args( (array) get_option( 'nizamiye_settings', array() ), $defaults );
 }
@@ -114,11 +118,70 @@ function nizamiye_is_class_teacher( $user_id = 0 ) {
 	return (bool) get_user_meta( $user_id, 'nizamiye_is_class_teacher', true );
 }
 
-/** Sınıf öğretmeninin sorumlu olduğu sınıf seviyeleri (boş = tüm seviyeler). */
-function nizamiye_class_teacher_grades( $user_id = 0 ) {
+/**
+ * Sınıf öğretmeninin sorumluluk kapsamı: sınıf/şube çiftleri.
+ *
+ * Meta ('nizamiye_class_teacher_grades') iki biçimi de taşıyabilir; anahtar
+ * değişmediği için eski kurulumlar migration'sız çalışır:
+ *   eski → [6, 7]            (tamsayı: o sınıfın tamamı)
+ *   yeni → ["6", "6-A"]      ("6" sınıfın tamamı, "6-A" yalnızca o şube)
+ *
+ * @return array<int,array{grade:int,section:string}> Boş dizi = kısıt yok (tüm öğrenciler).
+ */
+function nizamiye_class_teacher_scopes( $user_id = 0 ) {
 	$user_id = $user_id ? (int) $user_id : get_current_user_id();
-	$grades  = get_user_meta( $user_id, 'nizamiye_class_teacher_grades', true );
-	return is_array( $grades ) ? array_map( 'intval', $grades ) : array();
+	$raw     = get_user_meta( $user_id, 'nizamiye_class_teacher_grades', true );
+	if ( ! is_array( $raw ) ) {
+		return array();
+	}
+
+	$scopes = array();
+	foreach ( $raw as $entry ) {
+		$parts   = explode( '-', (string) $entry, 2 );
+		$grade   = (int) $parts[0];
+		$section = isset( $parts[1] ) ? nizamiye_normalize_section( $parts[1] ) : '';
+		if ( $grade > 0 ) {
+			$scopes[] = array( 'grade' => $grade, 'section' => $section );
+		}
+	}
+	return $scopes;
+}
+
+/**
+ * Bir öğrenci, verilen sorumluluk kapsamlarından herhangi birine giriyor mu?
+ * Kapsam listesi boşsa kısıt yoktur ve her öğrenci geçer. Şubesiz bir kapsam
+ * ("6") o sınıfın tüm şubelerini kapsar; şubeli bir kapsam ("6-A") yalnızca
+ * kendi şubesini.
+ */
+function nizamiye_scope_allows( array $scopes, $grade, $section ) {
+	if ( ! $scopes ) {
+		return true;
+	}
+	$grade   = (int) $grade;
+	$section = nizamiye_normalize_section( $section );
+
+	foreach ( $scopes as $scope ) {
+		if ( $scope['grade'] !== $grade ) {
+			continue;
+		}
+		if ( '' === $scope['section'] || $scope['section'] === $section ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * Sınıf öğretmeninin sorumlu olduğu sınıf seviyeleri (boş = tüm seviyeler).
+ * Kapsam artık şube de içerebildiğinden yalnızca seviye boyutunu döndürür;
+ * şube ayrımı gereken yerlerde nizamiye_class_teacher_scopes() kullanılmalıdır.
+ */
+function nizamiye_class_teacher_grades( $user_id = 0 ) {
+	$grades = array();
+	foreach ( nizamiye_class_teacher_scopes( $user_id ) as $scope ) {
+		$grades[] = $scope['grade'];
+	}
+	return array_values( array_unique( $grades ) );
 }
 
 /** Geçerli kullanıcı genel (namaz/temizlik/telefon) yoklaması alabilir mi? */
@@ -131,7 +194,7 @@ function nizamiye_can_take_general_attendance() {
 
 /**
  * Genel yoklama için görülebilecek öğrenci ID'leri.
- * Yönetici: dönemdeki tüm aktif öğrenciler. Sınıf öğretmeni: sorumlu seviyeler (boşsa tümü).
+ * Yönetici: dönemdeki tüm aktif öğrenciler. Sınıf öğretmeni: sorumlu sınıf/şubeler (boşsa tümü).
  * $category_id verilirse, kategorinin "hangi sınıflar bu yoklamada görünsün" kısıtlamasıyla
  * (Yoklama Türleri sayfasında ayarlanır) da kesişim alınır.
  */
@@ -142,13 +205,16 @@ function nizamiye_general_attendance_student_ids( $term_id = 0, $user_id = 0, $c
 	$args = array( 'term_id' => $term_id, 'status' => 'active' );
 	$students = Nizamiye_Students::query( $args );
 
-	$teacher_grades = user_can( $user_id, 'manage_options' ) ? array() : nizamiye_class_teacher_grades( $user_id );
-	$cat_grades     = $category_id ? Nizamiye_Attendance_Types::get_grade_levels( $category_id ) : array();
+	$scopes     = user_can( $user_id, 'manage_options' ) ? array() : nizamiye_class_teacher_scopes( $user_id );
+	$cat_grades = $category_id ? Nizamiye_Attendance_Types::get_grade_levels( $category_id ) : array();
 
 	$ids = array();
 	foreach ( $students as $s ) {
-		$g = (int) ( $s->grade_level ?? 0 );
-		if ( $teacher_grades && ! in_array( $g, $teacher_grades, true ) ) {
+		$g   = (int) ( $s->grade_level ?? 0 );
+		$sec = nizamiye_normalize_section( $s->section ?? '' );
+		// Öğretmenin kapsamı şube düzeyinde olabilir; kategorinin kendi kısıtı
+		// (Yoklama Türleri sayfası) seviye düzeyinde kalır ve ayrıca kesişir.
+		if ( ! nizamiye_scope_allows( $scopes, $g, $sec ) ) {
 			continue;
 		}
 		if ( $cat_grades && ! in_array( $g, $cat_grades, true ) ) {
@@ -800,7 +866,7 @@ function nizamiye_view_header( $title, $subtitle = '', $show_term_picker = true 
 		// (aksi halde bu değerler zaten sayfanın kendisinde de yok sayılmış demektir).
 		if ( isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' ) ) {
 			// phpcs:disable WordPress.Security.NonceVerification.Recommended -- yukarıda wp_verify_nonce() ile zaten doğrulandı.
-			foreach ( array( 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'rsession', 'tab', 'rtype', 'group', 'grade', 'metric', 'from', 'to', 'datemode', 'rmonth', 'ryear', 'gview', 'subject', 'title', 'exam_date', 'exam_type', 'pmode', 'pdate', 'pweek', 'pmonth', 'pyear', 'orient' ) as $keep ) {
+			foreach ( array( 'view', 'class_id', 'habit_id', 'student', 'cat', 'session', 'rsession', 'tab', 'rtype', 'group', 'grade', 'metric', 'from', 'to', 'datemode', 'rmonth', 'ryear', 'gview', 'subject', 'title', 'exam_date', 'exam_type', 'pmode', 'pdate', 'pweek', 'pmonth', 'pyear', 'orient', 'section' ) as $keep ) {
 				if ( isset( $_GET[ $keep ] ) ) {
 					echo '<input type="hidden" name="' . esc_attr( $keep ) . '" value="' . esc_attr( sanitize_text_field( wp_unslash( $_GET[ $keep ] ) ) ) . '">';
 				}
