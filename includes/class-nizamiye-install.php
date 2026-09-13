@@ -28,8 +28,71 @@ class Nizamiye_Install {
 
 		self::seed_attendance_types();
 		self::migrate_attendance();
+		$schema_ok = self::migrate_sections();
 
-		update_option( 'nizamiye_db_version', NIZAMIYE_VERSION );
+		// Sürüm damgası yalnızca şema gerçekten beklenen hâldeyse atılır. Damga
+		// koşulsuz atılsaydı, dbDelta sessizce başarısız olduğunda migration bir
+		// daha denenmez ve eklenti "Unknown column" hatalarıyla boş listeler
+		// döndürerek çalışmaya devam ederdi — teşhisi çok zor bir bozulma.
+		// Damga atılmazsa bu yordam bir sonraki yönetim sayfasında yeniden dener.
+		if ( $schema_ok ) {
+			update_option( 'nizamiye_db_version', NIZAMIYE_VERSION );
+		}
+	}
+
+	/** Kolon var mı? Idempotent migration kontrolleri için. */
+	private static function column_exists( $table, $column ) {
+		global $wpdb;
+		return (bool) (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM information_schema.COLUMNS
+			 WHERE table_schema = DATABASE() AND table_name = %s AND column_name = %s",
+			$table,
+			$column
+		) );
+	}
+
+	/** Index var mı? Idempotent migration kontrolleri için. */
+	private static function index_exists( $table, $index ) {
+		global $wpdb;
+		return (bool) (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM information_schema.STATISTICS
+			 WHERE table_schema = DATABASE() AND table_name = %s AND index_name = %s",
+			$table,
+			$index
+		) );
+	}
+
+	/**
+	 * 1.5.0 şube alanları: enrollments.section, classes.section, classes.auto_roster.
+	 *
+	 * dbDelta() bu kolonları normalde kendisi ekler; bu yordam bir emniyet ağıdır.
+	 * dbDelta biçim konusunda seçicidir (boşluk, tip yazımı, index ayrıştırma) ve
+	 * başarısız olduğunda hata döndürmez — sessizce hiçbir şey yapmaz. Kolonların
+	 * varlığı burada açıkça doğrulanır, eksikse ALTER TABLE ile eklenir.
+	 *
+	 * @return bool Şema beklenen hâlde mi (activate() sürüm damgasını buna bakarak atar).
+	 */
+	private static function migrate_sections() {
+		global $wpdb;
+		$enr = $wpdb->prefix . 'nizamiye_enrollments';
+		$cls = $wpdb->prefix . 'nizamiye_classes';
+
+		if ( ! self::column_exists( $enr, 'section' ) ) {
+			$wpdb->query( "ALTER TABLE $enr ADD COLUMN section VARCHAR(10) NOT NULL DEFAULT '' AFTER grade_level" );
+		}
+		if ( ! self::index_exists( $enr, 'grade_section' ) ) {
+			$wpdb->query( "ALTER TABLE $enr ADD KEY grade_section (grade_level,section)" );
+		}
+		if ( ! self::column_exists( $cls, 'section' ) ) {
+			$wpdb->query( "ALTER TABLE $cls ADD COLUMN section VARCHAR(10) NULL AFTER grade_level" );
+		}
+		if ( ! self::column_exists( $cls, 'auto_roster' ) ) {
+			$wpdb->query( "ALTER TABLE $cls ADD COLUMN auto_roster TINYINT(1) NOT NULL DEFAULT 0 AFTER section" );
+		}
+
+		return self::column_exists( $enr, 'section' )
+			&& self::column_exists( $cls, 'section' )
+			&& self::column_exists( $cls, 'auto_roster' );
 	}
 
 	private static function create_tables() {

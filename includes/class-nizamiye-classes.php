@@ -211,17 +211,43 @@ class Nizamiye_Classes {
 	 * ve kesişim sayısı karşılaştırılır.
 	 */
 	public static function stale_ids( $term_id ) {
-		$stale = array();
-		foreach ( self::for_term( $term_id ) as $class ) {
-			if ( empty( $class->auto_roster ) ) {
-				continue;
-			}
-			$diff = self::roster_diff( (int) $class->id );
-			if ( $diff['add'] || $diff['remove'] ) {
-				$stale[] = (int) $class->id;
-			}
-		}
-		return $stale;
+		global $wpdb;
+
+		// Her derslik için ayrı ayrı roster_diff() çağırmak derslik başına üç sorgu
+		// demekti; bu metot derslikler listesinin her açılışında çalıştığından
+		// karşılaştırma tek sorguya indirildi. Derslik başına üç sayı hesaplanır:
+		//   expected — kuralın öngördüğü öğrenci sayısı
+		//   actual   — kadroda fiilen kaç kişi var
+		//   matched  — kadrodakilerden kaça kuralın da uyduğu
+		// Kadro kuralla birebir aynıysa üçü de eşittir; herhangi bir sapma eksik
+		// ya da fazla öğrenci olduğu anlamına gelir.
+		$sql = "SELECT t.id FROM (
+			SELECT c.id AS id,
+				(SELECT COUNT(*)
+				   FROM {$wpdb->prefix}nizamiye_enrollments e
+				   INNER JOIN {$wpdb->prefix}nizamiye_students s ON s.id = e.student_id
+				  WHERE e.term_id = c.term_id AND e.grade_level = c.grade_level
+				    AND e.status = 'active' AND s.status = 'active'
+				    AND (c.section IS NULL OR c.section = '' OR e.section = c.section)
+				) AS expected,
+				(SELECT COUNT(*)
+				   FROM {$wpdb->prefix}nizamiye_class_students cs
+				  WHERE cs.class_id = c.id
+				) AS actual,
+				(SELECT COUNT(*)
+				   FROM {$wpdb->prefix}nizamiye_class_students cs
+				   INNER JOIN {$wpdb->prefix}nizamiye_enrollments e
+				           ON e.student_id = cs.student_id AND e.term_id = c.term_id
+				   INNER JOIN {$wpdb->prefix}nizamiye_students s ON s.id = cs.student_id
+				  WHERE cs.class_id = c.id AND e.grade_level = c.grade_level
+				    AND e.status = 'active' AND s.status = 'active'
+				    AND (c.section IS NULL OR c.section = '' OR e.section = c.section)
+				) AS matched
+			  FROM {$wpdb->prefix}nizamiye_classes c
+			 WHERE c.term_id = %d AND c.auto_roster = 1
+		) t WHERE t.expected <> t.matched OR t.actual <> t.matched";
+
+		return array_map( 'intval', $wpdb->get_col( $wpdb->prepare( $sql, (int) $term_id ) ) );
 	}
 
 	/** Dönemde kullanılan branşlar (toplu oluşturma formunu önceden doldurur). */
