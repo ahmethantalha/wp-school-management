@@ -4,7 +4,7 @@ Tags: eğitim, yoklama, not defteri, öğrenci yönetimi, raporlar
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,6 +21,7 @@ takip araçlarını tek bir panelde bir araya getirir.
 
 * **Öğrenci / Öğretmen / Veli yönetimi** — her rol için ayrı bir WordPress kullanıcı rolü ve giriş sonrası doğrudan panele yönlendirme.
 * **Derslik yönetimi** — sınıf filtresi ve toplu seçimli kadro ekranıyla hızlı öğrenci ataması.
+* **Şubeler ve toplu derslik oluşturma** — öğrenci döneme bir şubeyle (6-A, 6-B) kaydedilir. Toplu sihirbaz branşları sınıf/şube kombinasyonlarıyla çarpıp bütün derslikleri tek seferde açar ve her kadroyu şubeden doldurur. Şubeye bağlı derslikler yeni kaydolan öğrencileri kendiliğinden alır; çıkarma işlemi her zaman onay ister, böylece kulüpler, etüt grupları ve bilinçli istisnalar sessizce bozulmaz.
 * **Kategori ve oturum bazlı yoklama** — normal ders yoklamasının yanı sıra namaz vakitleri, temizlik nöbeti, telefon kontrolü gibi genel kategoriler; yönetici yeni kategori/oturum tanımlayabilir ve her kategorinin hangi sınıf seviyelerinde geçerli olacağını seçebilir.
 * **Alışkanlık takibi** — Yaptı/Yapmadı, puanlı (1'den N'e) veya kitap/sayfa takibi (günlük kitap adı + okunan sayfa) yöntemleri.
 * **Not girişi ve toplu yükleme** — derslik bazlı sınav notları; CSV şablonu indirme ve toplu yükleme desteği.
@@ -98,6 +99,25 @@ Evet. **Karneler** sayfasında öğrencileri onay kutularıyla seçip ("tümün�
 6. Dönemler sayfası — akademik dönemleri yönetme ve aktif dönemi değiştirme.
 
 == Değişiklik Günlüğü ==
+
+= 1.5.0 =
+* Şubeler (6-A, 6-B) artık gerçek veri: öğrenci döneme bir şubeyle kaydediliyor; şube eskisi gibi
+  yalnızca derslik adının içindeki bir metin olmaktan çıktı. Şube, öğrenci listesinden toplu
+  olarak, öğrenci düzenleme ekranından tek tek ya da içe aktarmada `sube` sütunuyla atanabilir;
+  içe aktarılan `sinif` hücresi "6-A" biçiminde yazıldıysa sınıf ve şube olarak ayrıştırılır.
+* Toplu derslik sihirbazı eklendi (Derslikler → Toplu Derslik Oluştur). Yazdığınız branşları
+  işaretlediğiniz sınıf/şube kombinasyonlarıyla çarpar, bütün derslikleri tek seferde açar ve her
+  kadroyu şubeden doldurur. İdempotenttir: aynı branş, sınıf ve şube için derslik zaten varsa
+  atlanır, dolayısıyla sihirbaz güvenle tekrar çalıştırılabilir.
+* Derslik şubesine bağlanabiliyor. Şubeye yeni yazılan öğrenciler bağlı dersliklere otomatik
+  eklenir, ama hiçbir şey onaysız çıkarılmaz: derslik ekranı kaç öğrencinin ekleneceğini ve
+  çıkarılacağını gösterip onay ister. Böylece kulüpler, etüt grupları ve bilinçli istisnalar
+  sessizce bozulmaz.
+* Yeni dönem açılırken şube korunuyor (6-A → 7-A); dönem formundaki kutucukla bu kapatılıp
+  şubeler yeniden dağıtılabilir.
+* Öğrenci kaydetme yordamındaki gizli bir kusur giderildi: durum bilgisi verilmediğinde kod
+  tanımsız bir dizi anahtarını okuyor, PHP 8 uyarısı üretip durum alanına null yazıyordu. Mevcut
+  iki çağrı yeri de durum gönderdiğinden eklenti pratikte bundan etkilenmiyordu.
 
 = 1.4.0 =
 * Alışkanlıklar ve yoklama için, velilere gönderilmek üzere günlük / haftalık / aylık toplu

@@ -80,6 +80,10 @@ $nizamiye_preview  = $nizamiye_active ? Nizamiye_Terms::rollover_preview( (int) 
 								<input type="checkbox" name="auto_promote" value="1" checked>
 								Öğrencileri otomatik aktar (sınıf atlat, son sınıfları mezun et)
 							</label>
+							<label class="sms-check">
+								<input type="checkbox" name="keep_sections" value="1" checked>
+								Şubeleri koru (6-A → 7-A). İşaretlemezseniz yeni dönemde şubeler boş gelir.
+							</label>
 						<?php endif; ?>
 						<button type="submit" class="sms-btn sms-btn-primary sms-btn-block"><?php echo $nizamiye_active ? 'Dönemi Aç ve Aktar' : 'Dönemi Oluştur'; ?></button>
 					</form>

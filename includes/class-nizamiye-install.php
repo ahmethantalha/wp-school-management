@@ -70,25 +70,36 @@ class Nizamiye_Install {
 			KEY user_id (user_id)
 		) $charset;";
 
+		// section: öğrencinin o dönemdeki şubesi (A, B, C…). Boş = şube atanmamış.
+		// Kod tarafında tek harfe (A-Z) normalize edilir; VARCHAR(10) ileride
+		// adlandırma değişirse şema göçü gerekmesin diye bırakılmış paydır.
 		$sql[] = "CREATE TABLE {$p}enrollments (
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			student_id BIGINT UNSIGNED NOT NULL,
 			term_id BIGINT UNSIGNED NOT NULL,
 			grade_level SMALLINT NOT NULL,
+			section VARCHAR(10) NOT NULL DEFAULT '',
 			status VARCHAR(20) NOT NULL DEFAULT 'active',
 			created_at DATETIME NOT NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY student_term (student_id,term_id),
 			KEY term_id (term_id),
-			KEY grade_level (grade_level)
+			KEY grade_level (grade_level),
+			KEY grade_section (grade_level,section)
 		) $charset;";
 
+		// section + auto_roster: dersliğin "kural"ı. auto_roster=1 ise kadro,
+		// grade_level + section ile eşleşen öğrencilerden türetilir (section boşsa
+		// kural yalnızca sınıf seviyesidir: "6. Sınıf Etüt" = 6'nın tüm şubeleri).
+		// Kulüp/etüt grupları auto_roster=0 ile eskisi gibi elle kadro kurar.
 		$sql[] = "CREATE TABLE {$p}classes (
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			term_id BIGINT UNSIGNED NOT NULL,
 			name VARCHAR(190) NOT NULL,
 			subject VARCHAR(100) NULL,
 			grade_level SMALLINT NULL,
+			section VARCHAR(10) NULL,
+			auto_roster TINYINT(1) NOT NULL DEFAULT 0,
 			teacher_id BIGINT UNSIGNED NULL,
 			created_at DATETIME NOT NULL,
 			PRIMARY KEY  (id),

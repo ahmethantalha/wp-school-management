@@ -640,3 +640,11 @@
 	border: 1px solid #e2e8f0;
 	border-radius: 6px;
 }
+
+/* Toplu derslik matrisindeki satır içi şube kutucukları */
+.sms-check-inline {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0 14px 6px 0;
+}

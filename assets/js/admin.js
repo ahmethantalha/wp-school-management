@@ -31,15 +31,18 @@
 		if (roster) {
 			var searchInput = document.querySelector('[data-sms-filter-search]');
 			var gradeSelect = document.querySelector('[data-sms-filter-grade]');
+			var sectionSelect = document.querySelector('[data-sms-filter-section]');
 			var counter = document.querySelector('[data-sms-count-checked]');
 
 			function applyFilter() {
 				var query = (searchInput && searchInput.value || '').toLocaleLowerCase('tr');
 				var grade = gradeSelect ? gradeSelect.value : '';
+				var section = sectionSelect ? sectionSelect.value : '';
 				roster.querySelectorAll('.sms-roster-item, .sms-roster-row').forEach(function (item) {
 					var matchName = !query || (item.getAttribute('data-name') || '').indexOf(query) !== -1;
 					var matchGrade = !grade || item.getAttribute('data-grade') === grade;
-					item.classList.toggle('sms-hidden', !(matchName && matchGrade));
+					var matchSection = !section || item.getAttribute('data-section') === section;
+					item.classList.toggle('sms-hidden', !(matchName && matchGrade && matchSection));
 				});
 			}
 
@@ -51,6 +54,7 @@
 
 			if (searchInput) { searchInput.addEventListener('input', applyFilter); }
 			if (gradeSelect) { gradeSelect.addEventListener('change', applyFilter); }
+			if (sectionSelect) { sectionSelect.addEventListener('change', applyFilter); }
 			roster.addEventListener('change', updateCount);
 
 			var selectBtn = document.querySelector('[data-sms-select-visible]');
@@ -153,7 +157,11 @@
 		}
 
 		/* ---------- Karneler: toplu seçim + toplu PDF indirme ---------- */
-		var bulkForm = document.querySelector('[data-sms-bulk-print-form]');
+		/* Toplu seçim: formu, ilk seçim kutusunun kapsayıcısından bulur. Böylece
+		   karne ZIP indirme ve öğrenci listesindeki toplu şube atama gibi farklı
+		   formlar ayrı bir işaretleyici özniteliğe ihtiyaç duymadan çalışır. */
+		var bulkAnchor = document.querySelector('[data-sms-bulk-item]');
+		var bulkForm = bulkAnchor ? bulkAnchor.closest('form') : null;
 		if (bulkForm) {
 			var bulkAll    = bulkForm.querySelector('[data-sms-bulk-all]');
 			var bulkItems  = bulkForm.querySelectorAll('[data-sms-bulk-item]');

@@ -5,14 +5,20 @@ $nizamiye_term_id  = nizamiye_current_term_id();
 $nizamiye_has_nonce = isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nizamiye_view' );
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- $_GET okumaları yalnızca yukarıdaki wp_verify_nonce() doğrulaması geçerse kullanılır; aksi halde güvenli varsayılana düşülür.
 $nizamiye_grade_f  = $nizamiye_has_nonce && isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
+$nizamiye_sec_f    = $nizamiye_has_nonce && isset( $_GET['section'] ) ? nizamiye_normalize_section( wp_unslash( $_GET['section'] ) ) : '';
 $nizamiye_status_f = $nizamiye_has_nonce && isset( $_GET['status'] ) ? sanitize_key( $_GET['status'] ) : 'active';
 $nizamiye_search   = $nizamiye_has_nonce && isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
 // phpcs:enable WordPress.Security.NonceVerification.Recommended
 $nizamiye_teacher  = nizamiye_is_teacher();
 
+// Mezun arşivi dönemden bağımsız listelendiği için (term_id = 0) enrollment JOIN'i
+// kurulmaz; şube o modda ne filtrelenebilir ne de gösterilebilir.
+$nizamiye_show_section = 'graduated' !== $nizamiye_status_f && $nizamiye_term_id;
+
 $nizamiye_args = array(
 	'term_id' => 'graduated' === $nizamiye_status_f ? 0 : $nizamiye_term_id,
 	'grade'   => $nizamiye_grade_f,
+	'section' => $nizamiye_show_section ? $nizamiye_sec_f : '',
 	'status'  => $nizamiye_status_f,
 	'search'  => $nizamiye_search,
 );
@@ -21,6 +27,7 @@ if ( $nizamiye_teacher ) {
 }
 $nizamiye_students = Nizamiye_Students::query( $nizamiye_args );
 $nizamiye_grades   = Nizamiye_Students::grades_in_term( $nizamiye_term_id );
+$nizamiye_sections = Nizamiye_Students::sections_in_term( $nizamiye_term_id );
 $nizamiye_parents  = nizamiye_users_by_role( 'nizamiye_parent' );
 $nizamiye_parent_names = array();
 foreach ( $nizamiye_parents as $nizamiye_p ) {
@@ -42,6 +49,14 @@ foreach ( $nizamiye_parents as $nizamiye_p ) {
 					<option value="<?php echo (int) $nizamiye_g; ?>" <?php selected( $nizamiye_grade_f, $nizamiye_g ); ?>><?php echo esc_html( nizamiye_grade_label( $nizamiye_g ) ); ?></option>
 				<?php endforeach; ?>
 			</select>
+			<?php if ( $nizamiye_show_section && $nizamiye_sections ) : ?>
+				<select name="section">
+					<option value="">Tüm şubeler</option>
+					<?php foreach ( $nizamiye_sections as $nizamiye_sec ) : ?>
+						<option value="<?php echo esc_attr( $nizamiye_sec ); ?>" <?php selected( $nizamiye_sec_f, $nizamiye_sec ); ?>><?php echo esc_html( $nizamiye_sec ); ?> şubesi</option>
+					<?php endforeach; ?>
+				</select>
+			<?php endif; ?>
 			<select name="status">
 				<option value="active" <?php selected( $nizamiye_status_f, 'active' ); ?>>Aktif</option>
 				<option value="graduated" <?php selected( $nizamiye_status_f, 'graduated' ); ?>>🎓 Mezunlar (arşiv)</option>
@@ -55,11 +70,35 @@ foreach ( $nizamiye_parents as $nizamiye_p ) {
 
 	<div class="sms-card">
 		<?php if ( $nizamiye_students ) : ?>
+			<?php $nizamiye_can_bulk = nizamiye_is_manager() && $nizamiye_show_section; ?>
+			<?php if ( $nizamiye_can_bulk ) : ?>
+				<?php nizamiye_form_open( 'nizamiye_bulk_section' ); nizamiye_back_url_field(); ?>
+				<input type="hidden" name="nizamiye_term" value="<?php echo (int) $nizamiye_term_id; ?>">
+				<div class="sms-toolbar">
+					<span class="sms-muted"><span data-sms-bulk-count>0</span> öğrenci seçili</span>
+					<span>
+						<label class="sms-muted">Seçilenlere şube ata:</label>
+						<select name="section">
+							<option value="">— Şubeyi kaldır —</option>
+							<?php foreach ( nizamiye_section_options() as $nizamiye_sec ) : ?>
+								<option value="<?php echo esc_attr( $nizamiye_sec ); ?>"><?php echo esc_html( $nizamiye_sec ); ?></option>
+							<?php endforeach; ?>
+						</select>
+						<button type="submit" class="sms-btn sms-btn-primary sms-btn-sm" data-sms-bulk-submit disabled>Uygula</button>
+					</span>
+				</div>
+			<?php endif; ?>
 			<table class="sms-table">
-				<thead><tr><th>Öğrenci</th><th>Sınıf</th><th>Okul</th><th>Veli</th><th>Doğum Tarihi</th><th>Durum</th><th></th></tr></thead>
+				<thead><tr>
+					<?php if ( $nizamiye_can_bulk ) : ?><th class="sms-check-col"><input type="checkbox" data-sms-bulk-all title="Tümünü seç"></th><?php endif; ?>
+					<th>Öğrenci</th><th>Sınıf</th><?php if ( $nizamiye_show_section ) : ?><th>Şube</th><?php endif; ?><th>Okul</th><th>Veli</th><th>Doğum Tarihi</th><th>Durum</th><th></th>
+				</tr></thead>
 				<tbody>
 				<?php foreach ( $nizamiye_students as $nizamiye_s ) : ?>
 					<tr>
+						<?php if ( $nizamiye_can_bulk ) : ?>
+							<td class="sms-check-col"><input type="checkbox" name="student_ids[]" value="<?php echo (int) $nizamiye_s->id; ?>" data-sms-bulk-item></td>
+						<?php endif; ?>
 						<td class="sms-name-cell">
 							<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $nizamiye_s ) ) ); ?>
 							<div>
@@ -68,6 +107,10 @@ foreach ( $nizamiye_parents as $nizamiye_p ) {
 							</div>
 						</td>
 						<td><?php echo isset( $nizamiye_s->grade_level ) ? '<span class="sms-badge sms-badge-indigo">' . esc_html( nizamiye_grade_label( $nizamiye_s->grade_level ) ) . '</span>' : '—'; ?></td>
+						<?php if ( $nizamiye_show_section ) : ?>
+							<?php $nizamiye_row_sec = nizamiye_normalize_section( $nizamiye_s->section ?? '' ); ?>
+							<td><?php echo '' !== $nizamiye_row_sec ? '<span class="sms-badge">' . esc_html( $nizamiye_row_sec ) . '</span>' : '<span class="sms-muted">—</span>'; ?></td>
+						<?php endif; ?>
 						<td class="sms-muted"><?php echo $nizamiye_s->school ? esc_html( $nizamiye_s->school ) : '—'; ?></td>
 						<td class="sms-muted"><?php echo $nizamiye_s->parent_user_id && isset( $nizamiye_parent_names[ (int) $nizamiye_s->parent_user_id ] ) ? esc_html( $nizamiye_parent_names[ (int) $nizamiye_s->parent_user_id ] ) : '—'; ?></td>
 						<td class="sms-muted"><?php echo esc_html( nizamiye_format_date( $nizamiye_s->birth_date ) ); ?></td>
@@ -85,6 +128,7 @@ foreach ( $nizamiye_parents as $nizamiye_p ) {
 				<?php endforeach; ?>
 				</tbody>
 			</table>
+			<?php if ( $nizamiye_can_bulk ) : ?></form><?php endif; ?>
 		<?php else : ?>
 			<div class="sms-empty">
 				<span class="dashicons dashicons-groups"></span>

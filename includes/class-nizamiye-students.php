@@ -23,14 +23,16 @@ class Nizamiye_Students {
 	}
 
 	/**
-	 * Öğrenci listesi. $args: term_id, grade, status, search, ids (sınırla), orderby.
-	 * term_id verilirse enrollment ile birleşir ve grade_level döner.
+	 * Öğrenci listesi. $args: term_id, grade, section, status, search, ids (sınırla).
+	 * term_id verilirse enrollment ile birleşir ve grade_level + section döner.
+	 * section yalnızca term_id ile birlikte anlamlıdır (şube dönem kaydında yaşar).
 	 */
 	public static function query( $args = array() ) {
 		global $wpdb;
 		$args = wp_parse_args( $args, array(
 			'term_id' => 0,
 			'grade'   => 0,
+			'section' => '',
 			'status'  => 'active',
 			'search'  => '',
 			'ids'     => null,
@@ -67,7 +69,11 @@ class Nizamiye_Students {
 				$where[]  = 'e.grade_level = %d';
 				$params[] = (int) $args['grade'];
 			}
-			$sql = "SELECT s.*, e.grade_level, e.status AS enrollment_status FROM {$wpdb->prefix}nizamiye_students s $join WHERE " . implode( ' AND ', $where ) . ' ORDER BY e.grade_level ASC, s.first_name ASC';
+			if ( $args['section'] ) {
+				$where[]  = 'e.section = %s';
+				$params[] = nizamiye_normalize_section( $args['section'] );
+			}
+			$sql = "SELECT s.*, e.grade_level, e.section, e.status AS enrollment_status FROM {$wpdb->prefix}nizamiye_students s $join WHERE " . implode( ' AND ', $where ) . ' ORDER BY e.grade_level ASC, e.section ASC, s.first_name ASC';
 			$params = array_merge( $params_j, $params );
 		} else {
 			$sql = "SELECT s.* FROM {$wpdb->prefix}nizamiye_students s WHERE " . implode( ' AND ', $where ) . ' ORDER BY s.first_name ASC';
@@ -97,10 +103,16 @@ class Nizamiye_Students {
 		) );
 	}
 
-	/** Ekle/güncelle. $data öğrenci alanları; $grade + $term_id kayıt için. */
-	public static function save( $data, $term_id = 0, $grade = 0, $id = 0 ) {
+	/**
+	 * Ekle/güncelle. $data öğrenci alanları; $grade + $term_id kayıt için.
+	 * $section: null = şubeye dokunma, '' = temizle, 'A' = ata (bkz. set_enrollment()).
+	 */
+	public static function save( $data, $term_id = 0, $grade = 0, $id = 0, $section = null ) {
 		global $wpdb;
-		$id  = (int) $id;
+		$id = (int) $id;
+		// $data['status'] yoksa varsayılan bir kez hesaplanır; aksi halde in_array()
+		// kontrolü 'active' ile geçerken sonraki okuma tanımsız anahtara düşüyordu.
+		$status = $data['status'] ?? 'active';
 		$row = array(
 			'first_name'     => sanitize_text_field( $data['first_name'] ?? '' ),
 			'last_name'      => sanitize_text_field( $data['last_name'] ?? '' ),
@@ -109,7 +121,7 @@ class Nizamiye_Students {
 			'student_no'     => sanitize_text_field( $data['student_no'] ?? '' ),
 			'parent_user_id' => ! empty( $data['parent_user_id'] ) ? (int) $data['parent_user_id'] : null,
 			'user_id'        => ! empty( $data['user_id'] ) ? (int) $data['user_id'] : null,
-			'status'         => in_array( $data['status'] ?? 'active', array( 'active', 'graduated', 'archived' ), true ) ? $data['status'] : 'active',
+			'status'         => in_array( $status, array( 'active', 'graduated', 'archived' ), true ) ? $status : 'active',
 			'notes'          => sanitize_textarea_field( $data['notes'] ?? '' ),
 		);
 
@@ -122,31 +134,41 @@ class Nizamiye_Students {
 		}
 
 		if ( $term_id && $grade ) {
-			self::set_enrollment( $id, $term_id, $grade );
+			self::set_enrollment( $id, $term_id, $grade, $section );
 		}
 
 		return $id;
 	}
 
-	/** Dönem kaydını oluşturur/günceller (sınıf seviyesi elle de değiştirilebilir). */
-	public static function set_enrollment( $student_id, $term_id, $grade ) {
+	/**
+	 * Dönem kaydını oluşturur/günceller (sınıf seviyesi elle de değiştirilebilir).
+	 *
+	 * @param string|null $section null ise şubeye DOKUNULMAZ. Şubeyi bilmeyen eski
+	 *                             çağrı yollarının var olan şubeyi sessizce silmesini
+	 *                             önler. '' temizler, 'A' atar.
+	 */
+	public static function set_enrollment( $student_id, $term_id, $grade, $section = null ) {
 		global $wpdb;
 		$existing = self::enrollment( $student_id, $term_id );
-		if ( $existing ) {
-			$wpdb->update(
-				$wpdb->prefix . 'nizamiye_enrollments',
-				array( 'grade_level' => (int) $grade ),
-				array( 'id' => (int) $existing->id )
-			);
-		} else {
-			$wpdb->insert( $wpdb->prefix . 'nizamiye_enrollments', array(
-				'student_id'  => (int) $student_id,
-				'term_id'     => (int) $term_id,
-				'grade_level' => (int) $grade,
-				'status'      => 'active',
-				'created_at'  => current_time( 'mysql' ),
-			) );
+		$row      = array( 'grade_level' => (int) $grade );
+		if ( null !== $section ) {
+			$row['section'] = nizamiye_normalize_section( $section );
 		}
+
+		if ( $existing ) {
+			$wpdb->update( $wpdb->prefix . 'nizamiye_enrollments', $row, array( 'id' => (int) $existing->id ) );
+		} else {
+			$wpdb->insert( $wpdb->prefix . 'nizamiye_enrollments', array_merge( $row, array(
+				'student_id' => (int) $student_id,
+				'term_id'    => (int) $term_id,
+				'status'     => 'active',
+				'created_at' => current_time( 'mysql' ),
+			) ) );
+		}
+
+		// Öğrenciyi kuralına uyan dersliklere ekler (asla çıkarmaz). Şube
+		// değişikliği/yeni kayıt, kurallı dersliklerin kadrosuna anında yansısın diye.
+		Nizamiye_Classes::sync_student( $student_id, $term_id );
 	}
 
 	/** Öğrenciyi ve tüm bağlı kayıtlarını siler. */
@@ -194,6 +216,23 @@ class Nizamiye_Students {
 			"SELECT DISTINCT grade_level FROM {$wpdb->prefix}nizamiye_enrollments WHERE term_id = %d ORDER BY grade_level",
 			$term_id
 		) ) );
+	}
+
+	/**
+	 * Dönemde fiilen kullanılan şubeler (filtre ve toplu derslik matrisi için).
+	 * $grade verilirse yalnızca o sınıf seviyesinin şubeleri döner. Şubesi
+	 * atanmamış kayıtlar (boş dize) listeye girmez.
+	 */
+	public static function sections_in_term( $term_id, $grade = 0 ) {
+		global $wpdb;
+		$sql    = "SELECT DISTINCT section FROM {$wpdb->prefix}nizamiye_enrollments WHERE term_id = %d AND section != ''";
+		$params = array( (int) $term_id );
+		if ( $grade ) {
+			$sql     .= ' AND grade_level = %d';
+			$params[] = (int) $grade;
+		}
+		$sql .= ' ORDER BY section';
+		return $wpdb->get_col( $wpdb->prepare( $sql, $params ) );
 	}
 }
 // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange

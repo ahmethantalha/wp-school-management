@@ -81,7 +81,13 @@ class Nizamiye_Menu {
 				self::load_view( 'parents' );
 				break;
 			case 'nizamiye-classes':
-				self::load_view( 'edit' === $view ? 'class-edit' : 'classes' );
+				if ( 'edit' === $view ) {
+					self::load_view( 'class-edit' );
+				} elseif ( 'bulk' === $view ) {
+					self::load_view( 'class-bulk' );
+				} else {
+					self::load_view( 'classes' );
+				}
 				break;
 			case 'nizamiye-attendance':
 				self::load_view( 'report' === $view ? 'attendance-report' : 'attendance' );
