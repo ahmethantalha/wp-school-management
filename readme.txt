@@ -4,7 +4,7 @@ Tags: education, attendance, gradebook, student management, reports
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,6 +21,7 @@ an institution needs in a single panel.
 
 * **Student / Teacher / Parent Management** — a dedicated WordPress user role for each role, with direct redirection to the panel after login.
 * **Classroom management** — quick student assignment via a class filter and bulk-selection roster screen.
+* **Sections and bulk classroom creation** — a student is enrolled into a section (6-A, 6-B) for the term. The bulk wizard multiplies subjects by grade/section combinations and opens every classroom in one pass, filling each roster from the section. Classrooms linked to a section pick up newly enrolled students automatically; removals always require confirmation, so clubs, study groups and deliberate exceptions are never silently undone.
 * **Category and session based attendance** — in addition to regular class attendance, general categories such as prayer times, cleaning duty and phone checks; the administrator can define new categories/sessions and choose which grade levels each category applies to.
 * **Habit tracking** — Done/Not done, graded (1 to N), or book/page tracking (daily book title + pages read) methods.
 * **Grade entry and bulk upload** — classroom-based exam grades; CSV template download and bulk upload support.
@@ -98,6 +99,25 @@ and download a single ZIP file containing a separate PDF for each student.
 6. Terms page — manage academic terms and switch the active one.
 
 == Changelog ==
+
+= 1.5.0 =
+* Sections (6-A, 6-B) are now real data: a student is enrolled into a section for the term,
+  instead of the section existing only as text inside a classroom name. Sections can be assigned
+  from the student list in bulk, from the student edit screen, or through a `sube` column when
+  importing; an imported `sinif` cell written as "6-A" is split into grade and section.
+* Added a bulk classroom wizard (Classrooms → Create Classrooms in Bulk). It multiplies the
+  subjects you list by the grade/section combinations you tick, opens every classroom in one
+  pass and fills each roster from the section. It is idempotent: a classroom that already exists
+  for the same subject, grade and section is skipped, so the wizard can safely be re-run.
+* A classroom can be linked to its section. Newly enrolled students are added to linked
+  classrooms automatically, but nothing is ever removed without confirmation: the classroom
+  screen shows how many students would be added and removed and asks before applying. This keeps
+  clubs, study groups and deliberate exceptions from being undone silently.
+* Section is carried over when a new term is opened (6-A becomes 7-A); a checkbox on the new
+  term form turns this off so sections can be redistributed instead.
+* Fixed a latent defect in the student save routine: when no status was supplied the code read
+  an undefined array key, emitting a PHP 8 warning and writing a null status. Both existing call
+  sites passed a status, so the plugin was not affected in practice.
 
 = 1.4.0 =
 * Added daily / weekly / monthly roster reports for habits and attendance, intended to be sent

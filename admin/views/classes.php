@@ -14,8 +14,16 @@ foreach ( nizamiye_users_by_role( 'nizamiye_teacher' ) as $nizamiye_t ) {
 	<?php nizamiye_view_header( 'Derslikler', 'Şube mantığıyla çalışır: aynı branştan birden fazla derslik açabilirsiniz (örn. Türkçe 6-A, Türkçe 6-B).' ); ?>
 
 	<?php if ( nizamiye_is_manager() && $nizamiye_term_id ) : ?>
+		<?php $nizamiye_stale = Nizamiye_Classes::stale_ids( $nizamiye_term_id ); ?>
+		<?php if ( $nizamiye_stale ) : ?>
+			<div class="sms-notice sms-notice-info">
+				<span class="dashicons dashicons-info"></span>
+				<?php echo (int) count( $nizamiye_stale ); ?> dersliğin kadrosu bağlı olduğu şubeyle uyuşmuyor.
+				İlgili dersliği açıp <strong>Kadroyu Senkronize Et</strong> ile gözden geçirebilirsiniz.
+			</div>
+		<?php endif; ?>
 		<div class="sms-toolbar">
-			<span></span>
+			<a href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-classes&view=bulk&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>" class="sms-btn sms-btn-ghost"><span class="dashicons dashicons-screenoptions"></span> Toplu Derslik Oluştur</a>
 			<a href="<?php echo esc_url( nizamiye_view_nonce_url( admin_url( 'admin.php?page=nizamiye-classes&view=edit&nizamiye_term=' . $nizamiye_term_id ) ) ); ?>" class="sms-btn sms-btn-primary"><span class="dashicons dashicons-plus-alt2"></span> Yeni Derslik</a>
 		</div>
 	<?php endif; ?>
@@ -28,7 +36,13 @@ foreach ( nizamiye_users_by_role( 'nizamiye_teacher' ) as $nizamiye_t ) {
 						<span class="sms-class-emblem"><?php echo esc_html( mb_strtoupper( mb_substr( $nizamiye_c->subject ?: $nizamiye_c->name, 0, 2 ) ) ); ?></span>
 						<div>
 							<h3><?php echo esc_html( $nizamiye_c->name ); ?></h3>
-							<span class="sms-muted"><?php echo esc_html( $nizamiye_c->subject ?: 'Branş belirtilmedi' ); ?><?php echo $nizamiye_c->grade_level ? ' • ' . esc_html( nizamiye_grade_label( $nizamiye_c->grade_level ) ) : ''; ?></span>
+							<span class="sms-muted">
+								<?php echo esc_html( $nizamiye_c->subject ?: 'Branş belirtilmedi' ); ?>
+								<?php echo $nizamiye_c->grade_level ? ' • ' . esc_html( nizamiye_section_label( $nizamiye_c->grade_level, $nizamiye_c->section ?? '' ) ) : ''; ?>
+								<?php if ( ! empty( $nizamiye_c->auto_roster ) ) : ?>
+									• <span title="Kadro şubeye bağlı; yeni öğrenciler otomatik eklenir."><span class="dashicons dashicons-admin-links"></span> şubeye bağlı</span>
+								<?php endif; ?>
+							</span>
 						</div>
 					</div>
 					<div class="sms-class-card-meta">

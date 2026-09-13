@@ -80,11 +80,11 @@ class Nizamiye_Terms {
 		$final_grade = (int) $settings['final_grade'];
 
 		$rows = $wpdb->get_results( $wpdb->prepare(
-			"SELECT e.grade_level, COUNT(*) AS cnt
+			"SELECT e.grade_level, e.section, COUNT(*) AS cnt
 			 FROM {$wpdb->prefix}nizamiye_enrollments e
 			 INNER JOIN {$wpdb->prefix}nizamiye_students s ON s.id = e.student_id
 			 WHERE e.term_id = %d AND e.status = 'active' AND s.status = 'active'
-			 GROUP BY e.grade_level ORDER BY e.grade_level",
+			 GROUP BY e.grade_level, e.section ORDER BY e.grade_level, e.section",
 			$from_term_id
 		) );
 
@@ -92,14 +92,15 @@ class Nizamiye_Terms {
 		$graduate = 0;
 		$breakdown = array();
 		foreach ( $rows as $r ) {
-			$grade = (int) $r->grade_level;
-			$cnt   = (int) $r->cnt;
+			$grade   = (int) $r->grade_level;
+			$cnt     = (int) $r->cnt;
+			$section = nizamiye_normalize_section( $r->section ?? '' );
 			if ( $grade >= $final_grade ) {
-				$graduate += $cnt;
-				$breakdown[] = array( 'from' => $grade, 'to' => null, 'count' => $cnt );
+				$graduate   += $cnt;
+				$breakdown[] = array( 'from' => $grade, 'to' => null, 'count' => $cnt, 'section' => $section );
 			} else {
-				$promote += $cnt;
-				$breakdown[] = array( 'from' => $grade, 'to' => $grade + 1, 'count' => $cnt );
+				$promote    += $cnt;
+				$breakdown[] = array( 'from' => $grade, 'to' => $grade + 1, 'count' => $cnt, 'section' => $section );
 			}
 		}
 
@@ -117,7 +118,7 @@ class Nizamiye_Terms {
 	 *
 	 * @return array İstatistikler: term_id, promoted, graduated.
 	 */
-	public static function open_new_term( $name, $start_date, $end_date, $auto_promote = true ) {
+	public static function open_new_term( $name, $start_date, $end_date, $auto_promote = true, $keep_sections = true ) {
 		global $wpdb;
 
 		$old_term    = self::active();
@@ -131,7 +132,7 @@ class Nizamiye_Terms {
 			$final_grade = (int) $settings['final_grade'];
 
 			$enrollments = $wpdb->get_results( $wpdb->prepare(
-				"SELECT e.student_id, e.grade_level
+				"SELECT e.student_id, e.grade_level, e.section
 				 FROM {$wpdb->prefix}nizamiye_enrollments e
 				 INNER JOIN {$wpdb->prefix}nizamiye_students s ON s.id = e.student_id
 				 WHERE e.term_id = %d AND e.status = 'active' AND s.status = 'active'",
@@ -154,10 +155,15 @@ class Nizamiye_Terms {
 					);
 					$graduated++;
 				} else {
+					// Burada bilinçli olarak Nizamiye_Students::set_enrollment() yerine ham
+					// insert kullanılır: o metot her çağrıda kurallı derslikleri senkronlar,
+					// oysa yeni dönemin derslikleri henüz açılmamıştır. (Kayıt yazımının bu
+					// ikinci kopyası, enrollment alanları değişirse burada da güncellenmeli.)
 					$wpdb->insert( $wpdb->prefix . 'nizamiye_enrollments', array(
 						'student_id'  => (int) $enr->student_id,
 						'term_id'     => $new_term_id,
 						'grade_level' => $grade + 1,
+						'section'     => $keep_sections ? nizamiye_normalize_section( $enr->section ?? '' ) : '',
 						'status'      => 'active',
 						'created_at'  => current_time( 'mysql' ),
 					) );

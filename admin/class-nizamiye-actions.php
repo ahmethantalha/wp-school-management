@@ -19,7 +19,10 @@ class Nizamiye_Actions {
 			'nizamiye_delete_user'     => 'nizamiye_manage',
 			'nizamiye_save_class'      => 'nizamiye_manage',
 			'nizamiye_delete_class'    => 'nizamiye_manage',
+			'nizamiye_bulk_classes'    => 'nizamiye_manage',
 			'nizamiye_class_roster'    => 'nizamiye_teach',
+			'nizamiye_sync_roster'     => 'nizamiye_teach',
+			'nizamiye_bulk_section'    => 'nizamiye_manage',
 			'nizamiye_save_attendance' => 'nizamiye_teach',
 			'nizamiye_save_habit'      => 'nizamiye_teach',
 			'nizamiye_delete_habit'    => 'nizamiye_teach',
@@ -620,11 +623,15 @@ class Nizamiye_Actions {
 		if ( ! $name ) {
 			self::back( '', 'Dönem adı gerekli.' );
 		}
-		$stats = Nizamiye_Terms::open_new_term(
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- handler başında check_admin_referer() ile doğrulandı; yalnızca kutunun işaretli olup olmadığına bakılır.
+		$keep_sections = ! empty( $_POST['keep_sections'] );
+		$stats         = Nizamiye_Terms::open_new_term(
 			$name,
 			self::post( 'start_date' ),
 			self::post( 'end_date' ),
-			! empty( $_POST['auto_promote'] )
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- aynı gerekçe.
+			! empty( $_POST['auto_promote'] ),
+			$keep_sections
 		);
 		$msg = sprintf(
 			'"%s" dönemi açıldı. %d öğrenci bir üst sınıfa aktarıldı, %d öğrenci mezun olarak arşivlendi.',
@@ -644,6 +651,9 @@ class Nizamiye_Actions {
 		$id      = (int) self::post( 'student_id' );
 		$term_id = (int) self::post( 'term_id' );
 		$grade   = (int) self::post( 'grade_level' );
+		// Form şube alanını her zaman gönderir; boş değer "şubesi yok" demektir
+		// (null değil), bu yüzden set_enrollment() şubeyi temizleyebilsin diye dize geçilir.
+		$section = nizamiye_normalize_section( self::post( 'section' ) );
 
 		if ( ! self::post( 'first_name' ) || ! self::post( 'last_name' ) ) {
 			self::back( '', 'Ad ve soyad zorunludur.' );
@@ -690,7 +700,7 @@ class Nizamiye_Actions {
 			$data['user_id'] = (int) $user_id;
 		}
 
-		$id = Nizamiye_Students::save( $data, $term_id, $grade, $id );
+		$id = Nizamiye_Students::save( $data, $term_id, $grade, $id, $section );
 		self::back( 'Öğrenci kaydedildi.', '', nizamiye_view_nonce_url_raw( admin_url( 'admin.php?page=nizamiye-students&view=edit&student=' . $id ) ) );
 	}
 
@@ -806,11 +816,15 @@ class Nizamiye_Actions {
 		if ( ! $name ) {
 			self::back( '', 'Derslik adı gerekli.' );
 		}
-		$id = Nizamiye_Classes::save( array(
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- handler başında check_admin_referer() ile doğrulandı; yalnızca kutunun işaretli olup olmadığına bakılır.
+		$auto_roster = ! empty( $_POST['auto_roster'] );
+		$id          = Nizamiye_Classes::save( array(
 			'term_id'     => (int) self::post( 'term_id' ),
 			'name'        => $name,
 			'subject'     => self::post( 'subject' ),
 			'grade_level' => (int) self::post( 'grade_level' ),
+			'section'     => nizamiye_normalize_section( self::post( 'section' ) ),
+			'auto_roster' => $auto_roster ? 1 : 0,
 			'teacher_id'  => (int) self::post( 'teacher_id' ),
 		), $id );
 		self::back( 'Derslik kaydedildi.', '', nizamiye_view_nonce_url_raw( admin_url( 'admin.php?page=nizamiye-classes&view=edit&class_id=' . $id ) ) );
@@ -842,6 +856,170 @@ class Nizamiye_Actions {
 	}
 
 	/* ---------- Yoklama ---------- */
+
+	/**
+	 * Toplu derslik oluşturma: branşlar × (sınıf, şube) kombinasyonları.
+	 *
+	 * Aynı branş + sınıf + şube için derslik zaten varsa atlanır; böylece sihirbaz
+	 * idempotenttir ve yarıda kalan bir işlemden sonra tekrar çalıştırılabilir.
+	 */
+	public static function handle_bulk_classes() {
+		check_admin_referer( 'nizamiye_bulk_classes', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_bulk_classes';
+
+		$term_id = (int) self::post( 'term_id' );
+		if ( ! $term_id ) {
+			self::back( '', 'Dönem bulunamadı.' );
+		}
+
+		$pattern     = self::post( 'name_pattern' );
+		$pattern     = '' !== $pattern ? $pattern : '{brans} {sinif}-{sube}';
+		$teacher_id  = (int) self::post( 'teacher_id' );
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- yukarıda check_admin_referer() ile doğrulandı; dizi/çok satırlı alanlar post() ile okunamadığından burada elle temizlenir.
+		$auto_roster = ! empty( $_POST['auto_roster'] );
+		$raw_subjects = isset( $_POST['subjects'] ) ? sanitize_textarea_field( wp_unslash( $_POST['subjects'] ) ) : '';
+		$combos       = isset( $_POST['combo'] ) ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST['combo'] ) ) : array();
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+
+		$subjects = array();
+		foreach ( preg_split( '/\r\n|\r|\n/', $raw_subjects ) as $line ) {
+			$line = sanitize_text_field( trim( $line ) );
+			if ( '' !== $line && ! in_array( $line, $subjects, true ) ) {
+				$subjects[] = $line;
+			}
+		}
+
+		if ( ! $subjects ) {
+			self::back( '', 'En az bir branş yazmalısınız.' );
+		}
+		if ( ! $combos ) {
+			self::back( '', 'En az bir sınıf/şube kombinasyonu seçmelisiniz.' );
+		}
+
+		$created = 0;
+		$skipped = 0;
+		$filled  = 0;
+
+		foreach ( $subjects as $subject ) {
+			foreach ( $combos as $combo ) {
+				// Kombinasyon biçimi: "6:A" ya da şubesiz için "6:".
+				$parts   = explode( ':', $combo, 2 );
+				$grade   = (int) ( $parts[0] ?? 0 );
+				$section = nizamiye_normalize_section( $parts[1] ?? '' );
+				if ( ! $grade ) {
+					continue;
+				}
+
+				if ( Nizamiye_Classes::find_by_rule( $term_id, $subject, $grade, $section ) ) {
+					$skipped++;
+					continue;
+				}
+
+				$name = strtr( $pattern, array(
+					'{brans}' => $subject,
+					'{sinif}' => (string) $grade,
+					'{sube}'  => $section,
+				) );
+				// Şubesiz kombinasyonlarda desendeki ayırıcı boşta kalır ("Türkçe 6-"):
+				// sondaki tire/boşluk temizlenir.
+				$name = trim( preg_replace( '/[\s\-]+$/u', '', $name ) );
+				if ( '' === $name ) {
+					$name = $subject . ' ' . nizamiye_section_label( $grade, $section );
+				}
+
+				$class_id = Nizamiye_Classes::save( array(
+					'term_id'     => $term_id,
+					'name'        => $name,
+					'subject'     => $subject,
+					'grade_level' => $grade,
+					'section'     => $section,
+					'auto_roster' => $auto_roster ? 1 : 0,
+					'teacher_id'  => $teacher_id,
+				) );
+				$created++;
+
+				if ( $auto_roster && $class_id ) {
+					$result  = Nizamiye_Classes::sync_roster( $class_id );
+					$filled += $result['added'];
+				}
+			}
+		}
+
+		$msg = sprintf( '%d derslik oluşturuldu', $created );
+		if ( $skipped ) {
+			$msg .= sprintf( ', %d tanesi zaten vardı ve atlandı', $skipped );
+		}
+		if ( $filled ) {
+			$msg .= sprintf( '. Kadrolara toplam %d öğrenci eklendi', $filled );
+		}
+		self::back( $msg . '.', '', nizamiye_view_nonce_url_raw( admin_url( 'admin.php?page=nizamiye-classes&nizamiye_term=' . $term_id ) ) );
+	}
+
+	/**
+	 * Seçilen öğrencilere topluca şube atar (öğrenci listesindeki araç çubuğu).
+	 * Boş şube değeri "şubeyi kaldır" demektir.
+	 */
+	public static function handle_bulk_section() {
+		check_admin_referer( 'nizamiye_bulk_section', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_manage' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_bulk_section';
+
+		$term_id = (int) self::post( 'nizamiye_term' );
+		$section = nizamiye_normalize_section( self::post( 'section' ) );
+		if ( ! $term_id ) {
+			self::back( '', 'Dönem bulunamadı.' );
+		}
+
+		// Dizi alanı post() ile okunamaz (o yalnızca tek değer döndürür); nonce
+		// yukarıda doğrulandı, değerler intval ile temizleniyor.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- yukarıda check_admin_referer() ile doğrulandı.
+		$ids = isset( $_POST['student_ids'] ) ? array_unique( array_map( 'intval', (array) $_POST['student_ids'] ) ) : array();
+		$ids = array_values( array_filter( $ids ) );
+		if ( ! $ids ) {
+			self::back( '', 'Şube atanacak öğrenci seçilmedi.' );
+		}
+
+		$updated = 0;
+		foreach ( $ids as $student_id ) {
+			$enrollment = Nizamiye_Students::enrollment( $student_id, $term_id );
+			if ( ! $enrollment ) {
+				continue; // Bu döneme kaydı olmayan öğrenciye şube atanmaz.
+			}
+			Nizamiye_Students::set_enrollment( $student_id, $term_id, (int) $enrollment->grade_level, $section );
+			$updated++;
+		}
+
+		self::back( sprintf(
+			'%d öğrencinin şubesi %s.',
+			$updated,
+			'' === $section ? 'kaldırıldı' : $section . ' olarak güncellendi'
+		) );
+	}
+
+	/**
+	 * Kurallı bir dersliğin kadrosunu şubesiyle eşitler (ekler VE çıkarır).
+	 * Yalnızca kullanıcı bu butona bastığında çalışır; otomatik senkron asla çıkarmaz.
+	 */
+	public static function handle_sync_roster() {
+		check_admin_referer( 'nizamiye_sync_roster', '_nizamiye_nonce' );
+		if ( ! current_user_can( 'nizamiye_teach' ) ) {
+			wp_die( 'Bu işlem için yetkiniz yok.' );
+		}
+		self::$verified_action = 'nizamiye_sync_roster';
+
+		$class_id = (int) self::post( 'class_id' );
+		if ( ! $class_id || ! nizamiye_can_manage_class( $class_id ) ) {
+			wp_die( 'Bu dersliğe erişim yetkiniz yok.' );
+		}
+
+		$result = Nizamiye_Classes::sync_roster( $class_id );
+		self::back( sprintf( 'Kadro senkronize edildi: %d eklendi, %d çıkarıldı.', $result['added'], $result['removed'] ) );
+	}
 
 	public static function handle_save_attendance() {
 		check_admin_referer( 'nizamiye_save_attendance', '_nizamiye_nonce' );

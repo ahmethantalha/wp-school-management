@@ -53,7 +53,7 @@ $nizamiye_grades = $nizamiye_term_id ? Nizamiye_Students::grades_in_term( $nizam
 
 	<div class="sms-card">
 		<?php if ( $nizamiye_scores ) : ?>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" target="_blank" rel="noopener" data-sms-bulk-print-form>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" target="_blank" rel="noopener">
 				<input type="hidden" name="action" value="nizamiye_print_report_bulk">
 				<?php wp_nonce_field( 'nizamiye_print_report_bulk', '_nizamiye_nonce' ); ?>
 				<input type="hidden" name="nizamiye_term" value="<?php echo (int) $nizamiye_term_id; ?>">

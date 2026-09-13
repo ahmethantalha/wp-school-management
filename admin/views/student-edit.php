@@ -47,6 +47,15 @@ $nizamiye_linked_user = $nizamiye_student && $nizamiye_student->user_id ? get_us
 								<?php endfor; ?>
 							</select>
 						</div>
+						<div class="sms-field">
+							<label>Şube</label>
+							<select name="section">
+								<option value="">— Yok —</option>
+								<?php foreach ( nizamiye_section_options() as $nizamiye_sec ) : ?>
+									<option value="<?php echo esc_attr( $nizamiye_sec ); ?>" <?php selected( $nizamiye_enrollment ? nizamiye_normalize_section( $nizamiye_enrollment->section ?? '' ) : '', $nizamiye_sec ); ?>><?php echo esc_html( $nizamiye_sec ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</div>
 					</div>
 					<div class="sms-field-row">
 						<div class="sms-field">

@@ -188,6 +188,9 @@ class Nizamiye_Import {
 			'ogrenci_no'         => 'student_no',
 			'numara'             => 'student_no',
 			'student_no'         => 'student_no',
+			'sube'               => 'section',
+			'section'            => 'section',
+			'sinif_sube'         => 'section',
 			'sinif'              => 'grade_level',
 			'sinif_seviyesi'     => 'grade_level',
 			'grade'              => 'grade_level',
@@ -279,12 +282,21 @@ class Nizamiye_Import {
 				'parent_user_id' => $parent_id,
 				'status'         => 'active',
 			);
-			$grade = (int) ( $row['grade_level'] ?? 0 );
+			// 'sinif' hücresi "6-A" gibi birleşik gelebilir; ayrı bir 'sube' sütunu
+			// yoksa sınıf ve şube buradan ayrıştırılır.
+			$raw_grade = trim( (string) ( $row['grade_level'] ?? '' ) );
+			$section   = nizamiye_normalize_section( $row['section'] ?? '' );
+			if ( '' === $section && preg_match( '/^\s*(\d{1,2})\s*[-\/ ]\s*([A-Za-z])\s*$/', $raw_grade, $m ) ) {
+				$raw_grade = $m[1];
+				$section   = nizamiye_normalize_section( $m[2] );
+			}
+
+			$grade = (int) $raw_grade;
 			if ( $grade <= 0 ) {
 				$grade    = (int) nizamiye_get_settings()['min_grade'];
 				$errors[] = "Satır $line: sınıf belirtilmedi, {$grade}. sınıfa atandı.";
 			}
-			Nizamiye_Students::save( $data, $term_id, $grade, 0 );
+			Nizamiye_Students::save( $data, $term_id, $grade, 0, $section );
 			$created++;
 		}
 
@@ -478,8 +490,8 @@ class Nizamiye_Import {
 		$sep = ';';
 		switch ( $type ) {
 			case 'students':
-				return "ad{$sep}soyad{$sep}dogum_tarihi{$sep}okul{$sep}ogrenci_no{$sep}sinif{$sep}veli_eposta\n"
-					. "Ahmet{$sep}Yılmaz{$sep}2012-05-14{$sep}Atatürk Ortaokulu{$sep}1001{$sep}6{$sep}veli@example.com\n";
+				return "ad{$sep}soyad{$sep}dogum_tarihi{$sep}okul{$sep}ogrenci_no{$sep}sinif{$sep}sube{$sep}veli_eposta\n"
+					. "Ahmet{$sep}Yılmaz{$sep}2012-05-14{$sep}Atatürk Ortaokulu{$sep}1001{$sep}6{$sep}A{$sep}veli@example.com\n";
 			case 'teachers':
 				return "ad{$sep}soyad{$sep}kullanici_adi{$sep}eposta{$sep}sinif_ogretmeni\n"
 					. "Mehmet{$sep}Demir{$sep}mdemir{$sep}mdemir@example.com{$sep}1\n";

@@ -226,6 +226,37 @@ function nizamiye_grade_label( $grade ) {
 	return (int) $grade . '. Sınıf';
 }
 
+/**
+ * Şube etiketini tek harfe (A-Z) normalize eder.
+ *
+ * Kullanıcı "a", " b ", "6-C" gibi her şeyi yazabilir; içe aktarmada da serbest
+ * metin gelir. Tek bir biçim dayatmak, aynı şubenin "A" ve "a" olarak ikiye
+ * bölünmesini ve toplu derslik matrisinin kirlenmesini önler.
+ *
+ * @return string Tek büyük harf, ya da tanınmayan girdide boş dize.
+ */
+function nizamiye_normalize_section( $raw ) {
+	$letters = preg_replace( '/[^A-Za-z]/', '', (string) $raw );
+	if ( '' === $letters ) {
+		return '';
+	}
+	return strtoupper( substr( $letters, 0, 1 ) );
+}
+
+/** Sınıf + şube etiketi: "6-A"; şube yoksa "6. Sınıf". */
+function nizamiye_section_label( $grade, $section ) {
+	$section = nizamiye_normalize_section( $section );
+	if ( '' === $section ) {
+		return nizamiye_grade_label( $grade );
+	}
+	return (int) $grade . '-' . $section;
+}
+
+/** Şube seçeneği listesi (A-Z). Select kutularını besler. */
+function nizamiye_section_options() {
+	return range( 'A', 'Z' );
+}
+
 function nizamiye_student_status_label( $status ) {
 	$map = array(
 		'active'    => 'Aktif',

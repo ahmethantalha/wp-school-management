@@ -32,6 +32,31 @@ $nizamiye_grades      = Nizamiye_Students::grades_in_term( $nizamiye_term_id );
 						<h2>Öğrenci Kadrosu</h2>
 						<span class="sms-muted"><span data-sms-count-checked>?</span> öğrenci seçili</span>
 					</div>
+					<?php if ( ! empty( $nizamiye_class->auto_roster ) ) : ?>
+						<?php $nizamiye_diff = Nizamiye_Classes::roster_diff( (int) $nizamiye_class->id ); ?>
+						<div class="sms-pad">
+							<div class="sms-notice <?php echo ( $nizamiye_diff['add'] || $nizamiye_diff['remove'] ) ? 'sms-notice-info' : ''; ?>">
+								<span class="dashicons dashicons-admin-links"></span>
+								Bu dersliğin kadrosu
+								<strong><?php echo esc_html( nizamiye_section_label( (int) $nizamiye_class->grade_level, $nizamiye_class->section ?? '' ) ); ?></strong>
+								şubesine bağlı.
+								<?php if ( $nizamiye_diff['add'] || $nizamiye_diff['remove'] ) : ?>
+									Şu an <strong><?php echo (int) count( $nizamiye_diff['add'] ); ?> eklenecek</strong>,
+									<strong><?php echo (int) count( $nizamiye_diff['remove'] ); ?> çıkarılacak</strong> öğrenci var.
+								<?php else : ?>
+									Kadro güncel.
+								<?php endif; ?>
+							</div>
+							<?php if ( $nizamiye_diff['add'] || $nizamiye_diff['remove'] ) : ?>
+								<?php nizamiye_form_open( 'nizamiye_sync_roster', 'sms-confirm' ); nizamiye_back_url_field(); ?>
+									<input type="hidden" name="class_id" value="<?php echo (int) $nizamiye_class->id; ?>">
+									<button type="submit" class="sms-btn sms-btn-ghost sms-btn-sm" data-confirm="Kadro şubeyle eşitlenecek: <?php echo (int) count( $nizamiye_diff['add'] ); ?> öğrenci eklenecek, <?php echo (int) count( $nizamiye_diff['remove'] ); ?> öğrenci çıkarılacak. Devam edilsin mi?">
+										Kadroyu Senkronize Et
+									</button>
+								</form>
+							<?php endif; ?>
+						</div>
+					<?php endif; ?>
 					<div class="sms-pad">
 						<div class="sms-roster-tools">
 							<input type="search" placeholder="Öğrenci ara…" data-sms-filter-search>
@@ -41,6 +66,15 @@ $nizamiye_grades      = Nizamiye_Students::grades_in_term( $nizamiye_term_id );
 									<option value="<?php echo (int) $nizamiye_g; ?>"><?php echo esc_html( nizamiye_grade_label( $nizamiye_g ) ); ?></option>
 								<?php endforeach; ?>
 							</select>
+							<?php $nizamiye_sections = Nizamiye_Students::sections_in_term( $nizamiye_term_id ); ?>
+							<?php if ( $nizamiye_sections ) : ?>
+								<select data-sms-filter-section>
+									<option value="">Tüm şubeler</option>
+									<?php foreach ( $nizamiye_sections as $nizamiye_sec ) : ?>
+										<option value="<?php echo esc_attr( $nizamiye_sec ); ?>"><?php echo esc_html( $nizamiye_sec ); ?> şubesi</option>
+									<?php endforeach; ?>
+								</select>
+							<?php endif; ?>
 							<button type="button" class="sms-btn sms-btn-ghost sms-btn-sm" data-sms-select-visible>Görünenleri Seç</button>
 							<button type="button" class="sms-btn sms-btn-ghost sms-btn-sm" data-sms-clear-visible>Görünenleri Kaldır</button>
 						</div>
@@ -49,7 +83,7 @@ $nizamiye_grades      = Nizamiye_Students::grades_in_term( $nizamiye_term_id );
 							<input type="hidden" name="class_id" value="<?php echo (int) $nizamiye_class_id; ?>">
 							<div class="sms-roster-list" data-sms-roster>
 								<?php if ( $nizamiye_all_students ) : foreach ( $nizamiye_all_students as $nizamiye_s ) : ?>
-									<label class="sms-roster-item" data-grade="<?php echo (int) ( $nizamiye_s->grade_level ?? 0 ); ?>" data-name="<?php echo esc_attr( mb_strtolower( nizamiye_student_name( $nizamiye_s ) ) ); ?>">
+									<label class="sms-roster-item" data-grade="<?php echo (int) ( $nizamiye_s->grade_level ?? 0 ); ?>" data-section="<?php echo esc_attr( nizamiye_normalize_section( $nizamiye_s->section ?? '' ) ); ?>" data-name="<?php echo esc_attr( mb_strtolower( nizamiye_student_name( $nizamiye_s ) ) ); ?>">
 										<input type="checkbox" name="student_ids[]" value="<?php echo (int) $nizamiye_s->id; ?>" <?php checked( in_array( (int) $nizamiye_s->id, $nizamiye_roster_ids, true ) ); ?>>
 										<?php echo wp_kses_post( nizamiye_avatar( nizamiye_student_name( $nizamiye_s ) ) ); ?>
 										<span class="sms-roster-name"><?php echo esc_html( nizamiye_student_name( $nizamiye_s ) ); ?></span>
@@ -87,6 +121,24 @@ $nizamiye_grades      = Nizamiye_Students::grades_in_term( $nizamiye_term_id );
 									</select>
 								</div>
 							</div>
+							<div class="sms-field">
+								<label>Şube</label>
+								<select name="section">
+									<option value="">— Yok (karma / kulüp) —</option>
+									<?php foreach ( nizamiye_section_options() as $nizamiye_sec ) : ?>
+										<option value="<?php echo esc_attr( $nizamiye_sec ); ?>" <?php selected( nizamiye_normalize_section( $nizamiye_class->section ?? '' ), $nizamiye_sec ); ?>><?php echo esc_html( $nizamiye_sec ); ?></option>
+									<?php endforeach; ?>
+								</select>
+							</div>
+							<label class="sms-check">
+								<input type="checkbox" name="auto_roster" value="1" <?php checked( ! empty( $nizamiye_class->auto_roster ) ); ?>>
+								Kadro bu sınıf/şubeyi izlesin
+							</label>
+							<p class="sms-muted">
+								İşaretliyse şubeye yazılan yeni öğrenciler bu dersliğe otomatik eklenir. Çıkarma işlemi
+								asla kendiliğinden olmaz; kadro bloğundaki senkron butonuyla onaylarsınız.
+								Kulüp ve etüt grupları için işaretlemeyin.
+							</p>
 							<div class="sms-field">
 								<label>Öğretmen</label>
 								<select name="teacher_id">
