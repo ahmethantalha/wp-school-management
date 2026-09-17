@@ -630,21 +630,9 @@
 	border-radius: 10px;
 	overflow-x: auto;
 }
-/* Önizlemenin sayfa genişliği PDF'in içerik alanının BİREBİR aynısıdır:
-   A4 dikeyde 210mm - 2x10mm kenar boşluğu = 190mm, yatayda 297mm - 20mm = 277mm.
-   Sabit genişlik şart: PNG/JPG önizlemenin fotoğrafı olduğu için, genişlik
-   ekrana bırakılırsa velilere giden görsel geniş ekranlarda yayvan çıkıyor.
-   Dar ekranda küçültmek yerine .sms-sheet-wrap yatay kaydırır — oran bozulmasın. */
-.sms-sheet-wrap .sheet-poster {
-	box-sizing: border-box;
-	width: 190mm;
-	margin: 0 auto;
-}
-.sms-sheet-wrap .is-landscape { width: 277mm; }
+/* Sayfa genişliği burada DEĞİL, nizamiye_preview_page_css() ile satır içi
+   basılır — gerekçesi orada. Buradaki kurallar yalnızca önizleme süslemesi. */
 .sms-sheet-wrap .sheet {
-	box-sizing: border-box;
-	width: 190mm;
-	margin: 0 auto;
 	padding: 22px;
 	background: #fff;
 	border: 1px solid #e2e8f0;

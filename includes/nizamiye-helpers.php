@@ -896,6 +896,28 @@ function nizamiye_parse_sheet_marks( $raw ) {
 }
 
 /**
+ * Yalnızca ekrandaki önizlemeye uygulanan sayfa genişliği.
+ *
+ * Bilerek admin.css'te değil, satır içi stil olarak basılır. PNG/JPG'yi üreten
+ * html2canvas belgeyi bir iframe'e klonluyor; satır içi <style> bloğu birebir
+ * kopyalanırken harici stil dosyası klonda yüklenmeyebiliyor. Afişin görünüm
+ * CSS'i zaten satır içi geldiği için renkler doğru çıkıyordu, ama genişlik
+ * harici dosyada kaldığı sürece klonda uygulanmıyor ve indirilen görsel ekran
+ * genişliğine yayılıyordu — önizleme düzgünken indirilen dosya yayvan kalıyordu.
+ *
+ * Ölçüler PDF'in içerik alanının birebir aynısı: A4 dikeyde 210mm - 2x10mm
+ * kenar boşluğu, yatayda 297mm - 20mm. Dar ekranda sayfayı küçültmek yerine
+ * .sms-sheet-wrap yatay kaydırır; küçültseydi indirilen görselin oranı bozulurdu.
+ */
+function nizamiye_preview_page_css() {
+	return '
+	.sms-sheet-wrap .sheet,
+	.sms-sheet-wrap .sheet-poster { box-sizing: border-box; width: 190mm; margin: 0 auto; }
+	.sms-sheet-wrap .is-landscape { width: 277mm; }
+	';
+}
+
+/**
  * Türkçe kurallarıyla büyük harfe çevirir: i → İ, ı → I.
  *
  * CSS'in `text-transform: uppercase`'i bu ayrımı bilmez ve "KITAP OKUMA

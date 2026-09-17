@@ -160,7 +160,7 @@ class Nizamiye_Menu {
 			// (bkz. nizamiye_print_sheet_css, nizamiye_print_poster_css); önizlemenin
 			// PDF'e birebir benzemesi buna dayanır. İki düzen de yüklenir: seçim GET
 			// ile değiştiği için hangisinin basılacağı enqueue anında bilinmez.
-			wp_add_inline_style( 'sms-admin', nizamiye_print_sheet_css() . nizamiye_print_poster_css() );
+			wp_add_inline_style( 'sms-admin', nizamiye_print_sheet_css() . nizamiye_print_poster_css() . nizamiye_preview_page_css() );
 		}
 	}
 }
