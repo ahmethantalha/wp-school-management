@@ -10,8 +10,13 @@ if ( $nizamiye_edit && ! in_array( 'nizamiye_teacher', (array) $nizamiye_edit->r
 	$nizamiye_edit = null;
 }
 $nizamiye_edit_ct       = $nizamiye_edit ? nizamiye_is_class_teacher( (int) $nizamiye_edit->ID ) : false;
-$nizamiye_edit_ct_grade = $nizamiye_edit ? nizamiye_class_teacher_grades( (int) $nizamiye_edit->ID ) : array();
-$nizamiye_settings      = nizamiye_get_settings();
+// Kapsam artık sınıf/şube çifti: "6" o sınıfın tamamı, "6-A" yalnızca o şube.
+$nizamiye_edit_scopes = $nizamiye_edit ? nizamiye_class_teacher_scopes( (int) $nizamiye_edit->ID ) : array();
+$nizamiye_scope_keys  = array();
+foreach ( $nizamiye_edit_scopes as $nizamiye_sc ) {
+	$nizamiye_scope_keys[] = $nizamiye_sc['grade'] . ( '' !== $nizamiye_sc['section'] ? '-' . $nizamiye_sc['section'] : '' );
+}
+$nizamiye_settings = nizamiye_get_settings();
 ?>
 <div class="wrap sms-wrap">
 	<?php nizamiye_view_header( 'Öğretmenler', 'Öğretmen hesaplarını yönetin; derslik atamaları Derslikler sayfasından yapılır.' ); ?>
@@ -63,15 +68,25 @@ $nizamiye_settings      = nizamiye_get_settings();
 							<span><strong>Sınıf öğretmeni</strong> — genel yoklama (namaz, temizlik, telefon) alabilir</span>
 						</label>
 						<div class="sms-ct-grades" data-sms-ct-grades <?php echo $nizamiye_edit_ct ? '' : 'style="display:none"'; ?>>
-							<label class="sms-muted">Sorumlu sınıf seviyeleri (boş = tümü):</label>
-							<div class="sms-grade-checks">
-								<?php for ( $nizamiye_g = (int) $nizamiye_settings['min_grade']; $nizamiye_g <= (int) $nizamiye_settings['max_grade']; $nizamiye_g++ ) : ?>
+							<label class="sms-muted">Sorumlu sınıf ve şubeler (boş = tümü):</label>
+							<?php for ( $nizamiye_g = (int) $nizamiye_settings['min_grade']; $nizamiye_g <= (int) $nizamiye_settings['max_grade']; $nizamiye_g++ ) : ?>
+								<?php $nizamiye_g_sections = Nizamiye_Students::sections_in_term( $nizamiye_term_id, $nizamiye_g ); ?>
+								<div class="sms-ct-row">
+									<span class="sms-ct-row-label"><?php echo (int) $nizamiye_g; ?>.</span>
 									<label class="sms-grade-check">
-										<input type="checkbox" name="ct_grades[]" value="<?php echo (int) $nizamiye_g; ?>" <?php checked( in_array( $nizamiye_g, $nizamiye_edit_ct_grade, true ) ); ?>>
-										<span><?php echo (int) $nizamiye_g; ?></span>
+										<input type="checkbox" name="ct_grades[]" value="<?php echo (int) $nizamiye_g; ?>" <?php checked( in_array( (string) $nizamiye_g, $nizamiye_scope_keys, true ) ); ?>>
+										<span>Tümü</span>
 									</label>
-								<?php endfor; ?>
-							</div>
+									<?php foreach ( $nizamiye_g_sections as $nizamiye_sec ) : ?>
+										<?php $nizamiye_key = $nizamiye_g . '-' . $nizamiye_sec; ?>
+										<label class="sms-grade-check">
+											<input type="checkbox" name="ct_grades[]" value="<?php echo esc_attr( $nizamiye_key ); ?>" <?php checked( in_array( $nizamiye_key, $nizamiye_scope_keys, true ) ); ?>>
+											<span><?php echo esc_html( $nizamiye_sec ); ?></span>
+										</label>
+									<?php endforeach; ?>
+								</div>
+							<?php endfor; ?>
+							<p class="sms-muted">"Tümü" o sınıfın bütün şubelerini kapsar. Tek bir şube seçilirse öğretmen yalnızca o şubenin genel yoklamasını alır.</p>
 						</div>
 					</div>
 

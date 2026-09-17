@@ -30,6 +30,22 @@ $nizamiye_settings = nizamiye_get_settings();
 						<input type="number" name="final_grade" min="1" max="12" value="<?php echo (int) $nizamiye_settings['final_grade']; ?>">
 						<p class="sms-muted">Yeni dönem açıldığında bu seviyedeki öğrenciler bir üst sınıfa aktarılmak yerine <strong>mezun</strong> statüsüne alınır ve arşivlenir.</p>
 					</div>
+					<hr class="sms-hr">
+					<div class="sms-field-row">
+						<div class="sms-field">
+							<label>Devamsızlık Uyarı Eşiği (gün)</label>
+							<input type="number" name="alert_absence_days" min="2" max="30" value="<?php echo (int) $nizamiye_settings['alert_absence_days']; ?>">
+						</div>
+						<div class="sms-field">
+							<label>Not Düşüşü Uyarı Eşiği (puan)</label>
+							<input type="number" name="alert_grade_drop" min="1" max="100" value="<?php echo (int) $nizamiye_settings['alert_grade_drop']; ?>">
+						</div>
+					</div>
+					<p class="sms-muted">
+						Paneldeki uyarı kartını besler. Devamsızlıkta bir gün, o yoklama türündeki <strong>tüm</strong>
+						kayıtlar "gelmedi" ise kayıp sayılır — namazın beş vaktinden birine gelmemek devamsızlık
+						sayılmaz. Not düşüşü, öğrencinin son sınavlarının ortalamasını kendi önceki ortalamasıyla karşılaştırır.
+					</p>
 					<button type="submit" class="sms-btn sms-btn-primary">Ayarları Kaydet</button>
 				</form>
 			</div>

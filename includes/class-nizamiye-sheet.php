@@ -56,7 +56,7 @@ class Nizamiye_Sheet {
 	 * Nizamiye_Habits::students() / Nizamiye_Classes::students() yalnızca s.*
 	 * döndürdüğü ve grade_level içermediği için bu adım gerekli.
 	 */
-	private static function roster( $term_id, array $ids, $grade ) {
+	private static function roster( $term_id, array $ids, $grade, $section = '' ) {
 		$ids = array_values( array_unique( array_map( 'intval', $ids ) ) );
 		if ( ! $ids ) {
 			return array();
@@ -65,6 +65,7 @@ class Nizamiye_Sheet {
 			'term_id' => (int) $term_id,
 			'ids'     => $ids,
 			'grade'   => (int) $grade,
+			'section' => nizamiye_normalize_section( $section ),
 			'status'  => 'active',
 		) );
 	}
@@ -89,6 +90,19 @@ class Nizamiye_Sheet {
 		);
 	}
 
+	/** Başlığa eklenen sınıf/şube kısıtı etiketi: " — 6-A" ya da " — 6. Sınıf". */
+	private static function scope_note( $grade, $section ) {
+		$grade   = (int) $grade;
+		$section = nizamiye_normalize_section( $section );
+		if ( ! $grade && '' === $section ) {
+			return '';
+		}
+		if ( ! $grade ) {
+			return ' — ' . $section . ' şubesi';
+		}
+		return ' — ' . nizamiye_section_label( $grade, $section );
+	}
+
 	/** Öğrenci adı hücresi (ad + küçük punto sınıf bilgisi). */
 	private static function name_cell( $student ) {
 		$grade = (int) ( $student->grade_level ?? 0 );
@@ -105,7 +119,7 @@ class Nizamiye_Sheet {
 	 * @param array $period nizamiye_resolve_period() çıktısı.
 	 * @return array|WP_Error
 	 */
-	public static function habit_sheet( $habit_id, array $period, $grade, $term_id ) {
+	public static function habit_sheet( $habit_id, array $period, $grade, $term_id, $section = '' ) {
 		$habit_id = (int) $habit_id;
 		$term_id  = (int) $term_id;
 		$habit    = Nizamiye_Habits::get( $habit_id );
@@ -127,12 +141,13 @@ class Nizamiye_Sheet {
 			} ) );
 		}
 
-		$roster = self::roster( $term_id, wp_list_pluck( $students, 'id' ), $grade );
+		$roster = self::roster( $term_id, wp_list_pluck( $students, 'id' ), $grade, $section );
 		$report = Nizamiye_Habits::report_rows( $habit_id, $period['from'], $period['to'], wp_list_pluck( $roster, 'id' ) );
 		$data   = $report['students'];
 		$tracked = max( 1, (int) $report['tracked_days'] );
 
-		$sheet      = self::base( $habit->name, $period, $term_id );
+		$scope_note = self::scope_note( $grade, $section );
+		$sheet      = self::base( $habit->name . $scope_note, $period, $term_id );
 		$is_reading = 'reading' === $habit->track_type;
 		$is_scale   = 'scale' === $habit->track_type;
 		$is_day     = 'day' === $period['mode'];
@@ -331,7 +346,7 @@ class Nizamiye_Sheet {
 	 * @param array $period nizamiye_resolve_period() çıktısı.
 	 * @return array|WP_Error
 	 */
-	public static function attendance_sheet( $term_id, $category_id, $session_id, $class_id, array $period, $grade ) {
+	public static function attendance_sheet( $term_id, $category_id, $session_id, $class_id, array $period, $grade, $section = '' ) {
 		$term_id     = (int) $term_id;
 		$category_id = (int) $category_id;
 		$session_id  = (int) $session_id;
@@ -374,8 +389,9 @@ class Nizamiye_Sheet {
 		if ( $session ) {
 			$title .= ' — ' . $session->name;
 		}
+		$title .= self::scope_note( $grade, $section );
 
-		$roster  = self::roster( $term_id, wp_list_pluck( $students, 'id' ), $grade );
+		$roster  = self::roster( $term_id, wp_list_pluck( $students, 'id' ), $grade, $section );
 		$report  = Nizamiye_Attendance::roster_report( $term_id, $category_id, $session_id, $class_id, $period['from'], $period['to'], wp_list_pluck( $roster, 'id' ) );
 		$data    = $report['students'];
 

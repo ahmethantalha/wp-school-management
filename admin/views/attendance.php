@@ -128,6 +128,7 @@ if ( 'class' === $nizamiye_category->scope ) {
 $nizamiye_sheet    = Nizamiye_Attendance::sheet( (int) $nizamiye_category->id, (int) $nizamiye_session->id, (int) $nizamiye_class_id, $nizamiye_date );
 $nizamiye_statuses = nizamiye_attendance_statuses();
 $nizamiye_grades   = 'general' === $nizamiye_category->scope ? Nizamiye_Students::grades_in_term( $nizamiye_term_id ) : array();
+$nizamiye_sections = 'general' === $nizamiye_category->scope ? Nizamiye_Students::sections_in_term( $nizamiye_term_id ) : array();
 $nizamiye_multi_session = count( $nizamiye_sessions ) > 1;
 $title    = $nizamiye_category->name . ( $nizamiye_multi_session ? ' — ' . $nizamiye_session->name : '' ) . ' Yoklaması';
 $nizamiye_back_url = $nizamiye_multi_session
@@ -154,6 +155,15 @@ $nizamiye_back_url = $nizamiye_multi_session
 						<option value="">Tüm sınıflar</option>
 						<?php foreach ( $nizamiye_grades as $nizamiye_g ) : ?>
 							<option value="<?php echo (int) $nizamiye_g; ?>"><?php echo esc_html( nizamiye_grade_label( $nizamiye_g ) ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				<?php endif; ?>
+				<?php if ( $nizamiye_sections ) : ?>
+					<?php // İstemci tarafı filtre; altyapı assets/js/admin.js içinde hazır (data-section). ?>
+					<select data-sms-filter-section>
+						<option value="">Tüm şubeler</option>
+						<?php foreach ( $nizamiye_sections as $nizamiye_sec ) : ?>
+							<option value="<?php echo esc_attr( $nizamiye_sec ); ?>"><?php echo esc_html( $nizamiye_sec ); ?> şubesi</option>
 						<?php endforeach; ?>
 					</select>
 				<?php endif; ?>
@@ -184,7 +194,7 @@ $nizamiye_back_url = $nizamiye_multi_session
 						$nizamiye_current  = $nizamiye_row ? $nizamiye_row->status : 'present';
 						$nizamiye_note_val = $nizamiye_row->note ?? '';
 						?>
-						<div class="sms-att-row sms-roster-row" data-grade="<?php echo (int) ( $nizamiye_s->grade_level ?? 0 ); ?>">
+						<div class="sms-att-row sms-roster-row" data-grade="<?php echo (int) ( $nizamiye_s->grade_level ?? 0 ); ?>" data-section="<?php echo esc_attr( nizamiye_normalize_section( $nizamiye_s->section ?? '' ) ); ?>">
 							<span class="sms-att-row-name"><?php echo esc_html( nizamiye_student_name( $nizamiye_s ) ); ?></span>
 							<div class="sms-att-row-status">
 								<div class="sms-seg" role="radiogroup">

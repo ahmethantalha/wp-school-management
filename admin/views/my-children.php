@@ -30,7 +30,7 @@ $nizamiye_term_id  = nizamiye_current_term_id();
 						<div>
 							<h3><?php echo esc_html( nizamiye_student_name( $nizamiye_c ) ); ?></h3>
 							<span class="sms-muted">
-								<?php echo $nizamiye_enrollment ? esc_html( nizamiye_grade_label( $nizamiye_enrollment->grade_level ) ) : esc_html( nizamiye_student_status_label( $nizamiye_c->status ) ); ?>
+								<?php echo $nizamiye_enrollment ? esc_html( nizamiye_section_label( $nizamiye_enrollment->grade_level, $nizamiye_enrollment->section ?? '' ) ) : esc_html( nizamiye_student_status_label( $nizamiye_c->status ) ); ?>
 								<?php echo $nizamiye_c->school ? ' • ' . esc_html( $nizamiye_c->school ) : ''; ?>
 							</span>
 						</div>

@@ -60,7 +60,7 @@ $nizamiye_print_url = wp_nonce_url( add_query_arg( array(
 		<div class="sms-profile-info">
 			<h2><?php echo esc_html( nizamiye_student_name( $nizamiye_student ) ); ?></h2>
 			<div class="sms-profile-meta">
-				<?php if ( $nizamiye_report['enrollment'] ) : ?><span class="sms-badge sms-badge-indigo"><?php echo esc_html( nizamiye_grade_label( $nizamiye_report['enrollment']->grade_level ) ); ?></span><?php endif; ?>
+				<?php if ( $nizamiye_report['enrollment'] ) : ?><span class="sms-badge sms-badge-indigo"><?php echo esc_html( nizamiye_section_label( $nizamiye_report['enrollment']->grade_level, $nizamiye_report['enrollment']->section ?? '' ) ); ?></span><?php endif; ?>
 				<span class="sms-badge <?php echo 'active' === $nizamiye_student->status ? 'sms-badge-green' : 'sms-badge-amber'; ?>"><?php echo esc_html( nizamiye_student_status_label( $nizamiye_student->status ) ); ?></span>
 				<?php if ( $nizamiye_student->school ) : ?><span class="sms-muted"><span class="dashicons dashicons-building"></span> <?php echo esc_html( $nizamiye_student->school ); ?></span><?php endif; ?>
 				<?php if ( $nizamiye_student->birth_date ) : ?><span class="sms-muted"><span class="dashicons dashicons-cake"></span> <?php echo esc_html( nizamiye_format_date( $nizamiye_student->birth_date ) ); ?></span><?php endif; ?>
@@ -239,7 +239,7 @@ $nizamiye_print_url = wp_nonce_url( add_query_arg( array(
 				<div class="sms-pad">
 					<ul class="sms-mini-list">
 						<?php foreach ( $nizamiye_report['history'] as $nizamiye_h ) : ?>
-							<li><?php echo esc_html( $nizamiye_h->term_name . ' — ' . nizamiye_grade_label( $nizamiye_h->grade_level ) ); ?> <?php echo 'graduated' === $nizamiye_h->status ? '🎓 Mezun' : ( $nizamiye_h->is_active ? '<span class="sms-badge sms-badge-green">Aktif</span>' : '' ); ?></li>
+							<li><?php echo esc_html( $nizamiye_h->term_name . ' — ' . nizamiye_section_label( $nizamiye_h->grade_level, $nizamiye_h->section ?? '' ) ); ?> <?php echo 'graduated' === $nizamiye_h->status ? '🎓 Mezun' : ( $nizamiye_h->is_active ? '<span class="sms-badge sms-badge-green">Aktif</span>' : '' ); ?></li>
 						<?php endforeach; ?>
 					</ul>
 				</div>

@@ -62,7 +62,7 @@ $nizamiye_rate_color = function ( $nizamiye_v ) {
 	<td>
 		<p class="name"><?php echo esc_html( nizamiye_student_name( $nizamiye_student ) ); ?></p>
 		<div class="sub">
-			<?php echo $nizamiye_report['enrollment'] ? esc_html( nizamiye_grade_label( $nizamiye_report['enrollment']->grade_level ) ) . ' • ' : ''; ?>
+			<?php echo $nizamiye_report['enrollment'] ? esc_html( nizamiye_section_label( $nizamiye_report['enrollment']->grade_level, $nizamiye_report['enrollment']->section ?? '' ) ) . ' • ' : ''; ?>
 			<?php echo $nizamiye_student->school ? esc_html( $nizamiye_student->school ) . ' • ' : ''; ?>
 			<?php echo $nizamiye_student->birth_date ? 'Doğum: ' . esc_html( nizamiye_format_date( $nizamiye_student->birth_date ) ) . ' • ' : ''; ?>
 			<?php echo $nizamiye_parent ? 'Veli: ' . esc_html( $nizamiye_parent->display_name ) : ''; ?>
