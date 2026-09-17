@@ -31,6 +31,22 @@ $nizamiye_settings = nizamiye_get_settings();
 						<p class="sms-muted">Yeni dönem açıldığında bu seviyedeki öğrenciler bir üst sınıfa aktarılmak yerine <strong>mezun</strong> statüsüne alınır ve arşivlenir.</p>
 					</div>
 					<hr class="sms-hr">
+					<div class="sms-field">
+						<label>Varsayılan Çıktı Tipi</label>
+						<select name="sheet_layout">
+							<?php foreach ( nizamiye_sheet_layouts() as $nizamiye_key => $nizamiye_label ) : ?>
+								<option value="<?php echo esc_attr( $nizamiye_key ); ?>" <?php selected( nizamiye_default_sheet_layout(), $nizamiye_key ); ?>>
+									<?php echo esc_html( $nizamiye_label ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="sms-muted">
+							Alışkanlık ve yoklama rapor ekranları bu düzenle açılır. <strong>Afiş</strong> iri puntolu,
+							renkli, velilere gönderilmeye uygun; <strong>klasik</strong> daha çok satırı tek sayfaya
+							sığdırır. Her raporda çıktı tipi ayrıca değiştirilebilir.
+						</p>
+					</div>
+					<hr class="sms-hr">
 					<div class="sms-field-row">
 						<div class="sms-field">
 							<label>Devamsızlık Uyarı Eşiği (gün)</label>

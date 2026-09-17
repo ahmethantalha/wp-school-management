@@ -122,6 +122,9 @@ class Nizamiye_Actions {
 		$grade   = isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
 		$section = isset( $_GET['section'] ) ? nizamiye_normalize_section( wp_unslash( $_GET['section'] ) ) : '';
 		$orient  = isset( $_GET['orient'] ) && 'landscape' === $_GET['orient'] ? 'landscape' : 'portrait';
+		$layout  = isset( $_GET['layout'] ) ? nizamiye_normalize_sheet_layout( wp_unslash( $_GET['layout'] ) ) : nizamiye_default_sheet_layout();
+		// Afişteki elle işaretler yalnızca çıktı için taşınır; hiçbir yere yazılmaz.
+		$marks   = isset( $_GET['marks'] ) ? nizamiye_parse_sheet_marks( sanitize_text_field( wp_unslash( $_GET['marks'] ) ) ) : array();
 
 		if ( ! $term_id ) {
 			wp_die( 'Dönem bulunamadı.' );
@@ -129,7 +132,7 @@ class Nizamiye_Actions {
 
 		if ( 'habit' === $kind ) {
 			$habit_id = isset( $_GET['habit_id'] ) ? (int) $_GET['habit_id'] : 0;
-			$sheet    = Nizamiye_Sheet::habit_sheet( $habit_id, $period, $grade, $term_id, $section );
+			$sheet    = Nizamiye_Sheet::habit_sheet( $habit_id, $period, $grade, $term_id, $section, $layout, $marks );
 		} elseif ( 'attendance' === $kind ) {
 			$sheet = Nizamiye_Sheet::attendance_sheet(
 				$term_id,
@@ -138,7 +141,8 @@ class Nizamiye_Actions {
 				isset( $_GET['class_id'] ) ? (int) $_GET['class_id'] : 0,
 				$period,
 				$grade,
-				$section
+				$section,
+				$layout
 			);
 		} else {
 			wp_die( 'Geçersiz rapor türü.' );
@@ -1253,6 +1257,7 @@ class Nizamiye_Actions {
 			'max_grade'   => max( 1, (int) self::post( 'max_grade', '12' ) ),
 			'alert_absence_days' => max( 2, min( 30, (int) self::post( 'alert_absence_days', '3' ) ) ),
 			'alert_grade_drop'   => max( 1, min( 100, (int) self::post( 'alert_grade_drop', '15' ) ) ),
+			'sheet_layout'       => nizamiye_normalize_sheet_layout( self::post( 'sheet_layout', 'classic' ) ),
 		) );
 		self::back( 'Ayarlar kaydedildi.' );
 	}

@@ -13,6 +13,9 @@ $nizamiye_habit_id = $nizamiye_has_nonce && isset( $_GET['habit_id'] ) ? (int) $
 $nizamiye_grade    = $nizamiye_has_nonce && isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
 $nizamiye_sec_f    = $nizamiye_has_nonce && isset( $_GET['section'] ) ? nizamiye_normalize_section( wp_unslash( $_GET['section'] ) ) : '';
 $nizamiye_orient   = $nizamiye_has_nonce && isset( $_GET['orient'] ) && 'landscape' === $_GET['orient'] ? 'landscape' : 'portrait';
+$nizamiye_layout   = $nizamiye_has_nonce && isset( $_GET['layout'] )
+	? nizamiye_normalize_sheet_layout( wp_unslash( $_GET['layout'] ) )
+	: nizamiye_default_sheet_layout();
 // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 $nizamiye_habit = $nizamiye_habit_id ? Nizamiye_Habits::get( $nizamiye_habit_id ) : null;
@@ -23,7 +26,10 @@ if ( ! $nizamiye_habit ) {
 
 $nizamiye_term_id = (int) $nizamiye_habit->term_id;
 $nizamiye_period  = nizamiye_resolve_period();
-$nizamiye_sheet   = Nizamiye_Sheet::habit_sheet( $nizamiye_habit_id, $nizamiye_period, $nizamiye_grade, $nizamiye_term_id, $nizamiye_sec_f );
+$nizamiye_sheet   = Nizamiye_Sheet::habit_sheet( $nizamiye_habit_id, $nizamiye_period, $nizamiye_grade, $nizamiye_term_id, $nizamiye_sec_f, $nizamiye_layout );
+// İşaretler önizlemeye sunucudan değil, tarayıcıdan uygulanır (assets/js/sheet-marks.js):
+// PNG/JPG zaten önizlemenin fotoğrafı, PDF'e ise adres satırındaki 'marks' ile gider.
+// İkisini birden uygulamak aynı işareti iki kez basardı.
 
 if ( is_wp_error( $nizamiye_sheet ) ) {
 	echo '<div class="wrap sms-wrap"><div class="sms-card sms-empty"><h2>' . esc_html( $nizamiye_sheet->get_error_message() ) . '</h2></div></div>';
@@ -44,6 +50,7 @@ $nizamiye_pdf_url = wp_nonce_url(
 			'grade'         => $nizamiye_grade,
 			'section'       => $nizamiye_sec_f,
 			'orient'        => $nizamiye_orient,
+			'layout'        => $nizamiye_layout,
 			'nizamiye_term' => $nizamiye_term_id,
 		),
 		admin_url( 'admin-post.php' )
@@ -86,6 +93,8 @@ $nizamiye_pdf_url = wp_nonce_url(
 						<option value="<?php echo esc_attr( $nizamiye_sec ); ?>" <?php selected( $nizamiye_sec_f, $nizamiye_sec ); ?>><?php echo esc_html( $nizamiye_sec ); ?></option>
 					<?php endforeach; ?>
 				</select>
+				<?php nizamiye_sheet_layout_field( $nizamiye_layout ); ?>
+
 				<label class="sms-muted">PDF yönü</label>
 				<select name="orient" onchange="this.form.submit()">
 					<option value="portrait" <?php selected( $nizamiye_orient, 'portrait' ); ?>>Dikey</option>
@@ -101,10 +110,16 @@ $nizamiye_pdf_url = wp_nonce_url(
 		<div class="sms-pad">
 			<?php nizamiye_sheet_download_bar( $nizamiye_pdf_url, Nizamiye_Sheet::filename_base( $nizamiye_sheet ) ); ?>
 			<div class="sms-sheet-wrap">
-				<div class="sheet <?php echo esc_attr( $nizamiye_sheet['density'] ); ?>" data-sms-sheet>
-					<?php include NIZAMIYE_DIR . 'admin/views/print/_roster-report-body.php'; ?>
+				<div class="<?php echo esc_attr( Nizamiye_Sheet::wrapper_class( $nizamiye_sheet ) ); ?>" data-sms-sheet>
+					<?php include Nizamiye_Sheet::body_template( $nizamiye_sheet ); ?>
 				</div>
 			</div>
 		</div>
 	</div>
+
+	<?php
+	if ( 'poster' === $nizamiye_layout ) {
+		nizamiye_sheet_marks_panel( $nizamiye_sheet, 'habit-' . $nizamiye_habit_id . '-' . $nizamiye_period['from'] );
+	}
+	?>
 </div>
