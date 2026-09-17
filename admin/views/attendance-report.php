@@ -148,7 +148,8 @@ $nizamiye_pdf_url = wp_nonce_url(
 		<div class="sms-pad">
 			<?php nizamiye_sheet_download_bar( $nizamiye_pdf_url, Nizamiye_Sheet::filename_base( $nizamiye_sheet ) ); ?>
 			<div class="sms-sheet-wrap">
-				<div class="<?php echo esc_attr( Nizamiye_Sheet::wrapper_class( $nizamiye_sheet ) ); ?>" data-sms-sheet>
+				<?php // is-landscape yalnızca ekranda: sayfa genişliği seçili PDF yönünü izlesin. ?>
+				<div class="<?php echo esc_attr( Nizamiye_Sheet::wrapper_class( $nizamiye_sheet ) . ( 'landscape' === $nizamiye_orient ? ' is-landscape' : '' ) ); ?>" data-sms-sheet>
 					<?php include Nizamiye_Sheet::body_template( $nizamiye_sheet ); ?>
 				</div>
 			</div>
