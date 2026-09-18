@@ -153,9 +153,14 @@ class Nizamiye_Menu {
 		if ( 'report' === $view && in_array( $page, array( 'nizamiye-habits', 'nizamiye-attendance' ), true ) ) {
 			wp_enqueue_script( 'sms-html2canvas', NIZAMIYE_URL . 'assets/vendor/html2canvas.js', array(), '1.4.1', true );
 			wp_enqueue_script( 'sms-sheet-export', NIZAMIYE_URL . 'assets/js/sheet-export.js', array( 'sms-html2canvas' ), NIZAMIYE_VERSION, true );
-			// Rapor sayfasının .sheet stilleri dompdf ile ortaktır (bkz.
-			// nizamiye_print_sheet_css); önizlemenin PDF'e birebir benzemesi buna dayanır.
-			wp_add_inline_style( 'sms-admin', nizamiye_print_sheet_css() );
+			// Afişteki elle işaretleme; hiçbir şey kaydetmez, yalnızca önizlemeyi
+			// ve PDF bağlantısını günceller (bkz. assets/js/sheet-marks.js).
+			wp_enqueue_script( 'sms-sheet-marks', NIZAMIYE_URL . 'assets/js/sheet-marks.js', array(), NIZAMIYE_VERSION, true );
+			// Rapor sayfasının .sheet / .sheet-poster stilleri dompdf ile ortaktır
+			// (bkz. nizamiye_print_sheet_css, nizamiye_print_poster_css); önizlemenin
+			// PDF'e birebir benzemesi buna dayanır. İki düzen de yüklenir: seçim GET
+			// ile değiştiği için hangisinin basılacağı enqueue anında bilinmez.
+			wp_add_inline_style( 'sms-admin', nizamiye_print_sheet_css() . nizamiye_print_poster_css() . nizamiye_preview_page_css() );
 		}
 	}
 }

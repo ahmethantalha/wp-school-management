@@ -15,6 +15,9 @@ $nizamiye_class_id = $nizamiye_has_nonce && isset( $_GET['class_id'] ) ? (int) $
 $nizamiye_grade    = $nizamiye_has_nonce && isset( $_GET['grade'] ) ? (int) $_GET['grade'] : 0;
 $nizamiye_sec_f    = $nizamiye_has_nonce && isset( $_GET['section'] ) ? nizamiye_normalize_section( wp_unslash( $_GET['section'] ) ) : '';
 $nizamiye_orient   = $nizamiye_has_nonce && isset( $_GET['orient'] ) && 'landscape' === $_GET['orient'] ? 'landscape' : 'portrait';
+$nizamiye_layout   = $nizamiye_has_nonce && isset( $_GET['layout'] )
+	? nizamiye_normalize_sheet_layout( wp_unslash( $_GET['layout'] ) )
+	: nizamiye_default_sheet_layout();
 // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 $nizamiye_term_id  = nizamiye_current_term_id();
@@ -34,7 +37,8 @@ $nizamiye_sheet    = Nizamiye_Sheet::attendance_sheet(
 	$nizamiye_class_id,
 	$nizamiye_period,
 	$nizamiye_grade,
-	$nizamiye_sec_f
+	$nizamiye_sec_f,
+	$nizamiye_layout
 );
 
 if ( is_wp_error( $nizamiye_sheet ) ) {
@@ -69,6 +73,7 @@ $nizamiye_pdf_url = wp_nonce_url(
 			'grade'         => $nizamiye_grade,
 			'section'       => $nizamiye_sec_f,
 			'orient'        => $nizamiye_orient,
+			'layout'        => $nizamiye_layout,
 			'nizamiye_term' => $nizamiye_term_id,
 		),
 		admin_url( 'admin-post.php' )
@@ -126,6 +131,8 @@ $nizamiye_pdf_url = wp_nonce_url(
 						<option value="<?php echo esc_attr( $nizamiye_sec ); ?>" <?php selected( $nizamiye_sec_f, $nizamiye_sec ); ?>><?php echo esc_html( $nizamiye_sec ); ?></option>
 					<?php endforeach; ?>
 				</select>
+				<?php nizamiye_sheet_layout_field( $nizamiye_layout ); ?>
+
 				<label class="sms-muted">PDF yönü</label>
 				<select name="orient" onchange="this.form.submit()">
 					<option value="portrait" <?php selected( $nizamiye_orient, 'portrait' ); ?>>Dikey</option>
@@ -141,8 +148,9 @@ $nizamiye_pdf_url = wp_nonce_url(
 		<div class="sms-pad">
 			<?php nizamiye_sheet_download_bar( $nizamiye_pdf_url, Nizamiye_Sheet::filename_base( $nizamiye_sheet ) ); ?>
 			<div class="sms-sheet-wrap">
-				<div class="sheet <?php echo esc_attr( $nizamiye_sheet['density'] ); ?>" data-sms-sheet>
-					<?php include NIZAMIYE_DIR . 'admin/views/print/_roster-report-body.php'; ?>
+				<?php // is-landscape yalnızca ekranda: sayfa genişliği seçili PDF yönünü izlesin. ?>
+				<div class="<?php echo esc_attr( Nizamiye_Sheet::wrapper_class( $nizamiye_sheet ) . ( 'landscape' === $nizamiye_orient ? ' is-landscape' : '' ) ); ?>" data-sms-sheet>
+					<?php include Nizamiye_Sheet::body_template( $nizamiye_sheet ); ?>
 				</div>
 			</div>
 		</div>

@@ -41,7 +41,7 @@ if ( empty( $nizamiye_sheet ) || ! is_array( $nizamiye_sheet ) ) {
 				<td style="width: <?php echo esc_attr( (string) round( 100 / count( $nizamiye_sheet['summary'] ), 2 ) ); ?>%">
 					<div class="tile">
 						<span class="v"><?php echo esc_html( $nizamiye_tile['v'] ); ?></span>
-						<span class="l"><?php echo esc_html( $nizamiye_tile['l'] ); ?></span>
+						<span class="l"><?php echo esc_html( nizamiye_upper_tr( $nizamiye_tile['l'] ) ); ?></span>
 					</div>
 				</td>
 			<?php endforeach; ?>
@@ -53,18 +53,28 @@ if ( empty( $nizamiye_sheet ) || ! is_array( $nizamiye_sheet ) ) {
 	<thead>
 		<tr>
 			<?php foreach ( $nizamiye_sheet['columns'] as $nizamiye_col ) : ?>
-				<th class="<?php echo esc_attr( $nizamiye_col['class'] ); ?>"><?php echo esc_html( $nizamiye_col['label'] ); ?></th>
+				<th class="<?php echo esc_attr( $nizamiye_col['class'] ); ?>"><?php echo esc_html( nizamiye_upper_tr( $nizamiye_col['label'] ) ); ?></th>
 			<?php endforeach; ?>
 		</tr>
 	</thead>
 	<tbody>
 		<?php if ( $nizamiye_sheet['rows'] ) : ?>
 			<?php foreach ( $nizamiye_sheet['rows'] as $nizamiye_index => $nizamiye_row ) : ?>
+				<?php
+				// Şube ayırıcıları yalnızca afiş düzeninde üretilir; klasik gövde
+				// onları atlar ki iki şablon aynı sheet'i güvenle tüketebilsin.
+				if ( isset( $nizamiye_row['group'] ) ) {
+					continue;
+				}
+				?>
 				<?php // Şerit deseni CSS :nth-child yerine sınıfla verilir; dompdf'in nth-child desteği güvenilir değil. ?>
 				<tr class="<?php echo ( $nizamiye_index % 2 ) ? 'alt' : ''; ?>">
 					<?php foreach ( $nizamiye_row['cells'] as $nizamiye_cell ) : ?>
 						<td class="<?php echo esc_attr( isset( $nizamiye_cell['class'] ) ? $nizamiye_cell['class'] : '' ); ?>">
-							<?php if ( ! empty( $nizamiye_cell['lines'] ) ) : ?>
+							<?php if ( isset( $nizamiye_cell['check'] ) ) : ?>
+								<?php // Tik hücreleri afişe özgüdür; klasik gövde yine de okunur bir karşılık basar. ?>
+								<?php echo esc_html( 'yes' === $nizamiye_cell['check'] ? '✓' : ( 'no' === $nizamiye_cell['check'] ? '✗' : '—' ) ); ?>
+							<?php elseif ( ! empty( $nizamiye_cell['lines'] ) ) : ?>
 								<?php foreach ( $nizamiye_cell['lines'] as $nizamiye_line ) : ?>
 									<div><?php echo esc_html( $nizamiye_line ); ?></div>
 								<?php endforeach; ?>

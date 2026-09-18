@@ -4,7 +4,7 @@ Tags: eğitim, yoklama, not defteri, öğrenci yönetimi, raporlar
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -99,6 +99,34 @@ Evet. **Karneler** sayfasında öğrencileri onay kutularıyla seçip ("tümün�
 6. Dönemler sayfası — akademik dönemleri yönetme ve aktif dönemi değiştirme.
 
 == Değişiklik Günlüğü ==
+
+= 1.7.0 =
+* Alışkanlık ve yoklama liste raporları artık ikinci bir düzenle alınabiliyor. Mevcut "klasik"
+  (veri odaklı) cetvelin yanına "afiş" düzeni eklendi: iri punto, renkli durum etiketleri ve A4
+  künye — velilere gönderilmeye ya da panoya asılmaya uygun. Düzen her rapor ekranındaki filtre
+  satırından, varsayılanı Ayarlar sayfasından seçiliyor; seçim önizlemeyi, PDF'i, PNG'yi ve
+  JPG'yi birlikte değiştiriyor.
+* Rapor başlıkları artık sabit metin değil. Cetvel, yoklama türünün ya da alışkanlığın kendi
+  adını taşıyor; "Akşam Etüdü Yoklaması" ve "Sabah İçtiması" kendi adlarıyla basılıyor.
+* Afişteki kapsam elle yazılmıyor, veriden türetiliyor: derslik bazlı yoklamada dersliğin adı,
+  filtre uygulanmışsa filtre, filtresizse listedeki şubeler ("4 · 5 · 6. Sınıf" ya da
+  "Tüm Sınıflar (7)").
+* Birden çok şubeyi kapsayan yoklamalarda tablo şubelere göre ayrılıyor; ayırıcı satır o şubenin
+  öğrenci sayısını taşıyor, sıra numarası liste boyunca kesintisiz gidiyor.
+* Tek güne ait afiş formu geldi ve gelmedi için tik sütunları ile bir açıklama kutusu basıyor;
+  kayıt bulunmayan satırlarda halkalar boş kalıyor, böylece çıktı elde de doldurulabiliyor.
+* Okuma afişleri elle "ödeve devam etti" ya da "gelmedi" olarak işaretlenebiliyor. Bu iki durum
+  yalnızca çıktıda gerektiği için veritabanına hiçbir şey yazılmıyor: işaret önizlemeye
+  uygulanıyor, sunucuda üretilen PDF'e indirme bağlantısıyla taşınıyor ve sayfa yenilendiğinde
+  kaybolmaması için tarayıcıda tutuluyor.
+* Çıktılardaki Türkçe büyük harf hatası düzeltildi. CSS'in `text-transform: uppercase` kuralı
+  `i` harfini `I` yapıyor, Türkçede `İ` olmalı; bu yüzden "KITAP OKUMA ÇIZELGESI" ve "ÖĞRENCI"
+  basılıyordu. Büyük harfe çevirme artık PHP tarafında Türkçe eşlemesiyle yapılıyor — hem klasik
+  hem afiş düzeninde.
+* Önizlemenin sayfa genişliği düzeltildi. Ekrandaki cetvelin sabit genişliği yoktu ve yönetim
+  alanını dolduracak kadar yayılıyordu; PNG ve JPG önizlemenin fotoğrafı olduğu için indirilen
+  görseller geniş ekranlarda yayvan çıkıyordu. Önizleme artık PDF'in içerik alanının birebir
+  aynısı (dikeyde 190mm, yatayda 277mm) ve seçili PDF yönünü izliyor.
 
 = 1.6.0 =
 * Sınıf öğretmeni artık sınıf seviyesinin değil şubenin sorumlusu. Sorumluluk listesi sınıf/şube
@@ -220,6 +248,12 @@ Evet. **Karneler** sayfasında öğrencileri onay kutularıyla seçip ("tümün�
   not ve alışkanlık takibi.
 
 == Yükseltme Notu ==
+
+= 1.7.0 =
+Alışkanlık ve yoklama liste raporlarına afiş düzeni ekler; her raporda ayrıca seçilebilir,
+varsayılanı Ayarlar sayfasından belirlenir. Ayrıca çıktılardaki Türkçe büyük harf hatasını ve
+PNG/JPG indirmelerinin genişliğini düzeltir. Mevcut klasik düzen değişmedi ve varsayılan olarak
+kalıyor; yeni düzeni seçmediğiniz sürece çıktılarınızda bir değişiklik olmaz.
 
 = 1.3.6 =
 WordPress 7.1 uyumluluğu doğrulandı ve readme değişiklik günlüğü tamamlandı. Bu sürümde kod

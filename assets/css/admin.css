@@ -630,11 +630,9 @@
 	border-radius: 10px;
 	overflow-x: auto;
 }
+/* Sayfa genişliği burada DEĞİL, nizamiye_preview_page_css() ile satır içi
+   basılır — gerekçesi orada. Buradaki kurallar yalnızca önizleme süslemesi. */
 .sms-sheet-wrap .sheet {
-	/* A4 dikey (10mm kenar boşluğuyla) yaklaşık genişliği — önizleme PDF'e benzesin. */
-	width: 760px;
-	max-width: 100%;
-	margin: 0 auto;
 	padding: 22px;
 	background: #fff;
 	border: 1px solid #e2e8f0;
