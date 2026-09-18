@@ -4,7 +4,7 @@ Tags: education, attendance, gradebook, student management, reports
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -99,6 +99,34 @@ and download a single ZIP file containing a separate PDF for each student.
 6. Terms page — manage academic terms and switch the active one.
 
 == Changelog ==
+
+= 1.7.0 =
+* Habit and attendance roster reports can now be printed in a second layout. Alongside the
+  existing "classic" (data-dense) sheet there is a "poster" layout: large type, colour-coded
+  chips and an A4 masthead, meant to be sent to parents or pinned on a wall. The layout is
+  picked from the filter row on each report screen and its default from the Settings page;
+  the choice drives the on-screen preview and the PDF, PNG and JPG downloads together.
+* Report titles are no longer fixed strings. A sheet is named after the attendance type or the
+  habit itself, so "Evening Study Attendance" and "Morning Assembly" print under their own names.
+* The scope shown on a poster is derived from the data rather than typed in. A classroom-scoped
+  attendance shows the classroom name; a filtered report shows the filter; an unfiltered one
+  reads the sections present in the list ("4 · 5 · 6. Sınıf", or "Tüm Sınıflar (7)").
+* Attendance covering more than one section now breaks the table up by section, with a divider
+  row carrying each section's headcount, while the ordinal keeps running across the whole list.
+* The poster form for a single day prints tick columns for present and absent plus an
+  explanation box, and leaves empty circles where no record exists, so it can also be filled
+  in by hand on paper.
+* Reading posters can be marked by hand with "continued their homework" or "did not attend".
+  These two states are only needed on the printout, so nothing is written to the database:
+  the mark is applied to the preview, carried to the server-rendered PDF through the download
+  link, and remembered in the browser between refreshes.
+* Fixed Turkish uppercasing in printed sheets. CSS `text-transform: uppercase` maps `i` to `I`,
+  where Turkish requires `İ`, which printed "KITAP OKUMA ÇIZELGESI" and "ÖĞRENCI". Uppercasing
+  now happens in PHP with the Turkish mapping, in both the classic and poster layouts.
+* Fixed the preview page width. The on-screen sheet had no fixed width and spread to fill the
+  admin area, so the PNG and JPG downloads — which are photographs of the preview — came out
+  stretched on wide screens. The preview now matches the PDF content area exactly (190mm
+  portrait, 277mm landscape) and follows the selected PDF orientation.
 
 = 1.6.0 =
 * A homeroom teacher is now responsible for sections rather than whole grade levels. The
@@ -221,6 +249,12 @@ and download a single ZIP file containing a separate PDF for each student.
   management, basic attendance, grade and habit tracking.
 
 == Upgrade Notice ==
+
+= 1.7.0 =
+Adds a poster layout for habit and attendance roster reports, selectable per report with a
+default on the Settings page. Also fixes Turkish uppercasing in printed sheets and the width
+of PNG/JPG downloads. The existing classic layout is unchanged and stays the default, so
+nothing changes in your current output unless you pick the new layout.
 
 = 1.3.6 =
 Compatibility with WordPress 7.1 has been verified and the readme changelog completed.
